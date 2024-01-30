@@ -218,3 +218,6 @@ resources/Testdata
 UsabilityTestProgram.java
 UsabilityTestProgram.class
 /resources/searchHistory.txt
+
+**/.DS_STORE
+DS._STORE
