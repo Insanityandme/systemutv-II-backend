@@ -219,5 +219,7 @@ UsabilityTestProgram.java
 UsabilityTestProgram.class
 /resources/searchHistory.txt
 
+# Our own gitignores
 **/.DS_STORE
 DS._STORE
+.idea
