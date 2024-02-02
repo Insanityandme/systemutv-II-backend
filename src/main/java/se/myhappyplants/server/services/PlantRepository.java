@@ -6,6 +6,7 @@ import se.myhappyplants.shared.PlantDetails;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -25,9 +26,13 @@ public class PlantRepository {
 
     public ArrayList<Plant> getResult(String plantSearch) {
         ArrayList<Plant> plantList = new ArrayList<>();
-        String query = "SELECT id, common_name, scientific_name, family, image_url FROM species WHERE scientific_name LIKE ('%" + plantSearch + "%') OR common_name LIKE ('%" + plantSearch + "%');";
-        try {
-            ResultSet resultSet = database.executeQuery(query);
+        String query = "SELECT id, common_name, scientific_name, family, image_url FROM species WHERE scientific_name LIKE ? OR common_name LIKE ?;";
+
+        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+            preparedStatement.setString(1, "%" + plantSearch + "%");
+            preparedStatement.setString(2, "%" + plantSearch + "%");
+
+            ResultSet resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
                 String plantId = resultSet.getString("id");
                 String commonName = resultSet.getString("common_name");
@@ -36,19 +41,23 @@ public class PlantRepository {
                 String imageURL = resultSet.getString("image_url");
                 plantList.add(new Plant(plantId, commonName, scientificName, familyName, imageURL));
             }
-        }
-        catch (SQLException sqlException) {
-            System.out.println(sqlException.fillInStackTrace());
+        } catch (SQLException sqlException) {
+            sqlException.printStackTrace();
             plantList = null;
         }
+
         return plantList;
     }
 
+
     public PlantDetails getPlantDetails(Plant plant) {
         PlantDetails plantDetails = null;
-        String query = "SELECT genus, scientific_name, light, water_frequency, family FROM species WHERE id = '" + plant.getPlantId() + "';";
-        try {
-            ResultSet resultSet = database.executeQuery(query);
+        String query = "SELECT genus, scientific_name, light, water_frequency, family FROM species WHERE id = ?;";
+
+        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+            preparedStatement.setString(1, plant.getPlantId());
+
+            ResultSet resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
                 String genus = resultSet.getString("genus");
                 String scientificName = resultSet.getString("scientific_name");
@@ -61,12 +70,13 @@ public class PlantRepository {
 
                 plantDetails = new PlantDetails(genus, scientificName, light, water, family);
             }
+        } catch (SQLException sqlException) {
+            sqlException.printStackTrace();
         }
-        catch (SQLException sqlException) {
-            System.out.println(sqlException.fillInStackTrace());
-        }
+
         return plantDetails;
     }
+
 
     public static boolean isNumeric(String str) {
         try {
@@ -80,18 +90,22 @@ public class PlantRepository {
 
     public long getWaterFrequency(String plantId) throws IOException, InterruptedException {
         long waterFrequency = -1;
-        String query = "SELECT water_frequency FROM species WHERE id = '" + plantId + "';";
-        try {
-            ResultSet resultSet = database.executeQuery(query);
+        String query = "SELECT water_frequency FROM species WHERE id = ?;";
+
+        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+            preparedStatement.setString(1, plantId);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
                 String waterText = resultSet.getString("water_frequency");
                 int water = (isNumeric(waterText)) ? Integer.parseInt(waterText) : -1;
                 waterFrequency = WaterCalculator.calculateWaterFrequencyForWatering(water);
             }
+        } catch (SQLException sqlException) {
+            sqlException.printStackTrace();
         }
-        catch (SQLException throwables) {
-            throwables.printStackTrace();
-        }
+
         return waterFrequency;
     }
+
 }

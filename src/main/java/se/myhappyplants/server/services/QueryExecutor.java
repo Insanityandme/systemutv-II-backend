@@ -1,5 +1,6 @@
 package se.myhappyplants.server.services;
 
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -76,5 +77,21 @@ public class QueryExecutor implements IQueryExecutor {
     @Override
     public void rollbackTransaction() throws SQLException {
         connection.getConnection().rollback();
+    }
+
+    @Override
+    public PreparedStatement prepareStatement(String query) throws SQLException {
+        boolean isSuccess = false;
+        int retries = 0;
+        do {
+            try {
+                return this.connection.getConnection().prepareStatement(query);
+            }
+            catch (SQLException sqlException) {
+                connection.closeConnection();
+                retries++;
+            }
+        } while (!isSuccess && retries < 3);
+        throw new SQLException("No connection to the database");
     }
 }

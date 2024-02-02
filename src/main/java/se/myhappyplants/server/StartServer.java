@@ -4,6 +4,8 @@ import se.myhappyplants.server.controller.ResponseController;
 import se.myhappyplants.server.services.*;
 
 import java.net.UnknownHostException;
+import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 
 /**
@@ -13,14 +15,19 @@ import java.sql.SQLException;
  */
 public class StartServer {
     public static void main(String[] args) throws UnknownHostException, SQLException {
-        IDatabaseConnection connectionMyHappyPlants = new DatabaseConnection("MyHappyPlants");
-        IDatabaseConnection connectionSpecies = new DatabaseConnection("Species");
-        IQueryExecutor databaseMyHappyPlants = new QueryExecutor(connectionMyHappyPlants);
-        IQueryExecutor databaseSpecies = new QueryExecutor(connectionSpecies);
+
+        IDatabaseConnection connectionMyHappyPlants1 = new DatabaseConnection("myHappyPlantsDB");
+        IQueryExecutor databaseMyHappyPlants = new QueryExecutor(connectionMyHappyPlants1);
+
+
         UserRepository userRepository = new UserRepository(databaseMyHappyPlants);
-        PlantRepository plantRepository = new PlantRepository(databaseSpecies);
+        PlantRepository plantRepository = new PlantRepository(databaseMyHappyPlants);
+
         UserPlantRepository userPlantRepository = new UserPlantRepository(plantRepository, databaseMyHappyPlants);
-        ResponseController responseController = new ResponseController(userRepository,userPlantRepository,plantRepository);
+        ResponseController responseController = new ResponseController(userRepository, userPlantRepository, plantRepository);
         new Server(2555, responseController);
     }
+
+
+
 }

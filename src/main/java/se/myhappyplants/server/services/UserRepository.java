@@ -16,7 +16,7 @@ public class UserRepository {
     private IQueryExecutor database;
 
     public UserRepository(IQueryExecutor database){
-       this.database = database;
+        this.database = database;
     }
 
     /**
@@ -29,14 +29,19 @@ public class UserRepository {
         boolean success = false;
         String hashedPassword = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
         String sqlSafeUsername = user.getUsername().replace("'", "''");
-        String query = "INSERT INTO [User] VALUES ('" + sqlSafeUsername + "', '" + user.getEmail() + "', '" + hashedPassword + "'," + 1 + "," + 1 + ");";
-        try {
-            database.executeUpdate(query);
+        String query = "INSERT INTO User (username, email, password, notification_activated, fun_facts_activated) VALUES (?, ?, ?, 1, 1);";
+
+        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+            preparedStatement.setString(1, sqlSafeUsername);
+            preparedStatement.setString(2, user.getEmail());
+            preparedStatement.setString(3, hashedPassword);
+
+            preparedStatement.executeUpdate();
             success = true;
-        }
-        catch (SQLException sqlException) {
+        } catch (SQLException sqlException) {
             sqlException.printStackTrace();
         }
+
         return success;
     }
 
@@ -50,17 +55,20 @@ public class UserRepository {
      */
     public boolean checkLogin(String email, String password) {
         boolean isVerified = false;
-        String query = "SELECT password FROM [User] WHERE email = '" + email + "';";
-        try {
-            ResultSet resultSet = database.executeQuery(query);
+        String query = "SELECT password FROM User WHERE email = ?;";
+
+        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+            preparedStatement.setString(1, email);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
             if (resultSet.next()) {
-                String hashedPassword = resultSet.getString(1);
+                String hashedPassword = resultSet.getString("password");
                 isVerified = BCrypt.checkpw(password, hashedPassword);
             }
-        }
-        catch (SQLException sqlException) {
+        } catch (SQLException sqlException) {
             sqlException.printStackTrace();
         }
+
         return isVerified;
     }
 
@@ -76,20 +84,23 @@ public class UserRepository {
         String username = null;
         boolean notificationActivated = false;
         boolean funFactsActivated = false;
-        String query = "SELECT id, username, notification_activated, fun_facts_activated FROM [User] WHERE email = '" + email + "';";
-        try {
-            ResultSet resultSet = database.executeQuery(query);
+        String query = "SELECT id, username, notification_activated, fun_facts_activated FROM User WHERE email = ?;";
+
+        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+            preparedStatement.setString(1, email);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
-                uniqueID = resultSet.getInt(1);
-                username = resultSet.getString(2);
-                notificationActivated = resultSet.getBoolean(3);
-                funFactsActivated = resultSet.getBoolean(4);
+                uniqueID = resultSet.getInt("id");
+                username = resultSet.getString("username");
+                notificationActivated = resultSet.getBoolean("notification_activated");
+                funFactsActivated = resultSet.getBoolean("fun_facts_activated");
             }
             user = new User(uniqueID, email, username, notificationActivated, funFactsActivated);
-        }
-        catch (SQLException sqlException) {
+        } catch (SQLException sqlException) {
             sqlException.printStackTrace();
         }
+
         return user;
     }
 
@@ -102,67 +113,84 @@ public class UserRepository {
      * @return boolean value, false if transaction is rolled back
      * @throws SQLException
      */
+
     public boolean deleteAccount(String email, String password) {
         boolean accountDeleted = false;
         if (checkLogin(email, password)) {
-            String querySelect = "SELECT [User].id from [User] WHERE [User].email = '" + email + "';";
-            try {
-                Statement statement = database.beginTransaction();
-                ResultSet resultSet = statement.executeQuery(querySelect);
-                if (!resultSet.next()) {
-                    throw new SQLException();
+            String querySelect = "SELECT id FROM User WHERE email = ?;";
+
+            try (PreparedStatement preparedStatementSelect = database.prepareStatement(querySelect)) {
+                preparedStatementSelect.setString(1, email);
+
+                ResultSet resultSet = preparedStatementSelect.executeQuery();
+
+                if (resultSet.next()) {
+                    int id = resultSet.getInt("id");
+                    String queryDeletePlants = "DELETE FROM Plant WHERE user_id = ?;";
+                    String queryDeleteUser = "DELETE FROM User WHERE id = ?;";
+
+                    try (PreparedStatement preparedStatementDeletePlants = database.prepareStatement(queryDeletePlants);
+                         PreparedStatement preparedStatementDeleteUser = database.prepareStatement(queryDeleteUser)) {
+
+                        preparedStatementDeletePlants.setInt(1, id);
+                        preparedStatementDeleteUser.setInt(1, id);
+
+                        database.beginTransaction();
+
+                        preparedStatementDeletePlants.executeUpdate();
+                        preparedStatementDeleteUser.executeUpdate();
+
+                        database.endTransaction();
+                        accountDeleted = true;
+                    } catch (SQLException sqlException) {
+                        try {
+                            database.rollbackTransaction();
+                        } catch (SQLException throwables) {
+                            throwables.printStackTrace();
+                        }
+                    }
                 }
-                int id = resultSet.getInt(1);
-                String queryDeletePlants = "DELETE FROM [Plant] WHERE user_id = " + id + ";";
-                statement.executeUpdate(queryDeletePlants);
-                String queryDeleteUser = "DELETE FROM [User] WHERE id = " + id + ";";
-                statement.executeUpdate(queryDeleteUser);
-                database.endTransaction();
-                accountDeleted = true;
-            }
-            catch (SQLException sqlException) {
-                try {
-                   database.rollbackTransaction();
-                }
-                catch (SQLException throwables) {
-                    throwables.printStackTrace();
-                }
+            } catch (SQLException sqlException) {
+                sqlException.printStackTrace();
             }
         }
+
         return accountDeleted;
     }
 
     public boolean changeNotifications(User user, boolean notifications) {
         boolean notificationsChanged = false;
-        int notificationsActivated = 0;
-        if (notifications) {
-            notificationsActivated = 1;
-        }
-        String query = "UPDATE [User] SET notification_activated = " + notificationsActivated + " WHERE email = '" + user.getEmail() + "';";
-        try {
-            database.executeUpdate(query);
+        int notificationsActivated = notifications ? 1 : 0;
+        String query = "UPDATE User SET notification_activated = ? WHERE email = ?;";
+
+        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+            preparedStatement.setInt(1, notificationsActivated);
+            preparedStatement.setString(2, user.getEmail());
+
+            preparedStatement.executeUpdate();
             notificationsChanged = true;
-        }
-        catch (SQLException sqlException) {
+        } catch (SQLException sqlException) {
             sqlException.printStackTrace();
         }
+
         return notificationsChanged;
     }
 
     public boolean changeFunFacts(User user, Boolean funFactsActivated) {
         boolean funFactsChanged = false;
-        int funFactsBitValue = 0;
-        if (funFactsActivated) {
-            funFactsBitValue = 1;
-        }
-        String query = "UPDATE [User] SET fun_facts_activated = " + funFactsBitValue + " WHERE email = '" + user.getEmail() + "';";
-        try {
-            database.executeUpdate(query);
+        int funFactsBitValue = funFactsActivated ? 1 : 0;
+        String query = "UPDATE User SET fun_facts_activated = ? WHERE email = ?;";
+
+        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+            preparedStatement.setInt(1, funFactsBitValue);
+            preparedStatement.setString(2, user.getEmail());
+
+            preparedStatement.executeUpdate();
             funFactsChanged = true;
-        }
-        catch (SQLException sqlException) {
+        } catch (SQLException sqlException) {
             sqlException.printStackTrace();
         }
+
         return funFactsChanged;
     }
 }
