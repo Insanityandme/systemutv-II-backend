@@ -138,6 +138,8 @@ hs_err_pid*
 # Icon must end with two \r
 Icon
 
+# Ignore myHappyPlantsDB.db file
+src/main/resources/myHappyPlantsDB.db
 
 # Thumbnails
 ._*

@@ -1,8 +1,6 @@
 package se.myhappyplants.server.services;
 
-import se.myhappyplants.server.PasswordsAndKeys;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
@@ -12,52 +10,47 @@ import java.sql.SQLException;
  */
 public class DatabaseConnection implements IDatabaseConnection {
 
-    private java.sql.Connection conn;
+    private Connection conn;
     private String databaseName;
 
     public DatabaseConnection(String databaseName) {
         this.databaseName = databaseName;
     }
 
-    private java.sql.Connection createConnection() throws SQLException, UnknownHostException {
-        String dbServerIp = PasswordsAndKeys.dbServerIp;
-        String dbServerPort = PasswordsAndKeys.dbServerPort;
-        String dbUser = PasswordsAndKeys.dbUsername;
-        String dbPassword = PasswordsAndKeys.dbPassword;
-        DriverManager.registerDriver(new com.microsoft.sqlserver.jdbc.SQLServerDriver());
-
-        if (InetAddress.getLocalHost().getHostName().equals(PasswordsAndKeys.dbHostName)) {
-            dbServerIp = "localhost";
+    private Connection createConnection() throws SQLException {
+        if (conn == null || conn.isClosed()) {
+            try {
+                Class.forName("org.sqlite.JDBC");
+                String dbURL = "jdbc:sqlite:./src/main/resources/" + databaseName + ".db";
+                conn = DriverManager.getConnection(dbURL);
+            } catch (ClassNotFoundException e) {
+                throw new SQLException("SQLite JDBC driver not found", e);
+            }
         }
-        String dbURL = String.format("jdbc:sqlserver://%s:%s;databaseName=" + databaseName + ";user=%s;password=%s", dbServerIp, dbServerPort, dbUser, dbPassword);
-        this.conn = DriverManager.getConnection(dbURL);
+
         return conn;
     }
 
     @Override
-    public java.sql.Connection getConnection() {
-        if(conn==null) {
-            try {
-                conn = createConnection();
-            }
-            catch (UnknownHostException e) {
-                e.printStackTrace();
-            }
-            catch (SQLException sqlException) {
-                sqlException.printStackTrace();
-            }
+    public Connection getConnection() {
+        try {
+            return createConnection();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
         }
-        return conn;
     }
 
     @Override
     public void closeConnection() {
-        try {
-            conn.close();
+        if (conn != null) {
+            try {
+                conn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            } finally {
+                conn = null;
+            }
         }
-        catch (SQLException sqlException) {
-           //do nothing when this occurs, we don't care about this exception
-        }
-        conn = null;
     }
 }

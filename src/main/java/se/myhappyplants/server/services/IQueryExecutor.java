@@ -1,5 +1,6 @@
 package se.myhappyplants.server.services;
 
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -19,4 +20,6 @@ public interface IQueryExecutor {
     void endTransaction() throws SQLException;
 
     void rollbackTransaction() throws SQLException;
+
+    PreparedStatement prepareStatement(String query) throws SQLException;
 }
