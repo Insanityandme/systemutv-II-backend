@@ -33,6 +33,8 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -67,6 +69,9 @@ public class SearchTabPaneController {
 
     private ArrayList<Plant> searchResults;
     private ArrayList<PlantDetails> plantDetailsList = new ArrayList<>();
+
+    private Set<String> addedPlantIds = new HashSet<>();
+
 
     /**
      * Method to initialize the GUI
@@ -242,30 +247,31 @@ public class SearchTabPaneController {
 
 
                     String id = plantData.has("id") && !plantData.get("id").isJsonNull() ? plantData.get("id").getAsString() : null;
-                    String commonName = plantData.has("common_name") && !plantData.get("common_name").isJsonNull() ? plantData.get("common_name").getAsString() : "N/A";
-                    String scientificName = plantData.has("scientific_name") && !plantData.get("scientific_name").isJsonNull() ? plantData.get("scientific_name").getAsString() : "N/A";
-                    String family = plantData.has("family") && !plantData.get("family").isJsonNull() ? plantData.get("family").getAsString() : "N/A";
-                    String imageUrl = plantData.has("image_url") && !plantData.get("image_url").isJsonNull() ? plantData.get("image_url").getAsString() : "No Image";
-
-                    String genus = plantData.has("genus") && !plantData.get("genus").isJsonNull() ? plantData.get("genus").getAsString() : null;
-                    int light = plantData.has("data") && plantData.getAsJsonObject("data").has("growth")
-                            ? plantData.getAsJsonObject("data").getAsJsonObject("growth").has("light")
-                            ? plantData.getAsJsonObject("data").getAsJsonObject("growth").get("light").getAsInt()
-                            : 0
-                            : 0;
 
 
-                    int waterFrequency = plantData.has("water_frequency") && !plantData.get("water_frequency").isJsonNull() ? plantData.get("water_frequency").getAsInt() : 0;
+                    if (id != null && !addedPlantIds.contains(id)) {
+                        String commonName = plantData.has("common_name") && !plantData.get("common_name").isJsonNull() ? plantData.get("common_name").getAsString() : "N/A";
+                        String scientificName = plantData.has("scientific_name") && !plantData.get("scientific_name").isJsonNull() ? plantData.get("scientific_name").getAsString() : "N/A";
+                        String family = plantData.has("family") && !plantData.get("family").isJsonNull() ? plantData.get("family").getAsString() : "N/A";
+                        String imageUrl = plantData.has("image_url") && !plantData.get("image_url").isJsonNull() ? plantData.get("image_url").getAsString() : "No Image";
+
+                        String genus = plantData.has("genus") && !plantData.get("genus").isJsonNull() ? plantData.get("genus").getAsString() : null;
+                        int light = plantData.has("data") && plantData.getAsJsonObject("data").has("growth")
+                                ? plantData.getAsJsonObject("data").getAsJsonObject("growth").has("light")
+                                ? plantData.getAsJsonObject("data").getAsJsonObject("growth").get("light").getAsInt()
+                                : 0
+                                : 0;
+
+                        int waterFrequency = plantData.has("water_frequency") && !plantData.get("water_frequency").isJsonNull() ? plantData.get("water_frequency").getAsInt() : 0;
+
+                        Plant plant = new Plant(id, commonName, scientificName, family, imageUrl);
+                        PlantDetails plantDetails = new PlantDetails(genus, scientificName, light, waterFrequency, family);
+                        plantDetailsList.add(plantDetails);
+                        plants.add(plant);
 
 
-                    Plant plant = new Plant(id, commonName, scientificName, family, imageUrl);
-
-                    PlantDetails plantDetails = new PlantDetails(genus, scientificName, light, waterFrequency, family);
-                    plantDetailsList.add(plantDetails);
-
-
-
-                    plants.add(plant);
+                        addedPlantIds.add(id);
+                    }
 
 
                 }
