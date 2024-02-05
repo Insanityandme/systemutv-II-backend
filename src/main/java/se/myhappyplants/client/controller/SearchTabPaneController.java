@@ -143,7 +143,7 @@ public class SearchTabPaneController {
                             }
                             else {
                                 try {
-                                    spp.updateImage();
+                                    spp.updateImage(Plant.getImageURL());
                                 }
                                 catch (IllegalArgumentException e) {
                                     spp.setDefaultImage(ImageLibrary.getDefaultPlantImage().toURI().toString());
@@ -193,9 +193,6 @@ public class SearchTabPaneController {
 
         combinedFuture.thenRun(() -> {
             try {
-                System.out.println("Plants JSON response: " + responsePlantsFuture.get().body());
-                System.out.println("Species JSON response: " + responseSpeciesFuture.get().body());
-
 
 
                 ArrayList<Plant> plants = parseJsonResponse(responsePlantsFuture.get().body());
