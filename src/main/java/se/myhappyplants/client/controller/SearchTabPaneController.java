@@ -1,6 +1,7 @@
 package se.myhappyplants.client.controller;
 
 import com.google.gson.Gson;
+import io.github.cdimascio.dotenv.Dotenv;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonArray;
@@ -71,6 +72,8 @@ public class SearchTabPaneController {
     private ArrayList<PlantDetails> plantDetailsList = new ArrayList<>();
 
     private Set<String> addedPlantIds = new HashSet<>();
+
+    private static final String TREFLE_API_KEY = System.getenv("TREFLE_API_KEY");
 
 
     /**
@@ -181,8 +184,8 @@ public class SearchTabPaneController {
         String userSearch = txtFldSearchText.getText();
         userSearch = userSearch.replace(" ", "%20");
 
-        URI uriPlants = URI.create("https://trefle.io/api/v1/plants/search?token=YBughrIEe5CLTN8uX_YNOZOR4lrw2cGR0fLM1VM_FoM&q=" + userSearch);
-        URI uriSpecies = URI.create("https://trefle.io/api/v1/species/search?token=YBughrIEe5CLTN8uX_YNOZOR4lrw2cGR0fLM1VM_FoM&q=" + userSearch);
+        URI uriPlants = URI.create("https://trefle.io/api/v1/plants/search?token=" + TREFLE_API_KEY + "&q=" + userSearch);
+        URI uriSpecies = URI.create("https://trefle.io/api/v1/species/search?token=" + TREFLE_API_KEY + "&q=" + userSearch);
 
         HttpClient httpClient = HttpClient.newHttpClient();
 
