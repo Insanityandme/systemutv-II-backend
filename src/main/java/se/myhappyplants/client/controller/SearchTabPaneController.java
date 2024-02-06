@@ -72,9 +72,8 @@ public class SearchTabPaneController {
     private ArrayList<PlantDetails> plantDetailsList = new ArrayList<>();
 
     private Set<String> addedPlantIds = new HashSet<>();
+
     private String trefleApiKey;
-
-
 
 
     /**
