@@ -1,5 +1,6 @@
 package se.myhappyplants.server;
 
+import io.github.cdimascio.dotenv.Dotenv;
 import se.myhappyplants.server.controller.ResponseController;
 import se.myhappyplants.server.services.*;
 
@@ -15,6 +16,9 @@ import java.sql.SQLException;
  */
 public class StartServer {
     public static void main(String[] args) throws UnknownHostException, SQLException {
+
+
+
 
         IDatabaseConnection connectionMyHappyPlants1 = new DatabaseConnection("myHappyPlantsDB");
         IQueryExecutor databaseMyHappyPlants = new QueryExecutor(connectionMyHappyPlants1);

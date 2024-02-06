@@ -177,8 +177,8 @@ public class SearchPlantPane extends Pane implements PlantPane {
     /**
      * Method to update the image
      */
-    public void updateImage() {
-        Image img = new Image(String.valueOf(plant.getImageURL()));
+    public void updateImage(String url) {
+        Image img = new Image(url);
         image.setImage(img);
     }
 

@@ -125,7 +125,7 @@ public class Plant implements Serializable {
         if(imageURL == null) {
             imageURL = PictureRandomizer.getRandomPictureURL();
         }
-        String httpImageURL = imageURL.replace("https", "http");
+        String httpImageURL = imageURL;
         return httpImageURL;
     }
 

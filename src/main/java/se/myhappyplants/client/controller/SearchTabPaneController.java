@@ -1,5 +1,10 @@
 package se.myhappyplants.client.controller;
 
+import com.google.gson.Gson;
+import io.github.cdimascio.dotenv.Dotenv;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonArray;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -24,7 +29,14 @@ import se.myhappyplants.client.model.SetAvatar;
 import se.myhappyplants.shared.PlantDetails;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Class that controls the logic of the "search"-tab
@@ -57,6 +69,12 @@ public class SearchTabPaneController {
     public TextField txtNbrOfResults;
 
     private ArrayList<Plant> searchResults;
+    private ArrayList<PlantDetails> plantDetailsList = new ArrayList<>();
+
+    private Set<String> addedPlantIds = new HashSet<>();
+
+    private String trefleApiKey;
+
 
     /**
      * Method to initialize the GUI
@@ -64,6 +82,9 @@ public class SearchTabPaneController {
      */
     @FXML
     public void initialize() {
+
+        Dotenv dotenv = Dotenv.load();
+        trefleApiKey = dotenv.get("TREFLE_API_KEY");
         LoggedInUser loggedInUser = LoggedInUser.getInstance();
         lblUsername.setText(loggedInUser.getUser().getUsername());
         imgUserAvatar.setFill(new ImagePattern(new Image(SetAvatar.setAvatarOnLogin(loggedInUser.getUser().getEmail()))));
@@ -133,7 +154,7 @@ public class SearchTabPaneController {
                             }
                             else {
                                 try {
-                                    spp.updateImage();
+                                    spp.updateImage(Plant.getImageURL());
                                 }
                                 catch (IllegalArgumentException e) {
                                     spp.setDefaultImage(ImageLibrary.getDefaultPlantImage().toURI().toString());
@@ -162,32 +183,128 @@ public class SearchTabPaneController {
         btnSearch.setDisable(true);
         txtFldSearchText.addToHistory();
         PopupBox.display(MessageText.holdOnGettingInfo.toString());
-        Thread searchThread = new Thread(() -> {
-            Message apiRequest = new Message(MessageType.search, txtFldSearchText.getText());
-            ServerConnection connection = ServerConnection.getClientConnection();
-            Message apiResponse = connection.makeRequest(apiRequest);
 
-            if (apiResponse != null) {
-                if (apiResponse.isSuccess()) {
+        String userSearch = txtFldSearchText.getText();
+        userSearch = userSearch.replace(" ", "%20");
+
+        URI uriPlants = URI.create("https://trefle.io/api/v1/plants/search?token=" + trefleApiKey + "&q=" + userSearch);
+        URI uriSpecies = URI.create("https://trefle.io/api/v1/species/search?token=" + trefleApiKey + "&q=" + userSearch);
+
+        HttpClient httpClient = HttpClient.newHttpClient();
+
+        CompletableFuture<HttpResponse<String>> responsePlantsFuture = httpClient.sendAsync(HttpRequest.newBuilder()
+                .uri(uriPlants)
+                .build(), HttpResponse.BodyHandlers.ofString());
+
+        CompletableFuture<HttpResponse<String>> responseSpeciesFuture = httpClient.sendAsync(HttpRequest.newBuilder()
+                .uri(uriSpecies)
+                .build(), HttpResponse.BodyHandlers.ofString());
+
+        CompletableFuture<Void> combinedFuture = CompletableFuture.allOf(responsePlantsFuture, responseSpeciesFuture);
+
+        combinedFuture.thenRun(() -> {
+            try {
+
+
+                ArrayList<Plant> plants = parseJsonResponse(responsePlantsFuture.get().body());
+                ArrayList<Plant> species = parseJsonResponse(responseSpeciesFuture.get().body());
+
+                ArrayList<Plant> combinedResults = new ArrayList<>();
+                combinedResults.addAll(plants);
+                combinedResults.addAll(species);
+
+                Message apiResponse = new Message(combinedResults, true);
+
+                if (apiResponse != null && apiResponse.isSuccess()) {
                     searchResults = apiResponse.getPlantArray();
                     Platform.runLater(() -> txtNbrOfResults.setText(searchResults.size() + " results"));
-                    if(searchResults.size() == 0) {
+                    if (searchResults.size() == 0) {
                         progressIndicator.progressProperty().unbind();
                         progressIndicator.setProgress(100);
                         btnSearch.setDisable(false);
                         Platform.runLater(() -> listViewResult.getItems().clear());
-                        return;
+                    } else {
+                        Platform.runLater(() -> showResultsOnPane());
                     }
-                    Platform.runLater(() -> showResultsOnPane());
+                } else {
+                    Platform.runLater(() -> MessageBox.display(BoxTitle.Error, "Failed to process the server response."));
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
+                Platform.runLater(() -> MessageBox.display(BoxTitle.Error, "Failed to fetch data from the server."));
+            } finally {
+                Platform.runLater(() -> btnSearch.setDisable(false));
             }
-            else {
-                Platform.runLater(() -> MessageBox.display(BoxTitle.Error, "The connection to the server has failed. Check your connection and try again."));
-            }
-            btnSearch.setDisable(false);
         });
-        searchThread.start();
     }
+
+    private ArrayList<Plant> parseJsonResponse(String responseBody) {
+        ArrayList<Plant> plants = new ArrayList<>();
+
+        try {
+            Gson gson = new Gson();
+            JsonObject jsonResponse = gson.fromJson(responseBody, JsonObject.class);
+
+            if (jsonResponse.has("data")) {
+                JsonArray data = jsonResponse.getAsJsonArray("data");
+
+                for (JsonElement plantElement : data) {
+                    JsonObject plantData = plantElement.getAsJsonObject();
+
+
+                    String id = plantData.has("id") && !plantData.get("id").isJsonNull() ? plantData.get("id").getAsString() : null;
+
+
+                    if (id != null && !addedPlantIds.contains(id)) {
+                        String commonName = plantData.has("common_name") && !plantData.get("common_name").isJsonNull() ? plantData.get("common_name").getAsString() : "N/A";
+                        String scientificName = plantData.has("scientific_name") && !plantData.get("scientific_name").isJsonNull() ? plantData.get("scientific_name").getAsString() : "N/A";
+                        String family = plantData.has("family") && !plantData.get("family").isJsonNull() ? plantData.get("family").getAsString() : "N/A";
+                        String imageUrl = plantData.has("image_url") && !plantData.get("image_url").isJsonNull() ? plantData.get("image_url").getAsString() : "No Image";
+
+                        String genus = plantData.has("genus") && !plantData.get("genus").isJsonNull() ? plantData.get("genus").getAsString() : null;
+                        int light = plantData.has("data") && plantData.getAsJsonObject("data").has("growth")
+                                ? plantData.getAsJsonObject("data").getAsJsonObject("growth").has("light")
+                                ? plantData.getAsJsonObject("data").getAsJsonObject("growth").get("light").getAsInt()
+                                : 0
+                                : 0;
+
+                        int waterFrequency = plantData.has("water_frequency") && !plantData.get("water_frequency").isJsonNull() ? plantData.get("water_frequency").getAsInt() : 0;
+
+                        Plant plant = new Plant(id, commonName, scientificName, family, imageUrl);
+                        PlantDetails plantDetails = new PlantDetails(genus, scientificName, light, waterFrequency, family);
+                        plantDetailsList.add(plantDetails);
+                        plants.add(plant);
+
+
+                        addedPlantIds.add(id);
+                    }
+
+
+                }
+            } else {
+                System.out.println("No 'data' found in the JSON response.");
+            }
+
+
+            return plants;
+        } catch (Exception e) {
+            e.printStackTrace();
+
+            return new ArrayList<>();
+        }
+    }
+
+    private int getIndexOfPlant(Plant plant) {
+        for (int i = 0; i < searchResults.size(); i++) {
+            if (searchResults.get(i).getPlantId().equals(plant.getPlantId())) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+
+
 
     /**
      * Method to message the right controller-class that the log out-button has been pressed
@@ -200,14 +317,18 @@ public class SearchTabPaneController {
 
     public PlantDetails getPlantDetails(Plant plant) {
         PopupBox.display(MessageText.holdOnGettingInfo.toString());
-        PlantDetails plantDetails = null;
-        Message getInfoSearchedPlant = new Message(MessageType.getMorePlantInfo, plant);
-        ServerConnection connection = ServerConnection.getClientConnection();
-        Message response = connection.makeRequest(getInfoSearchedPlant);
-        if (response != null) {
-            plantDetails = response.getPlantDetails();
+
+        int index = getIndexOfPlant(plant);
+
+        if (index != -1 && index < plantDetailsList.size()) {
+            PlantDetails plantDetails = plantDetailsList.get(index);
+
+
+            return plantDetails;
+        } else {
+            System.out.println("Details not found for the selected plant.");
+            return null;
         }
-        return plantDetails;
     }
 
     /**
