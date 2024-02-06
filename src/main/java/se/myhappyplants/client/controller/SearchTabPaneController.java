@@ -72,8 +72,9 @@ public class SearchTabPaneController {
     private ArrayList<PlantDetails> plantDetailsList = new ArrayList<>();
 
     private Set<String> addedPlantIds = new HashSet<>();
+    private String trefleApiKey;
 
-    private static final String TREFLE_API_KEY = System.getenv("TREFLE_API_KEY");
+
 
 
     /**
@@ -82,6 +83,9 @@ public class SearchTabPaneController {
      */
     @FXML
     public void initialize() {
+
+        Dotenv dotenv = Dotenv.load();
+        trefleApiKey = dotenv.get("TREFLE_API_KEY");
         LoggedInUser loggedInUser = LoggedInUser.getInstance();
         lblUsername.setText(loggedInUser.getUser().getUsername());
         imgUserAvatar.setFill(new ImagePattern(new Image(SetAvatar.setAvatarOnLogin(loggedInUser.getUser().getEmail()))));
@@ -184,8 +188,8 @@ public class SearchTabPaneController {
         String userSearch = txtFldSearchText.getText();
         userSearch = userSearch.replace(" ", "%20");
 
-        URI uriPlants = URI.create("https://trefle.io/api/v1/plants/search?token=" + TREFLE_API_KEY + "&q=" + userSearch);
-        URI uriSpecies = URI.create("https://trefle.io/api/v1/species/search?token=" + TREFLE_API_KEY + "&q=" + userSearch);
+        URI uriPlants = URI.create("https://trefle.io/api/v1/plants/search?token=" + trefleApiKey + "&q=" + userSearch);
+        URI uriSpecies = URI.create("https://trefle.io/api/v1/species/search?token=" + trefleApiKey + "&q=" + userSearch);
 
         HttpClient httpClient = HttpClient.newHttpClient();
 

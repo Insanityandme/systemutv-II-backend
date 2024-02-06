@@ -17,8 +17,8 @@ import java.sql.SQLException;
 public class StartServer {
     public static void main(String[] args) throws UnknownHostException, SQLException {
 
-        Dotenv dotenv = Dotenv.load();
-        String trefleApiKey = dotenv.get("TREFLE_API_KEY");
+
+
 
         IDatabaseConnection connectionMyHappyPlants1 = new DatabaseConnection("myHappyPlantsDB");
         IQueryExecutor databaseMyHappyPlants = new QueryExecutor(connectionMyHappyPlants1);
