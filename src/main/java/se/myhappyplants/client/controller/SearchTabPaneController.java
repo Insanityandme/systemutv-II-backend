@@ -80,9 +80,10 @@ public class SearchTabPaneController {
      * Method to initialize the GUI
      * @throws IOException
      */
+    //Tar hand om krav F.SI.1
     @FXML
     public void initialize() {
-
+        //Tar hand om krav F.SI.1
         Dotenv dotenv = Dotenv.load();
         trefleApiKey = dotenv.get("TREFLE_API_KEY");
         LoggedInUser loggedInUser = LoggedInUser.getInstance();
@@ -154,7 +155,7 @@ public class SearchTabPaneController {
                             }
                             else {
                                 try {
-                                    spp.updateImage(Plant.getImageURL());
+                                    spp.updateImage(Plant.getImageURL());//Tar hand om krav F.SI.1
                                 }
                                 catch (IllegalArgumentException e) {
                                     spp.setDefaultImage(ImageLibrary.getDefaultPlantImage().toURI().toString());
@@ -178,8 +179,11 @@ public class SearchTabPaneController {
     /**
      * Method to sent a message to the server to get the results from the database. Displays a message to the user that more info is on its way
      */
+
+    //Tar hand om krav F.SI.1
     @FXML
     private void searchButtonPressed() {
+
         btnSearch.setDisable(true);
         txtFldSearchText.addToHistory();
         PopupBox.display(MessageText.holdOnGettingInfo.toString());
@@ -238,6 +242,7 @@ public class SearchTabPaneController {
         });
     }
 
+    //Tar hand om krav F.SI.1
     private ArrayList<Plant> parseJsonResponse(String responseBody) {
         ArrayList<Plant> plants = new ArrayList<>();
 
@@ -294,6 +299,7 @@ public class SearchTabPaneController {
         }
     }
 
+    //Tar hand om krav F.SI.1
     private int getIndexOfPlant(Plant plant) {
         for (int i = 0; i < searchResults.size(); i++) {
             if (searchResults.get(i).getPlantId().equals(plant.getPlantId())) {
@@ -315,6 +321,7 @@ public class SearchTabPaneController {
         mainPaneController.logoutButtonPressed();
     }
 
+    //Tar hand om krav F.SI.1
     public PlantDetails getPlantDetails(Plant plant) {
         PopupBox.display(MessageText.holdOnGettingInfo.toString());
 

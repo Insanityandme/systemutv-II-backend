@@ -121,6 +121,8 @@ public class Plant implements Serializable {
      *
      * @return URL location of image
      */
+
+    //Tar hand om krav F.SI.1
     public String getImageURL() {
         if(imageURL == null) {
             imageURL = PictureRandomizer.getRandomPictureURL();
