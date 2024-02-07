@@ -16,6 +16,8 @@ import java.util.ArrayList;
  * Created by: Linn Borgström
  * Updated by: Frida Jacobsson 2021-05-21
  */
+
+//Tar hand om kraven F.U.1
 public class UserPlantRepository {
 
     private PlantRepository plantRepository;

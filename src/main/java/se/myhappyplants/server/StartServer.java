@@ -15,7 +15,9 @@ import java.sql.SQLException;
  * Updated by: Frida Jacobsson 2021-05-21
  */
 public class StartServer {
+    //Tar hand om kraven F.U.1
     public static void main(String[] args) throws UnknownHostException, SQLException {
+
 
 
 

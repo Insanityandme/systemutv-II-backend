@@ -79,6 +79,7 @@ public class QueryExecutor implements IQueryExecutor {
         connection.getConnection().rollback();
     }
 
+    //Tar hand om kraven F.U.1
     @Override
     public PreparedStatement prepareStatement(String query) throws SQLException {
         boolean isSuccess = false;
