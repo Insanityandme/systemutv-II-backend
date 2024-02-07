@@ -21,5 +21,6 @@ public interface IQueryExecutor {
 
     void rollbackTransaction() throws SQLException;
 
+    //Tar hand om kraven F.U.1
     PreparedStatement prepareStatement(String query) throws SQLException;
 }

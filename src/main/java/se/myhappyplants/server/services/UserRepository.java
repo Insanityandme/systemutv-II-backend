@@ -11,6 +11,8 @@ import java.sql.*;
  * Created by: Frida Jacobsson 2021-03-30
  * Updated by: Frida Jacobsson 2021-05-21
  */
+
+//Tar hand om kraven F.U.1
 public class UserRepository {
 
     private IQueryExecutor database;

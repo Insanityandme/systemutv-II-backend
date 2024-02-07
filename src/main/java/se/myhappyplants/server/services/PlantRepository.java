@@ -16,6 +16,8 @@ import java.util.ArrayList;
  * Created by: Frida Jacobsson 2021-03-30
  * Updated by: Christopher O'Driscoll
  */
+
+//Tar hand om kraven F.U.1
 public class PlantRepository {
 
     private IQueryExecutor database;

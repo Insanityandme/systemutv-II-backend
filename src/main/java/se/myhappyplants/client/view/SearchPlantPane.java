@@ -177,6 +177,8 @@ public class SearchPlantPane extends Pane implements PlantPane {
     /**
      * Method to update the image
      */
+
+    //Tar hand om krav F.SI.1
     public void updateImage(String url) {
         Image img = new Image(url);
         image.setImage(img);

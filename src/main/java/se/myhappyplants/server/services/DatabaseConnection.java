@@ -17,6 +17,9 @@ public class DatabaseConnection implements IDatabaseConnection {
         this.databaseName = databaseName;
     }
 
+
+
+    //Tar hand om kraven F.U.1
     private Connection createConnection() throws SQLException {
         if (conn == null || conn.isClosed()) {
             try {
