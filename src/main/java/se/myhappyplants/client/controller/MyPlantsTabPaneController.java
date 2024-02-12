@@ -214,6 +214,7 @@ public class MyPlantsTabPaneController {
     public void addPlantToCurrentUserLibrary(Plant selectedPlant, String plantNickname, PlantDetails details) {
         int plantsWithThisNickname = 1;
         String uniqueNickName = plantNickname;
+        String imageURL= selectedPlant.getImageURL();
         for (Plant plant : currentUserLibrary) {
             if (plant.getNickname().equals(uniqueNickName)) {
                 plantsWithThisNickname++;
@@ -222,8 +223,7 @@ public class MyPlantsTabPaneController {
         }
         long currentDateMilli = System.currentTimeMillis();
         Date date = new Date(currentDateMilli);
-        String imageURL = PictureRandomizer.getRandomPictureURL();
-        Plant plantToAdd = new Plant(uniqueNickName, selectedPlant.getPlantId(), date, imageURL);
+        Plant plantToAdd = new Plant(uniqueNickName, selectedPlant.getPlantId(), date,imageURL);
         PopupBox.display(MessageText.sucessfullyAddPlant.toString());
         addPlantToDB(plantToAdd,details);
     }
