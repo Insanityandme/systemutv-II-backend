@@ -126,7 +126,8 @@ public class MyPlantsTabPaneController {
             } else {
                 enableButtons();
                 for (Plant plant : currentUserLibrary) {
-                    obsListLibraryPlantPane.add(new LibraryPlantPane(this, plant));
+                    PlantDetails details = getPlantDetails(plant);
+                    obsListLibraryPlantPane.add(new LibraryPlantPane(this, plant,details));
                 }
             }
         }

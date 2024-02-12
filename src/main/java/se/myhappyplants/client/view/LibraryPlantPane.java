@@ -45,6 +45,8 @@ public class LibraryPlantPane extends Pane implements PlantPane {
     private ListView listViewMoreInfo;
     private Label daysUntilWaterlbl;
 
+    private PlantDetails details;
+
     public boolean extended;
     private boolean gotInfoOnPlant;
 
@@ -77,10 +79,11 @@ public class LibraryPlantPane extends Pane implements PlantPane {
      * @param myPlantsTabPaneController MyPlantsTabController which contains logic for elements to use
      * @param plant                     plant object from user's library
      */
-    public LibraryPlantPane(MyPlantsTabPaneController myPlantsTabPaneController, Plant plant) {
+    public LibraryPlantPane(MyPlantsTabPaneController myPlantsTabPaneController, Plant plant, PlantDetails details) {
         this.myPlantsTabPaneController = myPlantsTabPaneController;
         this.plant = plant;
         this.image = new ImageView();
+        this.details = details;
         Image img = new Image(plant.getImageURL());
         initImages(img);
         initNicknameLabel(plant);
@@ -231,15 +234,13 @@ public class LibraryPlantPane extends Pane implements PlantPane {
         infoButton.setDisable(true);
         if (!extended) {
             if (!gotInfoOnPlant) {
-                PlantDetails plantDetails = myPlantsTabPaneController.getPlantDetails(plant);
-                long waterInMilli = WaterCalculator.calculateWaterFrequencyForWatering(plantDetails.getWaterFrequency());
+                long waterInMilli = WaterCalculator.calculateWaterFrequencyForWatering(details.getWaterFrequency());
                 String waterText = WaterTextFormatter.getWaterString(waterInMilli);
-                String lightText = LightTextFormatter.getLightTextString(plantDetails.getLight());
-
+                String lightText = LightTextFormatter.getLightTextString(details.getLight());
                 ObservableList<String> plantInfo = FXCollections.observableArrayList();
-                plantInfo.add("Genus: " + plantDetails.getGenus());
-                plantInfo.add("Scientific name: " + plantDetails.getScientificName());
-                plantInfo.add("Family: " + plantDetails.getFamily());
+                plantInfo.add("Genus: " + details.getGenus());
+                plantInfo.add("Scientific name: " + details.getScientificName());
+                plantInfo.add("Family: " + details.getFamily());
                 plantInfo.add("Light: " + lightText);
                 plantInfo.add("Water: " + waterText);
                 plantInfo.add("Last watered: " + plant.getLastWatered());
@@ -325,14 +326,13 @@ public class LibraryPlantPane extends Pane implements PlantPane {
         listViewMoreInfo.setLayoutY(this.getHeight() + 100.0);
         listViewMoreInfo.setPrefWidth(725.0);
         listViewMoreInfo.setPrefHeight(140.0);
-        PlantDetails plantDetails = myPlantsTabPaneController.getPlantDetails(plant);
-        long waterInMilli = WaterCalculator.calculateWaterFrequencyForWatering(plantDetails.getWaterFrequency());
+        long waterInMilli = WaterCalculator.calculateWaterFrequencyForWatering(details.getWaterFrequency());
         String waterText = WaterTextFormatter.getWaterString(waterInMilli);
-        String lightText = LightTextFormatter.getLightTextString(plantDetails.getLight());
+        String lightText = LightTextFormatter.getLightTextString(details.getLight());
         ObservableList<String> plantInfo = FXCollections.observableArrayList();
-        plantInfo.add("Genus: " + plantDetails.getGenus());
-        plantInfo.add("Scientific name: " + plantDetails.getScientificName());
-        plantInfo.add("Family: " + plantDetails.getFamily());
+        plantInfo.add("Genus: " + details.getGenus());
+        plantInfo.add("Scientific name: " + details.getScientificName());
+        plantInfo.add("Family: " + details.getFamily());
         plantInfo.add("Light: " + lightText);
         plantInfo.add("Water: " + waterText);
         plantInfo.add("Last watered: " + plant.getLastWatered());

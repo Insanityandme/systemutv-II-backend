@@ -50,7 +50,7 @@ public class UserPlantRepository {
         String sqlSafeNickname = plant.getNickname().replace("'", "''");
 
         String plantQuery = "INSERT INTO Plant (user_id, nickname, plant_id, last_watered, image_url) VALUES (?, ?, ?, ?, ?);";
-        String detailsQuery = "INSERT INTO PlantDetails (scientific_name, genus, family, common_name, image_url, light, url_wikipedia_en, water_frequency, plant_id) " +
+        String detailsQuery = "INSERT INTO PlantDetails (scientific_name, genus, family, common_name, image_url, light, url_wikipedia_en, water_frequency, plant_id)\n" +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
         try (PreparedStatement plantStatement = database.prepareStatement(plantQuery);
@@ -68,7 +68,7 @@ public class UserPlantRepository {
             detailsStatement.setString(3, details.getFamily());
             detailsStatement.setString(4, plant.getCommonName());
             detailsStatement.setString(5, plant.getImageURL());
-            detailsStatement.setInt(6, details.getLight());
+            detailsStatement.setString(6, "N/A");
             detailsStatement.setString(7, "N/A");
             detailsStatement.setString(8, "N/A");
             detailsStatement.setString(9, plant.getPlantId());
