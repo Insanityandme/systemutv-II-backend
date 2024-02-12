@@ -50,7 +50,7 @@ public class UserPlantRepository {
         String sqlSafeNickname = plant.getNickname().replace("'", "''");
 
         String plantQuery = "INSERT INTO Plant (user_id, nickname, plant_id, last_watered, image_url) VALUES (?, ?, ?, ?, ?);";
-        String detailsQuery = "INSERT INTO PlantDetails (scientific_name, genus, family, common_name, image_url, light, url_wikipedia_en, water_frequency, plant_id)\n" +
+        String detailsQuery = "INSERT INTO PlantDetails (scientific_name, genus, family, common_name, image_url, light, url_wikipedia_en, water_frequency, plant_id)" +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
         try (PreparedStatement plantStatement = database.prepareStatement(plantQuery);
@@ -59,6 +59,7 @@ public class UserPlantRepository {
             plantStatement.setInt(1, user.getUniqueId());
             plantStatement.setString(2, sqlSafeNickname);
             plantStatement.setString(3, plant.getPlantId());
+            System.out.print(plant.getPlantId());
             plantStatement.setDate(4, plant.getLastWatered());
             plantStatement.setString(5, plant.getImageURL());
             plantStatement.executeUpdate();
@@ -114,40 +115,7 @@ public class UserPlantRepository {
         return plantList;
     }
 
-    /**
-     * Method that retrieves the details for a specific plant based on plantId.
-     *
-     * @param plantId the unique identifier for the plant
-     * @return an instance of PlantDetails for the specified plantId, or null if not found
-     */
-    public PlantDetails getPlantDetailsByPlantId(String plantId) {
-        PlantDetails details = null;
-        String query = "SELECT * FROM PlantDetails WHERE plant_id = ?;";
 
-        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
-            preparedStatement.setString(1, plantId);
-
-            ResultSet resultSet = preparedStatement.executeQuery();
-
-            if (resultSet.next()) {
-                String scientificName = resultSet.getString("scientific_name");
-                String genus = resultSet.getString("genus");
-                String family = resultSet.getString("family");
-                String commonName = resultSet.getString("common_name");
-                String imageURL = resultSet.getString("image_url");
-                int light = Integer.parseInt(resultSet.getString("light"));
-                String wikipediaUrl = resultSet.getString("url_wikipedia_en");
-                int waterFrequency = Integer.parseInt(resultSet.getString("water_frequency"));
-
-
-                details = new PlantDetails( genus,scientificName, light,waterFrequency, family);
-            }
-        } catch (SQLException sqlException) {
-            sqlException.printStackTrace();
-        }
-
-        return details;
-    }
 
 
 

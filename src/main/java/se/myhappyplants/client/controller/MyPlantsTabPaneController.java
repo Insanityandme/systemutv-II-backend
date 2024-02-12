@@ -236,7 +236,7 @@ public class MyPlantsTabPaneController {
     public void addPlantToDB(Plant plant, PlantDetails details) {
         Thread addPlantThread = new Thread(() -> {
             currentUserLibrary.add(plant);
-            Message savePlant = new Message(MessageType.savePlant, LoggedInUser.getInstance().getUser(), plant);
+            Message savePlant = new Message(MessageType.savePlant, LoggedInUser.getInstance().getUser(), plant,details);
             ServerConnection connection = ServerConnection.getClientConnection();
             Message response = connection.makeRequest(savePlant);
             if (!response.isSuccess()) {
@@ -327,6 +327,7 @@ public class MyPlantsTabPaneController {
         if (response != null) {
             plantDetails = response.getPlantDetails();
         }
+
         return plantDetails;
     }
 

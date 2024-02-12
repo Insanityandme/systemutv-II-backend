@@ -55,7 +55,6 @@ public class PlantRepository {
 
     public PlantDetails getPlantDetails(Plant plant) {
         PlantDetails details = null;
-
         String query = "SELECT * FROM PlantDetails WHERE plant_id = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
@@ -69,12 +68,13 @@ public class PlantRepository {
                 String family = resultSet.getString("family");
                 String commonName = resultSet.getString("common_name");
                 String imageURL = resultSet.getString("image_url");
-                int light = Integer.parseInt(resultSet.getString("light"));
+                int light = resultSet.getInt("light");
                 String wikipediaUrl = resultSet.getString("url_wikipedia_en");
-                int waterFrequency = Integer.parseInt(resultSet.getString("water_frequency"));
+                int waterFrequency = resultSet.getInt("water_frequency");
 
-
-                details = new PlantDetails( genus,scientificName, light,waterFrequency, family);
+                details = new PlantDetails(genus, scientificName, light, waterFrequency, family);
+            } else {
+                System.out.println("No results found for plant_id: " + plant.getPlantId());
             }
         } catch (SQLException sqlException) {
             sqlException.printStackTrace();
@@ -82,6 +82,7 @@ public class PlantRepository {
 
         return details;
     }
+
 
 
     public static boolean isNumeric(String str) {

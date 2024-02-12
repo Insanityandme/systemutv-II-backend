@@ -185,7 +185,6 @@ public class SearchTabPaneController {
     //Tar hand om krav F.SI.1
     @FXML
     private void searchButtonPressed() {
-
         btnSearch.setDisable(true);
         txtFldSearchText.addToHistory();
         PopupBox.display(MessageText.holdOnGettingInfo.toString());
@@ -194,7 +193,6 @@ public class SearchTabPaneController {
         userSearch = userSearch.replace(" ", "%20");
 
         URI uriPlants = URI.create("https://trefle.io/api/v1/plants/search?token=" + trefleApiKey + "&q=" + userSearch);
-        URI uriSpecies = URI.create("https://trefle.io/api/v1/species/search?token=" + trefleApiKey + "&q=" + userSearch);
 
         HttpClient httpClient = HttpClient.newHttpClient();
 
@@ -202,24 +200,11 @@ public class SearchTabPaneController {
                 .uri(uriPlants)
                 .build(), HttpResponse.BodyHandlers.ofString());
 
-        CompletableFuture<HttpResponse<String>> responseSpeciesFuture = httpClient.sendAsync(HttpRequest.newBuilder()
-                .uri(uriSpecies)
-                .build(), HttpResponse.BodyHandlers.ofString());
-
-        CompletableFuture<Void> combinedFuture = CompletableFuture.allOf(responsePlantsFuture, responseSpeciesFuture);
-
-        combinedFuture.thenRun(() -> {
+        responsePlantsFuture.thenRun(() -> {
             try {
-
-
                 ArrayList<Plant> plants = parseJsonResponse(responsePlantsFuture.get().body());
-                ArrayList<Plant> species = parseJsonResponse(responseSpeciesFuture.get().body());
 
-                ArrayList<Plant> combinedResults = new ArrayList<>();
-                combinedResults.addAll(plants);
-                combinedResults.addAll(species);
-
-                Message apiResponse = new Message(combinedResults, true);
+                Message apiResponse = new Message(plants, true);
 
                 if (apiResponse != null && apiResponse.isSuccess()) {
                     searchResults = apiResponse.getPlantArray();
@@ -243,6 +228,7 @@ public class SearchTabPaneController {
             }
         });
     }
+
 
     //Tar hand om krav F.SI.1
     private ArrayList<Plant> parseJsonResponse(String responseBody) {
