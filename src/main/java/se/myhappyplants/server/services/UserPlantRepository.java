@@ -53,27 +53,28 @@ public class UserPlantRepository {
         String detailsQuery = "INSERT INTO plantdetails (scientific_name, genus, family, common_name, image_url, light, url_wikipedia_en, water_frequency, plant_id)" +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
-        try (PreparedStatement plantStatement = database.prepareStatement(plantQuery);
-             PreparedStatement detailsStatement = database.prepareStatement(detailsQuery)) {
-
+        try (PreparedStatement plantStatement = database.prepareStatement(plantQuery)) {
             plantStatement.setInt(1, user.getUniqueId());
             plantStatement.setString(2, sqlSafeNickname);
             plantStatement.setString(3, plant.getPlantId());
-            System.out.print(plant.getPlantId());
             plantStatement.setDate(4, plant.getLastWatered());
             plantStatement.setString(5, plant.getImageURL());
             plantStatement.executeUpdate();
 
-            detailsStatement.setString(1, details.getScientificName());
-            detailsStatement.setString(2, details.getGenus());
-            detailsStatement.setString(3, details.getFamily());
-            detailsStatement.setString(4, plant.getCommonName());
-            detailsStatement.setString(5, plant.getImageURL());
-            detailsStatement.setString(6, "0");
-            detailsStatement.setString(7, "0");
-            detailsStatement.setString(8, "0");
-            detailsStatement.setString(9, plant.getPlantId());
-            detailsStatement.executeUpdate();
+            if (!doesPlantDetailExist(plant.getPlantId())) {
+                try (PreparedStatement detailsStatement = database.prepareStatement(detailsQuery)) {
+                    detailsStatement.setString(1, details.getScientificName());
+                    detailsStatement.setString(2, details.getGenus());
+                    detailsStatement.setString(3, details.getFamily());
+                    detailsStatement.setString(4, plant.getCommonName());
+                    detailsStatement.setString(5, plant.getImageURL());
+                    detailsStatement.setString(6, "0");
+                    detailsStatement.setString(7, "0");
+                    detailsStatement.setString(8, "0");
+                    detailsStatement.setString(9, plant.getPlantId());
+                    detailsStatement.executeUpdate();
+                }
+            }
 
             success = true;
         } catch (SQLException throwables) {
@@ -82,6 +83,21 @@ public class UserPlantRepository {
 
         return success;
     }
+
+    private boolean doesPlantDetailExist(String plantId) throws SQLException {
+        String query = "SELECT COUNT(*) FROM plantdetails WHERE plant_id = ?";
+        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+            preparedStatement.setString(1, plantId);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                int count = resultSet.getInt(1);
+                return count > 0;
+            }
+        }
+        return false;
+    }
+
+
 
 
 
