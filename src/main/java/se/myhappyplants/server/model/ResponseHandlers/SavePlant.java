@@ -4,6 +4,7 @@ import se.myhappyplants.server.model.IResponseHandler;
 import se.myhappyplants.server.services.UserPlantRepository;
 import se.myhappyplants.shared.Message;
 import se.myhappyplants.shared.Plant;
+import se.myhappyplants.shared.PlantDetails;
 import se.myhappyplants.shared.User;
 /**
  * Class that saved a users plant
@@ -20,7 +21,8 @@ public class SavePlant implements IResponseHandler {
         Message response;
         User user = request.getUser();
         Plant plant = request.getPlant();
-        if (userPlantRepository.savePlant(user, plant)) {
+        PlantDetails details = request.getPlantDetails();
+        if (userPlantRepository.savePlant(user, plant,details)) {
             response = new Message(true);
 
         } else {
