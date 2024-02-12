@@ -49,8 +49,8 @@ public class UserPlantRepository {
         boolean success = false;
         String sqlSafeNickname = plant.getNickname().replace("'", "''");
 
-        String plantQuery = "INSERT INTO Plant (user_id, nickname, plant_id, last_watered, image_url) VALUES (?, ?, ?, ?, ?);";
-        String detailsQuery = "INSERT INTO PlantDetails (scientific_name, genus, family, common_name, image_url, light, url_wikipedia_en, water_frequency, plant_id)" +
+        String plantQuery = "INSERT INTO plant (user_id, nickname, plant_id, last_watered, image_url) VALUES (?, ?, ?, ?, ?);";
+        String detailsQuery = "INSERT INTO plantdetails (scientific_name, genus, family, common_name, image_url, light, url_wikipedia_en, water_frequency, plant_id)" +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
         try (PreparedStatement plantStatement = database.prepareStatement(plantQuery);
@@ -94,7 +94,7 @@ public class UserPlantRepository {
      */
     public ArrayList<Plant> getUserLibrary(User user) {
         ArrayList<Plant> plantList = new ArrayList<>();
-        String query = "SELECT nickname, plant_id, last_watered, image_url FROM Plant WHERE user_id = ?;";
+        String query = "SELECT nickname, plant_id, last_watered, image_url FROM plant WHERE user_id = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
             preparedStatement.setInt(1, user.getUniqueId());
@@ -128,7 +128,7 @@ public class UserPlantRepository {
     public Plant getPlant(User user, String nickname) {
         Plant plant = null;
         String sqlSafeNickname = nickname.replace("'", "''");
-        String query = "SELECT nickname, plant_id, last_watered, image_url FROM Plant WHERE user_id = ? AND nickname = ?;";
+        String query = "SELECT nickname, plant_id, last_watered, image_url FROM plant WHERE user_id = ? AND nickname = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
             preparedStatement.setInt(1, user.getUniqueId());
@@ -160,8 +160,8 @@ public class UserPlantRepository {
     public boolean deletePlant(User user, String nickname) {
         boolean plantDeleted = false;
         String sqlSafeNickname = nickname.replace("'", "''");
-        String plantQuery = "SELECT plant_id FROM Plant WHERE user_id = ? AND nickname = ?;";
-        String detailsQuery = "DELETE FROM PlantDetails WHERE plant_id = ?;";
+        String plantQuery = "SELECT plant_id FROM plant WHERE user_id = ? AND nickname = ?;";
+        String detailsQuery = "DELETE FROM plantdetails WHERE plant_id = ?;";
 
         try (PreparedStatement plantStatement = database.prepareStatement(plantQuery);
              PreparedStatement detailsStatement = database.prepareStatement(detailsQuery)) {
@@ -177,7 +177,7 @@ public class UserPlantRepository {
                 detailsStatement.setString(1, plantId);
                 detailsStatement.executeUpdate();
 
-                String deletePlantQuery = "DELETE FROM Plant WHERE user_id = ? AND nickname = ?;";
+                String deletePlantQuery = "DELETE FROM plant WHERE user_id = ? AND nickname = ?;";
                 try (PreparedStatement deletePlantStatement = database.prepareStatement(deletePlantQuery)) {
                     deletePlantStatement.setInt(1, user.getUniqueId());
                     deletePlantStatement.setString(2, sqlSafeNickname);
@@ -208,7 +208,7 @@ public class UserPlantRepository {
     public boolean changeLastWatered(User user, String nickname, LocalDate date) {
         boolean dateChanged = false;
         String sqlSafeNickname = nickname.replace("'", "''");
-        String query = "UPDATE Plant SET last_watered = ? WHERE user_id = ? AND nickname = ?;";
+        String query = "UPDATE plant SET last_watered = ? WHERE user_id = ? AND nickname = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
             preparedStatement.setDate(1, Date.valueOf(date));
@@ -228,7 +228,7 @@ public class UserPlantRepository {
         boolean nicknameChanged = false;
         String sqlSafeNickname = nickname.replace("'", "''");
         String sqlSafeNewNickname = newNickname.replace("'", "''");
-        String query = "UPDATE Plant SET nickname = ? WHERE user_id = ? AND nickname = ?;";
+        String query = "UPDATE plant SET nickname = ? WHERE user_id = ? AND nickname = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
             preparedStatement.setString(1, sqlSafeNewNickname);
@@ -247,7 +247,7 @@ public class UserPlantRepository {
     public boolean changeAllToWatered(User user) {
         boolean dateChanged = false;
         LocalDate date = java.time.LocalDate.now();
-        String query = "UPDATE Plant SET last_watered = ? WHERE user_id = ?;";
+        String query = "UPDATE plant SET last_watered = ? WHERE user_id = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
             preparedStatement.setDate(1, Date.valueOf(date));
@@ -266,7 +266,7 @@ public class UserPlantRepository {
         boolean pictureChanged = false;
         String nickname = plant.getNickname();
         String sqlSafeNickname = nickname.replace("'", "''");
-        String query = "UPDATE Plant SET image_url = ? WHERE user_id = ? AND nickname = ?;";
+        String query = "UPDATE plant SET image_url = ? WHERE user_id = ? AND nickname = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
             preparedStatement.setString(1, plant.getImageURL());

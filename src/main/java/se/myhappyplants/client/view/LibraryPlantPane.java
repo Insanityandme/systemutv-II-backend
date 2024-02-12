@@ -429,6 +429,11 @@ public class LibraryPlantPane extends Pane implements PlantPane {
      */
     private void changeDate(Plant plant) {
         LocalDate date = datePicker.getValue();
+
+        if (date == null) {
+            date = LocalDate.now();
+            datePicker.setValue(date);
+        }
         plant.setLastWatered(date);
         progressBar.setProgress(plant.getProgress());
         setColorProgressBar(plant.getProgress());

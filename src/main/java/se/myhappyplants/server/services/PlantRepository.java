@@ -28,7 +28,7 @@ public class PlantRepository {
 
     public ArrayList<Plant> getResult(String plantSearch) {
         ArrayList<Plant> plantList = new ArrayList<>();
-        String query = "SELECT id, common_name, scientific_name, family, image_url FROM PlantDetails WHERE scientific_name LIKE ? OR common_name LIKE ?;";
+        String query = "SELECT id, common_name, scientific_name, family, image_url FROM plantdetails WHERE scientific_name LIKE ? OR common_name LIKE ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
             preparedStatement.setString(1, "%" + plantSearch + "%");
@@ -55,7 +55,7 @@ public class PlantRepository {
 
     public PlantDetails getPlantDetails(Plant plant) {
         PlantDetails details = null;
-        String query = "SELECT * FROM PlantDetails WHERE plant_id = ?;";
+        String query = "SELECT * FROM plantdetails WHERE plant_id = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
             preparedStatement.setString(1, plant.getPlantId());
@@ -97,7 +97,7 @@ public class PlantRepository {
 
     public long getWaterFrequency(String plantId) throws IOException, InterruptedException {
         long waterFrequency = -1;
-        String query = "SELECT water_frequency FROM PlantDetails WHERE id = ?;";
+        String query = "SELECT water_frequency FROM plantdetails WHERE id = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
             preparedStatement.setString(1, plantId);
