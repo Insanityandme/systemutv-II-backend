@@ -1,13 +1,13 @@
 package se.myhappyplants.server;
 
-import io.github.cdimascio.dotenv.Dotenv;
 import se.myhappyplants.server.controller.ResponseController;
 import se.myhappyplants.server.services.*;
-
-import java.net.UnknownHostException;
-import java.sql.Connection;
-import java.sql.DriverManager;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.sql.SQLException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Class that starts the server
@@ -15,25 +15,31 @@ import java.sql.SQLException;
  * Updated by: Frida Jacobsson 2021-05-21
  */
 public class StartServer {
-    //Tar hand om kraven F.U.1
-    public static void main(String[] args) throws UnknownHostException, SQLException {
+    public static void main(String[] args) {
+        try {
 
+            IDatabaseConnection connectionMyHappyPlants1 = new DatabaseConnection("myHappyPlantsDB");
+            IQueryExecutor databaseMyHappyPlants = new QueryExecutor(connectionMyHappyPlants1);
+            UserRepository userRepository = new UserRepository(databaseMyHappyPlants);
+            PlantRepository plantRepository = new PlantRepository(databaseMyHappyPlants);
+            UserPlantRepository userPlantRepository = new UserPlantRepository(plantRepository, databaseMyHappyPlants);
+            ResponseController responseController = new ResponseController(userRepository, userPlantRepository, plantRepository);
 
+            //Starting the server
+            ServerSocket serverSocket = new ServerSocket(2555);
+            ExecutorService executor = Executors.newFixedThreadPool(5);
+            System.out.println("Server running");
 
-
-
-        IDatabaseConnection connectionMyHappyPlants1 = new DatabaseConnection("myHappyPlantsDB");
-        IQueryExecutor databaseMyHappyPlants = new QueryExecutor(connectionMyHappyPlants1);
-
-
-        UserRepository userRepository = new UserRepository(databaseMyHappyPlants);
-        PlantRepository plantRepository = new PlantRepository(databaseMyHappyPlants);
-
-        UserPlantRepository userPlantRepository = new UserPlantRepository(plantRepository, databaseMyHappyPlants);
-        ResponseController responseController = new ResponseController(userRepository, userPlantRepository, plantRepository);
-        new Server(2555, responseController);
+            while (true) {
+                try {
+                    Socket socket = serverSocket.accept();
+                    executor.submit(new ClientHandlerTask(socket, responseController));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        } catch (SQLException | IOException e) {
+            e.printStackTrace();
+        }
     }
-
-
-
 }
