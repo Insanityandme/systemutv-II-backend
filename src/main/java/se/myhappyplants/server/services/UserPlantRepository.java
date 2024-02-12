@@ -50,8 +50,8 @@ public class UserPlantRepository {
         String sqlSafeNickname = plant.getNickname().replace("'", "''");
 
         String plantQuery = "INSERT INTO Plant (user_id, nickname, plant_id, last_watered, image_url) VALUES (?, ?, ?, ?, ?);";
-        String detailsQuery = "INSERT INTO PlantDetails (id, scientific_name, genus, family, common_name, image_url, light, url_wikipedia_en, water_frequency, plant_id) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+        String detailsQuery = "INSERT INTO PlantDetails (scientific_name, genus, family, common_name, image_url, light, url_wikipedia_en, water_frequency, plant_id) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
         try (PreparedStatement plantStatement = database.prepareStatement(plantQuery);
              PreparedStatement detailsStatement = database.prepareStatement(detailsQuery)) {
@@ -63,15 +63,15 @@ public class UserPlantRepository {
             plantStatement.setString(5, plant.getImageURL());
             plantStatement.executeUpdate();
 
-            detailsStatement.setString(2, details.getScientificName());
-            detailsStatement.setString(3, details.getGenus());
-            detailsStatement.setString(4, details.getFamily());
-            detailsStatement.setString(5, plant.getCommonName());
-            detailsStatement.setString(6, plant.getImageURL());
-            detailsStatement.setInt(7, details.getLight());
+            detailsStatement.setString(1, details.getScientificName());
+            detailsStatement.setString(2, details.getGenus());
+            detailsStatement.setString(3, details.getFamily());
+            detailsStatement.setString(4, plant.getCommonName());
+            detailsStatement.setString(5, plant.getImageURL());
+            detailsStatement.setInt(6, details.getLight());
+            detailsStatement.setString(7, "N/A");
             detailsStatement.setString(8, "N/A");
-            detailsStatement.setString(9, "N/A");
-            detailsStatement.setString(10, plant.getPlantId());
+            detailsStatement.setString(9, plant.getPlantId());
             detailsStatement.executeUpdate();
 
             success = true;
