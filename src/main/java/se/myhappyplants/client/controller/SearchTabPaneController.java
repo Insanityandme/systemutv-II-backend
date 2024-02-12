@@ -127,12 +127,15 @@ public class SearchTabPaneController {
 
         int answer = MessageBox.askYesNo(BoxTitle.Add, "Do you want to add a nickname for your plant?");
         if (answer == 1) {
-            plantNickname = MessageBox.askForStringInput("Add a nickname", "Nickname:");
+            do {
+                plantNickname = MessageBox.askForStringInput("Add a nickname", "Nickname:");
+            } while (plantNickname.trim().isEmpty());
         }
 
         PlantDetails plantDetails = getPlantDetails(plantAdd);
         mainPaneController.getMyPlantsTabPaneController().addPlantToCurrentUserLibrary(plantAdd, plantNickname, plantDetails);
     }
+
 
     /**
      * Method to show the search result on the pane
