@@ -160,20 +160,42 @@ public class UserPlantRepository {
     public boolean deletePlant(User user, String nickname) {
         boolean plantDeleted = false;
         String sqlSafeNickname = nickname.replace("'", "''");
-        String query = "DELETE FROM plant WHERE user_id = ? AND nickname = ?;";
+        String plantQuery = "SELECT plant_id FROM Plant WHERE user_id = ? AND nickname = ?;";
+        String detailsQuery = "DELETE FROM PlantDetails WHERE plant_id = ?;";
 
-        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
-            preparedStatement.setInt(1, user.getUniqueId());
-            preparedStatement.setString(2, sqlSafeNickname);
+        try (PreparedStatement plantStatement = database.prepareStatement(plantQuery);
+             PreparedStatement detailsStatement = database.prepareStatement(detailsQuery)) {
 
-            preparedStatement.executeUpdate();
-            plantDeleted = true;
+            plantStatement.setInt(1, user.getUniqueId());
+            plantStatement.setString(2, sqlSafeNickname);
+
+            ResultSet resultSet = plantStatement.executeQuery();
+
+            if (resultSet.next()) {
+                String plantId = resultSet.getString("plant_id");
+
+                detailsStatement.setString(1, plantId);
+                detailsStatement.executeUpdate();
+
+                String deletePlantQuery = "DELETE FROM Plant WHERE user_id = ? AND nickname = ?;";
+                try (PreparedStatement deletePlantStatement = database.prepareStatement(deletePlantQuery)) {
+                    deletePlantStatement.setInt(1, user.getUniqueId());
+                    deletePlantStatement.setString(2, sqlSafeNickname);
+                    deletePlantStatement.executeUpdate();
+                }
+
+                plantDeleted = true;
+            }
+
         } catch (SQLException sqlException) {
             sqlException.printStackTrace();
         }
 
         return plantDeleted;
     }
+
+
+
 
     /**
      * Method that makes a query to change the last watered date of a specific plant in table Plant
