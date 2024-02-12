@@ -52,31 +52,35 @@ public class PlantRepository {
     }
 
 
+
     public PlantDetails getPlantDetails(Plant plant) {
-        PlantDetails plantDetails = null;
-        String query = "SELECT genus, scientific_name, light, water_frequency, family FROM PlantDetails WHERE id = ?;";
+        PlantDetails details = null;
+
+        String query = "SELECT * FROM PlantDetails WHERE plant_id = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
             preparedStatement.setString(1, plant.getPlantId());
 
             ResultSet resultSet = preparedStatement.executeQuery();
-            while (resultSet.next()) {
-                String genus = resultSet.getString("genus");
+
+            if (resultSet.next()) {
                 String scientificName = resultSet.getString("scientific_name");
-                String lightText = resultSet.getString("light");
-                String waterText = resultSet.getString("water_frequency");
+                String genus = resultSet.getString("genus");
                 String family = resultSet.getString("family");
+                String commonName = resultSet.getString("common_name");
+                String imageURL = resultSet.getString("image_url");
+                int light = Integer.parseInt(resultSet.getString("light"));
+                String wikipediaUrl = resultSet.getString("url_wikipedia_en");
+                int waterFrequency = Integer.parseInt(resultSet.getString("water_frequency"));
 
-                int light = (isNumeric(lightText)) ? Integer.parseInt(lightText) : -1;
-                int water = (isNumeric(waterText)) ? Integer.parseInt(waterText) : -1;
 
-                plantDetails = new PlantDetails(genus, scientificName, light, water, family);
+                details = new PlantDetails( genus,scientificName, light,waterFrequency, family);
             }
         } catch (SQLException sqlException) {
             sqlException.printStackTrace();
         }
 
-        return plantDetails;
+        return details;
     }
 
 

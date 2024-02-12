@@ -126,8 +126,7 @@ public class MyPlantsTabPaneController {
             } else {
                 enableButtons();
                 for (Plant plant : currentUserLibrary) {
-                    PlantDetails details = getPlantDetails(plant);
-                    obsListLibraryPlantPane.add(new LibraryPlantPane(this, plant,details));
+                    obsListLibraryPlantPane.add(new LibraryPlantPane(this, plant));
                 }
             }
         }
@@ -237,7 +236,7 @@ public class MyPlantsTabPaneController {
     public void addPlantToDB(Plant plant, PlantDetails details) {
         Thread addPlantThread = new Thread(() -> {
             currentUserLibrary.add(plant);
-            Message savePlant = new Message(MessageType.savePlant, LoggedInUser.getInstance().getUser(), plant,details);
+            Message savePlant = new Message(MessageType.savePlant, LoggedInUser.getInstance().getUser(), plant);
             ServerConnection connection = ServerConnection.getClientConnection();
             Message response = connection.makeRequest(savePlant);
             if (!response.isSuccess()) {
