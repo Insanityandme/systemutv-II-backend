@@ -129,7 +129,9 @@ public class SearchTabPaneController {
         if (answer == 1) {
             plantNickname = MessageBox.askForStringInput("Add a nickname", "Nickname:");
         }
-        mainPaneController.getMyPlantsTabPaneController().addPlantToCurrentUserLibrary(plantAdd, plantNickname, details);
+
+        PlantDetails plantDetails = getPlantDetails(plantAdd);
+        mainPaneController.getMyPlantsTabPaneController().addPlantToCurrentUserLibrary(plantAdd, plantNickname, plantDetails);
     }
 
     /**

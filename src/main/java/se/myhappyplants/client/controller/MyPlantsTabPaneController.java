@@ -225,7 +225,7 @@ public class MyPlantsTabPaneController {
         String imageURL = PictureRandomizer.getRandomPictureURL();
         Plant plantToAdd = new Plant(uniqueNickName, selectedPlant.getPlantId(), date, imageURL);
         PopupBox.display(MessageText.sucessfullyAddPlant.toString());
-        addPlantToDB(plantToAdd);
+        addPlantToDB(plantToAdd,details);
     }
 
     /**
