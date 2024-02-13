@@ -181,11 +181,14 @@ public class Plant implements Serializable {
             daysUntilWatering = (int) daysExactlyUntilWatering + 1;
         }
 
-        String strToReturn = String.format("Needs water in %d days", daysUntilWatering);
-        if (getProgress() == 0.02 || daysUntilWatering == 0) {
-            strToReturn = "You need to water this plant now!";
+        if (daysUntilWatering > 0) {
+            return String.format("Needs water in %d days", daysUntilWatering);
+        } else if (daysUntilWatering == 0) {
+            return "You need to water this plant now!";
+        } else {
+            return "This plant doesn't need watering right now.";
         }
-
-        return strToReturn;
     }
+
+
 }

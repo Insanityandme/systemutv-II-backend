@@ -235,7 +235,6 @@ public class LibraryPlantPane extends Pane implements PlantPane {
                 long waterInMilli = WaterCalculator.calculateWaterFrequencyForWatering(plantDetails.getWaterFrequency());
                 String waterText = WaterTextFormatter.getWaterString(waterInMilli);
                 String lightText = LightTextFormatter.getLightTextString(plantDetails.getLight());
-
                 ObservableList<String> plantInfo = FXCollections.observableArrayList();
                 plantInfo.add("Genus: " + plantDetails.getGenus());
                 plantInfo.add("Scientific name: " + plantDetails.getScientificName());
@@ -430,6 +429,11 @@ public class LibraryPlantPane extends Pane implements PlantPane {
      */
     private void changeDate(Plant plant) {
         LocalDate date = datePicker.getValue();
+
+        if (date == null) {
+            date = LocalDate.now();
+            datePicker.setValue(date);
+        }
         plant.setLastWatered(date);
         progressBar.setProgress(plant.getProgress());
         setColorProgressBar(plant.getProgress());

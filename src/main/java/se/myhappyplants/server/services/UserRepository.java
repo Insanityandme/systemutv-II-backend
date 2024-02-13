@@ -31,7 +31,7 @@ public class UserRepository {
         boolean success = false;
         String hashedPassword = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
         String sqlSafeUsername = user.getUsername().replace("'", "''");
-        String query = "INSERT INTO User (username, email, password, notification_activated, fun_facts_activated) VALUES (?, ?, ?, 1, 1);";
+        String query = "INSERT INTO user (username, email, password, notification_activated, fun_facts_activated) VALUES (?, ?, ?, 1, 1);";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
             preparedStatement.setString(1, sqlSafeUsername);
@@ -57,7 +57,7 @@ public class UserRepository {
      */
     public boolean checkLogin(String email, String password) {
         boolean isVerified = false;
-        String query = "SELECT password FROM User WHERE email = ?;";
+        String query = "SELECT password FROM user WHERE email = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
             preparedStatement.setString(1, email);
@@ -86,7 +86,7 @@ public class UserRepository {
         String username = null;
         boolean notificationActivated = false;
         boolean funFactsActivated = false;
-        String query = "SELECT id, username, notification_activated, fun_facts_activated FROM User WHERE email = ?;";
+        String query = "SELECT id, username, notification_activated, fun_facts_activated FROM user WHERE email = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
             preparedStatement.setString(1, email);
@@ -119,7 +119,7 @@ public class UserRepository {
     public boolean deleteAccount(String email, String password) {
         boolean accountDeleted = false;
         if (checkLogin(email, password)) {
-            String querySelect = "SELECT id FROM User WHERE email = ?;";
+            String querySelect = "SELECT id FROM user WHERE email = ?;";
 
             try (PreparedStatement preparedStatementSelect = database.prepareStatement(querySelect)) {
                 preparedStatementSelect.setString(1, email);
@@ -163,7 +163,7 @@ public class UserRepository {
     public boolean changeNotifications(User user, boolean notifications) {
         boolean notificationsChanged = false;
         int notificationsActivated = notifications ? 1 : 0;
-        String query = "UPDATE User SET notification_activated = ? WHERE email = ?;";
+        String query = "UPDATE user SET notification_activated = ? WHERE email = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
             preparedStatement.setInt(1, notificationsActivated);
@@ -181,7 +181,7 @@ public class UserRepository {
     public boolean changeFunFacts(User user, Boolean funFactsActivated) {
         boolean funFactsChanged = false;
         int funFactsBitValue = funFactsActivated ? 1 : 0;
-        String query = "UPDATE User SET fun_facts_activated = ? WHERE email = ?;";
+        String query = "UPDATE user SET fun_facts_activated = ? WHERE email = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
             preparedStatement.setInt(1, funFactsBitValue);

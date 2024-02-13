@@ -127,10 +127,15 @@ public class SearchTabPaneController {
 
         int answer = MessageBox.askYesNo(BoxTitle.Add, "Do you want to add a nickname for your plant?");
         if (answer == 1) {
-            plantNickname = MessageBox.askForStringInput("Add a nickname", "Nickname:");
+            do {
+                plantNickname = MessageBox.askForStringInput("Add a nickname", "Nickname:");
+            } while (plantNickname.trim().isEmpty());
         }
-        mainPaneController.getMyPlantsTabPaneController().addPlantToCurrentUserLibrary(plantAdd, plantNickname);
+
+        PlantDetails plantDetails = getPlantDetails(plantAdd);
+        mainPaneController.getMyPlantsTabPaneController().addPlantToCurrentUserLibrary(plantAdd, plantNickname, plantDetails);
     }
+
 
     /**
      * Method to show the search result on the pane
@@ -183,7 +188,6 @@ public class SearchTabPaneController {
     //Tar hand om krav F.SI.1
     @FXML
     private void searchButtonPressed() {
-
         btnSearch.setDisable(true);
         txtFldSearchText.addToHistory();
         PopupBox.display(MessageText.holdOnGettingInfo.toString());
@@ -192,7 +196,6 @@ public class SearchTabPaneController {
         userSearch = userSearch.replace(" ", "%20");
 
         URI uriPlants = URI.create("https://trefle.io/api/v1/plants/search?token=" + trefleApiKey + "&q=" + userSearch);
-        URI uriSpecies = URI.create("https://trefle.io/api/v1/species/search?token=" + trefleApiKey + "&q=" + userSearch);
 
         HttpClient httpClient = HttpClient.newHttpClient();
 
@@ -200,24 +203,11 @@ public class SearchTabPaneController {
                 .uri(uriPlants)
                 .build(), HttpResponse.BodyHandlers.ofString());
 
-        CompletableFuture<HttpResponse<String>> responseSpeciesFuture = httpClient.sendAsync(HttpRequest.newBuilder()
-                .uri(uriSpecies)
-                .build(), HttpResponse.BodyHandlers.ofString());
-
-        CompletableFuture<Void> combinedFuture = CompletableFuture.allOf(responsePlantsFuture, responseSpeciesFuture);
-
-        combinedFuture.thenRun(() -> {
+        responsePlantsFuture.thenRun(() -> {
             try {
-
-
                 ArrayList<Plant> plants = parseJsonResponse(responsePlantsFuture.get().body());
-                ArrayList<Plant> species = parseJsonResponse(responseSpeciesFuture.get().body());
 
-                ArrayList<Plant> combinedResults = new ArrayList<>();
-                combinedResults.addAll(plants);
-                combinedResults.addAll(species);
-
-                Message apiResponse = new Message(combinedResults, true);
+                Message apiResponse = new Message(plants, true);
 
                 if (apiResponse != null && apiResponse.isSuccess()) {
                     searchResults = apiResponse.getPlantArray();
@@ -241,6 +231,7 @@ public class SearchTabPaneController {
             }
         });
     }
+
 
     //Tar hand om krav F.SI.1
     private ArrayList<Plant> parseJsonResponse(String responseBody) {

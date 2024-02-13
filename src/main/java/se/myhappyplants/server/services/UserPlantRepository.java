@@ -1,6 +1,7 @@
 package se.myhappyplants.server.services;
 
 import se.myhappyplants.shared.Plant;
+import se.myhappyplants.shared.PlantDetails;
 import se.myhappyplants.shared.User;
 
 import java.io.IOException;
@@ -44,19 +45,37 @@ public class UserPlantRepository {
      * @return a boolean value, true if the plant was stored successfully
      */
 
-    public boolean savePlant(User user, Plant plant) {
+    public boolean savePlant(User user, Plant plant, PlantDetails details) {
         boolean success = false;
         String sqlSafeNickname = plant.getNickname().replace("'", "''");
-        String query = "INSERT INTO Plant (user_id, nickname, plant_id, last_watered, image_url) VALUES (?, ?, ?, ?, ?);";
 
-        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
-            preparedStatement.setInt(1, user.getUniqueId());
-            preparedStatement.setString(2, sqlSafeNickname);
-            preparedStatement.setString(3, plant.getPlantId());
-            preparedStatement.setDate(4, plant.getLastWatered());
-            preparedStatement.setString(5, plant.getImageURL());
+        String plantQuery = "INSERT INTO plant (user_id, nickname, plant_id, last_watered, image_url) VALUES (?, ?, ?, ?, ?);";
+        String detailsQuery = "INSERT INTO plantdetails (scientific_name, genus, family, common_name, image_url, light, url_wikipedia_en, water_frequency, plant_id)" +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
-            preparedStatement.executeUpdate();
+        try (PreparedStatement plantStatement = database.prepareStatement(plantQuery)) {
+            plantStatement.setInt(1, user.getUniqueId());
+            plantStatement.setString(2, sqlSafeNickname);
+            plantStatement.setString(3, plant.getPlantId());
+            plantStatement.setDate(4, plant.getLastWatered());
+            plantStatement.setString(5, plant.getImageURL());
+            plantStatement.executeUpdate();
+
+            if (!doesPlantDetailExist(plant.getPlantId())) {
+                try (PreparedStatement detailsStatement = database.prepareStatement(detailsQuery)) {
+                    detailsStatement.setString(1, details.getScientificName());
+                    detailsStatement.setString(2, details.getGenus());
+                    detailsStatement.setString(3, details.getFamily());
+                    detailsStatement.setString(4, plant.getCommonName());
+                    detailsStatement.setString(5, plant.getImageURL());
+                    detailsStatement.setString(6, "0");
+                    detailsStatement.setString(7, "0");
+                    detailsStatement.setString(8, "0");
+                    detailsStatement.setString(9, plant.getPlantId());
+                    detailsStatement.executeUpdate();
+                }
+            }
+
             success = true;
         } catch (SQLException throwables) {
             throwables.printStackTrace();
@@ -64,6 +83,22 @@ public class UserPlantRepository {
 
         return success;
     }
+
+    private boolean doesPlantDetailExist(String plantId) throws SQLException {
+        String query = "SELECT COUNT(*) FROM plantdetails WHERE plant_id = ?";
+        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+            preparedStatement.setString(1, plantId);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                int count = resultSet.getInt(1);
+                return count > 0;
+            }
+        }
+        return false;
+    }
+
+
+
 
 
     /**
@@ -75,7 +110,7 @@ public class UserPlantRepository {
      */
     public ArrayList<Plant> getUserLibrary(User user) {
         ArrayList<Plant> plantList = new ArrayList<>();
-        String query = "SELECT nickname, plant_id, last_watered, image_url FROM Plant WHERE user_id = ?;";
+        String query = "SELECT nickname, plant_id, last_watered, image_url FROM plant WHERE user_id = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
             preparedStatement.setInt(1, user.getUniqueId());
@@ -97,6 +132,9 @@ public class UserPlantRepository {
     }
 
 
+
+
+
     /**
      * Method that returns one specific plant based on nickname.
      *
@@ -106,7 +144,7 @@ public class UserPlantRepository {
     public Plant getPlant(User user, String nickname) {
         Plant plant = null;
         String sqlSafeNickname = nickname.replace("'", "''");
-        String query = "SELECT nickname, plant_id, last_watered, image_url FROM Plant WHERE user_id = ? AND nickname = ?;";
+        String query = "SELECT nickname, plant_id, last_watered, image_url FROM plant WHERE user_id = ? AND nickname = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
             preparedStatement.setInt(1, user.getUniqueId());
@@ -138,20 +176,42 @@ public class UserPlantRepository {
     public boolean deletePlant(User user, String nickname) {
         boolean plantDeleted = false;
         String sqlSafeNickname = nickname.replace("'", "''");
-        String query = "DELETE FROM plant WHERE user_id = ? AND nickname = ?;";
+        String plantQuery = "SELECT plant_id FROM plant WHERE user_id = ? AND nickname = ?;";
+        String detailsQuery = "DELETE FROM plantdetails WHERE plant_id = ?;";
 
-        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
-            preparedStatement.setInt(1, user.getUniqueId());
-            preparedStatement.setString(2, sqlSafeNickname);
+        try (PreparedStatement plantStatement = database.prepareStatement(plantQuery);
+             PreparedStatement detailsStatement = database.prepareStatement(detailsQuery)) {
 
-            preparedStatement.executeUpdate();
-            plantDeleted = true;
+            plantStatement.setInt(1, user.getUniqueId());
+            plantStatement.setString(2, sqlSafeNickname);
+
+            ResultSet resultSet = plantStatement.executeQuery();
+
+            if (resultSet.next()) {
+                String plantId = resultSet.getString("plant_id");
+
+                detailsStatement.setString(1, plantId);
+                detailsStatement.executeUpdate();
+
+                String deletePlantQuery = "DELETE FROM plant WHERE user_id = ? AND nickname = ?;";
+                try (PreparedStatement deletePlantStatement = database.prepareStatement(deletePlantQuery)) {
+                    deletePlantStatement.setInt(1, user.getUniqueId());
+                    deletePlantStatement.setString(2, sqlSafeNickname);
+                    deletePlantStatement.executeUpdate();
+                }
+
+                plantDeleted = true;
+            }
+
         } catch (SQLException sqlException) {
             sqlException.printStackTrace();
         }
 
         return plantDeleted;
     }
+
+
+
 
     /**
      * Method that makes a query to change the last watered date of a specific plant in table Plant
@@ -164,7 +224,7 @@ public class UserPlantRepository {
     public boolean changeLastWatered(User user, String nickname, LocalDate date) {
         boolean dateChanged = false;
         String sqlSafeNickname = nickname.replace("'", "''");
-        String query = "UPDATE Plant SET last_watered = ? WHERE user_id = ? AND nickname = ?;";
+        String query = "UPDATE plant SET last_watered = ? WHERE user_id = ? AND nickname = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
             preparedStatement.setDate(1, Date.valueOf(date));
@@ -184,7 +244,7 @@ public class UserPlantRepository {
         boolean nicknameChanged = false;
         String sqlSafeNickname = nickname.replace("'", "''");
         String sqlSafeNewNickname = newNickname.replace("'", "''");
-        String query = "UPDATE Plant SET nickname = ? WHERE user_id = ? AND nickname = ?;";
+        String query = "UPDATE plant SET nickname = ? WHERE user_id = ? AND nickname = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
             preparedStatement.setString(1, sqlSafeNewNickname);
@@ -203,7 +263,7 @@ public class UserPlantRepository {
     public boolean changeAllToWatered(User user) {
         boolean dateChanged = false;
         LocalDate date = java.time.LocalDate.now();
-        String query = "UPDATE Plant SET last_watered = ? WHERE user_id = ?;";
+        String query = "UPDATE plant SET last_watered = ? WHERE user_id = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
             preparedStatement.setDate(1, Date.valueOf(date));
@@ -222,7 +282,7 @@ public class UserPlantRepository {
         boolean pictureChanged = false;
         String nickname = plant.getNickname();
         String sqlSafeNickname = nickname.replace("'", "''");
-        String query = "UPDATE Plant SET image_url = ? WHERE user_id = ? AND nickname = ?;";
+        String query = "UPDATE plant SET image_url = ? WHERE user_id = ? AND nickname = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
             preparedStatement.setString(1, plant.getImageURL());

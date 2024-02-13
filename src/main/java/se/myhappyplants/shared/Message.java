@@ -20,6 +20,7 @@ public class Message implements Serializable {
     private LocalDate date;
     private ArrayList<Plant> plantArray;
     private Plant plant;
+
     private String newNickname;
     private PlantDetails plantDetails;
 
@@ -56,6 +57,12 @@ public class Message implements Serializable {
     public Message(MessageType messageType, User user, Plant plant) {
         this(messageType, user);
         this.plant = plant;
+    }
+
+    public Message(MessageType messageType, User user, Plant plant, PlantDetails plantDetails) {
+        this(messageType, user);
+        this.plant = plant;
+        this.plantDetails = plantDetails;
     }
 
     /**

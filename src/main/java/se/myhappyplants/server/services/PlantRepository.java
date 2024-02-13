@@ -28,7 +28,7 @@ public class PlantRepository {
 
     public ArrayList<Plant> getResult(String plantSearch) {
         ArrayList<Plant> plantList = new ArrayList<>();
-        String query = "SELECT id, common_name, scientific_name, family, image_url FROM species WHERE scientific_name LIKE ? OR common_name LIKE ?;";
+        String query = "SELECT id, common_name, scientific_name, family, image_url FROM plantdetails WHERE scientific_name LIKE ? OR common_name LIKE ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
             preparedStatement.setString(1, "%" + plantSearch + "%");
@@ -52,32 +52,37 @@ public class PlantRepository {
     }
 
 
+
     public PlantDetails getPlantDetails(Plant plant) {
-        PlantDetails plantDetails = null;
-        String query = "SELECT genus, scientific_name, light, water_frequency, family FROM species WHERE id = ?;";
+        PlantDetails details = null;
+        String query = "SELECT * FROM plantdetails WHERE plant_id = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
             preparedStatement.setString(1, plant.getPlantId());
 
             ResultSet resultSet = preparedStatement.executeQuery();
-            while (resultSet.next()) {
-                String genus = resultSet.getString("genus");
+
+            if (resultSet.next()) {
                 String scientificName = resultSet.getString("scientific_name");
-                String lightText = resultSet.getString("light");
-                String waterText = resultSet.getString("water_frequency");
+                String genus = resultSet.getString("genus");
                 String family = resultSet.getString("family");
+                String commonName = resultSet.getString("common_name");
+                String imageURL = resultSet.getString("image_url");
+                int light = resultSet.getInt("light");
+                String wikipediaUrl = resultSet.getString("url_wikipedia_en");
+                int waterFrequency = resultSet.getInt("water_frequency");
 
-                int light = (isNumeric(lightText)) ? Integer.parseInt(lightText) : -1;
-                int water = (isNumeric(waterText)) ? Integer.parseInt(waterText) : -1;
-
-                plantDetails = new PlantDetails(genus, scientificName, light, water, family);
+                details = new PlantDetails(genus, scientificName, light, waterFrequency, family);
+            } else {
+                System.out.println("No results found for plant_id: " + plant.getPlantId());
             }
         } catch (SQLException sqlException) {
             sqlException.printStackTrace();
         }
 
-        return plantDetails;
+        return details;
     }
+
 
 
     public static boolean isNumeric(String str) {
@@ -92,7 +97,7 @@ public class PlantRepository {
 
     public long getWaterFrequency(String plantId) throws IOException, InterruptedException {
         long waterFrequency = -1;
-        String query = "SELECT water_frequency FROM species WHERE id = ?;";
+        String query = "SELECT water_frequency FROM plantdetails WHERE id = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
             preparedStatement.setString(1, plantId);
