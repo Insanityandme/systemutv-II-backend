@@ -83,8 +83,7 @@ public class SearchTabPaneController {
     @FXML
     public void initialize() {
         //Tar hand om krav F.SI.1
-        // Dotenv dotenv = Dotenv.load();
-        // trefleApiKey = dotenv.get("TREFLE_API_KEY");
+        trefleApiKey = System.getenv("TREFLE_API_KEY");
         LoggedInUser loggedInUser = LoggedInUser.getInstance();
         lblUsername.setText(loggedInUser.getUser().getUsername());
         imgUserAvatar.setFill(new ImagePattern(new Image(SetAvatar.setAvatarOnLogin(loggedInUser.getUser().getEmail()))));
