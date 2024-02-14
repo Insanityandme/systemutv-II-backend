@@ -1,7 +1,6 @@
 package se.myhappyplants.client.controller;
 
 import com.google.gson.Gson;
-import io.github.cdimascio.dotenv.Dotenv;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonArray;
@@ -84,8 +83,8 @@ public class SearchTabPaneController {
     @FXML
     public void initialize() {
         //Tar hand om krav F.SI.1
-        Dotenv dotenv = Dotenv.load();
-        trefleApiKey = dotenv.get("TREFLE_API_KEY");
+        // Dotenv dotenv = Dotenv.load();
+        // trefleApiKey = dotenv.get("TREFLE_API_KEY");
         LoggedInUser loggedInUser = LoggedInUser.getInstance();
         lblUsername.setText(loggedInUser.getUser().getUsername());
         imgUserAvatar.setFill(new ImagePattern(new Image(SetAvatar.setAvatarOnLogin(loggedInUser.getUser().getEmail()))));
