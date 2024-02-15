@@ -8,7 +8,7 @@ import java.sql.SQLException;
  * Class for handling connection with a specific database
  * Created by: Frida Jacobsson 2021-05-21
  */
-public class DatabaseConnection implements IDatabaseConnection {
+public class DatabaseConnection {
 
     private Connection conn;
     private String databaseName;
@@ -16,8 +16,6 @@ public class DatabaseConnection implements IDatabaseConnection {
     public DatabaseConnection(String databaseName) {
         this.databaseName = databaseName;
     }
-
-
 
     //Tar hand om kraven F.U.1
     private Connection createConnection() throws SQLException {
@@ -34,7 +32,6 @@ public class DatabaseConnection implements IDatabaseConnection {
         return conn;
     }
 
-    @Override
     public Connection getConnection() {
         try {
             return createConnection();
@@ -44,7 +41,6 @@ public class DatabaseConnection implements IDatabaseConnection {
         }
     }
 
-    @Override
     public void closeConnection() {
         if (conn != null) {
             try {
