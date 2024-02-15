@@ -7,5 +7,7 @@ public class test {
         var app = Javalin.create(/*config*/)
                 .get("/", ctx -> ctx.result("Hello World"))
                 .start(7070);
+        String key = System.getenv("TREFLE_API_KEY");
+        System.out.println(key);
     }
 }
