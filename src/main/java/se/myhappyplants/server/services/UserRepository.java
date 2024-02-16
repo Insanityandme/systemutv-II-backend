@@ -7,8 +7,7 @@ import java.sql.*;
 
 //Tar hand om kraven F.U.1
 public class UserRepository {
-
-    private IQueryExecutor database;
+    private final IQueryExecutor database;
 
     public UserRepository(IQueryExecutor database){
         this.database = database;

@@ -53,12 +53,12 @@ public class UserController {
             }
     )
     public static void getOne(Context ctx) {
-        User user = UserService.findById(validPathParamUserId(ctx));
-        if (user == null) {
-            throw new NotFoundResponse("User not found");
-        } else {
-            ctx.json(user);
-        }
+        // User user = UserService.findById(validPathParamUserId(ctx));
+        // if (user == null) {
+        //     throw new NotFoundResponse("User not found");
+        // } else {
+        //     ctx.json(user);
+        // }
     }
 
     @OpenApi(
@@ -76,14 +76,14 @@ public class UserController {
             }
     )
     public static void update(Context ctx) {
-        User user = UserService.findById(validPathParamUserId(ctx));
-        if (user == null) {
-            throw new NotFoundResponse("User not found");
-        } else {
-            NewUserRequest newUser = ctx.bodyAsClass(NewUserRequest.class);
-            UserService.update(user.id, newUser.email, newUser.username, newUser.password);
-            ctx.status(204);
-        }
+        // User user = UserService.findById(validPathParamUserId(ctx));
+        // if (user == null) {
+        //     throw new NotFoundResponse("User not found");
+        // } else {
+        //     NewUserRequest newUser = ctx.bodyAsClass(NewUserRequest.class);
+        //     UserService.update(user.id, newUser.email, newUser.username, newUser.password);
+        //     ctx.status(204);
+        // }
     }
 
     @OpenApi(
@@ -100,13 +100,13 @@ public class UserController {
             }
     )
     public static void delete(Context ctx) {
-        User user = UserService.findById(validPathParamUserId(ctx));
-        if (user == null) {
-            throw new NotFoundResponse("User not found");
-        } else {
-            UserService.delete(user.id);
-            ctx.status(204);
-        }
+        // User user = UserService.findById(validPathParamUserId(ctx));
+        // if (user == null) {
+        //     throw new NotFoundResponse("User not found");
+        // } else {
+        //     UserService.delete(user.id);
+        //     ctx.status(204);
+        // }
     }
 
     // Prevent duplicate validation of userId

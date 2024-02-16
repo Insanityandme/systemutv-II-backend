@@ -8,7 +8,6 @@ import java.io.*;
  * Updated by: Linn Borgström, 2021-05-17
  */
 public class User implements Serializable {
-
     private int uniqueId;
     private String email;
     private String username;

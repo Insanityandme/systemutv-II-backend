@@ -13,8 +13,13 @@ public class DatabaseConnection {
         this.databaseName = databaseName;
     }
 
+    public DatabaseConnection() {
+        this.databaseName = "myhappyplants";
+    }
+
+
     //Tar hand om kraven F.U.1
-    private Connection createConnection() throws SQLException {
+    private Connection connect() throws SQLException {
         if (conn == null || conn.isClosed()) {
             try {
                 Class.forName("org.sqlite.JDBC");
@@ -30,7 +35,7 @@ public class DatabaseConnection {
 
     public Connection getConnection() {
         try {
-            return createConnection();
+            return connect();
         } catch (SQLException e) {
             e.printStackTrace();
             return null;
