@@ -18,7 +18,7 @@ public class Register implements IResponseHandler {
     public Message getResponse(Message request) {
         Message response;
         User user = request.getUser();
-        if (userRepository.saveUser(user)) {
+        if (userRepository.registerUser(user)) {
             User savedUser = userRepository.getUserDetails(user.getEmail());
             response = new Message(savedUser, true);
         } else {

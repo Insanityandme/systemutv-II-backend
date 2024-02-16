@@ -41,7 +41,6 @@ public class Message implements Serializable {
      * @param user
      */
     public Message(MessageType messageType, User user) {
-
         this.messageType = messageType;
         this.user = user;
     }
@@ -158,6 +157,7 @@ public class Message implements Serializable {
     /**
      * Creates a message that can be used to send
      * further information about a plant
+     *
      * @param plantDetails
      * @param success
      */
