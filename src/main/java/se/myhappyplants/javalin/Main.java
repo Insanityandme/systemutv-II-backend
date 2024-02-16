@@ -4,6 +4,7 @@ import io.javalin.Javalin;
 import io.javalin.openapi.*;
 import io.javalin.openapi.plugin.OpenApiPlugin;
 import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
+import io.javalin.plugin.bundled.CorsPluginConfig;
 import se.myhappyplants.javalin.user.User;
 import se.myhappyplants.javalin.user.UserController;
 
@@ -18,7 +19,6 @@ import static io.javalin.apibuilder.ApiBuilder.*;
 
 public class Main {
     public static void main(String[] args) {
-
         Javalin.create(config -> {
             // Plugin for documentation and testing our api
             config.registerPlugin(new OpenApiPlugin(pluginConfig -> {
@@ -27,7 +27,9 @@ public class Main {
                 });
             }));
             config.registerPlugin(new SwaggerPlugin());
-
+            config.bundledPlugins.enableCors(cors -> {
+                cors.addRule(CorsPluginConfig.CorsRule::anyHost);
+            });
             // Routing!
             config.router.apiBuilder(() -> {
                 // Users api routes
@@ -53,6 +55,7 @@ public class Main {
                                 get(ctx -> {
                                     String plant = ctx.queryParam("plant");
                                     HttpResponse<String> result = getPlants(plant);
+
                                     ctx.result(result.body());
                                 })
                         );
@@ -61,7 +64,6 @@ public class Main {
             });
         }).start(7002);
 
-        System.out.println("Check out Swagger UI docs at http://localhost:7002/swagger");
     }
 
     @OpenApi(
@@ -70,7 +72,7 @@ public class Main {
             path = "/v1/plants/search",
             methods = HttpMethod.GET,
             tags = {"Plants"},
-            queryParams = {@OpenApiParam(name="plant", description = "The plant name")},
+            queryParams = {@OpenApiParam(name = "plant", description = "The plant name")},
             responses = {
                     @OpenApiResponse(status = "200", content = {@OpenApiContent(from = User[].class)})
             }
@@ -79,9 +81,11 @@ public class Main {
         String TrefleKey = System.getenv("TREFLE_API_KEY");
 
         HttpClient client = HttpClient.newHttpClient();
+
         HttpRequest request = HttpRequest.newBuilder(
                         URI.create("https://trefle.io/api/v1/plants/search?token=" + TrefleKey + "&q=" + plant))
                 .header("accept", "application/json")
+
                 .build();
         CompletableFuture<HttpResponse<String>> response =
                 client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
