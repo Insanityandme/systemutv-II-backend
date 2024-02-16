@@ -1,4 +1,4 @@
-package se.myhappyplants.api;
+package se.myhappyplants.javalin;
 
 import java.util.Map;
 

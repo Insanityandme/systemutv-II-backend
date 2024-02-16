@@ -1,4 +1,4 @@
-package se.myhappyplants.api.user;
+package se.myhappyplants.javalin.user;
 
 
 import java.util.Collection;
@@ -13,24 +13,22 @@ public class UserService {
     private static AtomicInteger lastId;
 
     static {
-        users.put(0, new User(0, "Alice", "alice@alice.java"));
-        users.put(1, new User(1, "Bob", "bob@bob.java"));
-        users.put(2, new User(2, "Carol", "carol@carol.java"));
-        users.put(3, new User(3, "Dave", "dave@dave.java"));
+        users.put(0, new User(0, "alice@alice.java", "Alice", "123"));
+        users.put(1, new User(1, "bob@bob.java", "Bob", "123"));
         lastId = new AtomicInteger(users.size());
     }
 
-    public static void save(String name, String email) {
+    public static void save(String password, String username, String email) {
         int id = lastId.incrementAndGet();
-        users.put(id, new User(id, name, email));
+        users.put(id, new User(id, email, username, password));
     }
 
     public static Collection<User> getAll() {
         return users.values();
     }
 
-    public static void update(int userId, String name, String email) {
-        users.put(userId, new User(userId, name, email));
+    public static void update(int userId, String email, String username, String password) {
+        users.put(userId, new User(userId, email, username, password));
     }
 
     public static User findById(int userId) {

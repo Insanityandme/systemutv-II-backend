@@ -1,9 +1,9 @@
-package se.myhappyplants.api;
+package se.myhappyplants.javalin;
 
 import io.javalin.Javalin;
 import io.javalin.openapi.plugin.OpenApiPlugin;
 import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
-import se.myhappyplants.api.user.UserController;
+import se.myhappyplants.javalin.user.UserController;
 
 import static io.javalin.apibuilder.ApiBuilder.*;
 

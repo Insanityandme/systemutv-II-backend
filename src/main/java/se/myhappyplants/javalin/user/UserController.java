@@ -1,7 +1,7 @@
-package se.myhappyplants.api.user;
+package se.myhappyplants.javalin.user;
 
 import io.javalin.openapi.*;
-import se.myhappyplants.api.ErrorResponse;
+import se.myhappyplants.javalin.ErrorResponse;
 import io.javalin.http.Context;
 import io.javalin.http.NotFoundResponse;
 
@@ -21,7 +21,7 @@ public class UserController {
     )
     public static void create(Context ctx) {
         NewUserRequest user = ctx.bodyAsClass(NewUserRequest.class);
-        UserService.save(user.name, user.email);
+        UserService.save(user.email, user.username, user.email);
         ctx.status(201);
     }
 
@@ -81,7 +81,7 @@ public class UserController {
             throw new NotFoundResponse("User not found");
         } else {
             NewUserRequest newUser = ctx.bodyAsClass(NewUserRequest.class);
-            UserService.update(user.id, newUser.name, newUser.email);
+            UserService.update(user.id, newUser.email, newUser.username, newUser.password);
             ctx.status(204);
         }
     }
