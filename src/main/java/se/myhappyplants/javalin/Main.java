@@ -1,17 +1,24 @@
 package se.myhappyplants.javalin;
 
 import io.javalin.Javalin;
+import io.javalin.http.Context;
 import io.javalin.openapi.*;
 import io.javalin.openapi.plugin.OpenApiPlugin;
 import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
 import io.javalin.plugin.bundled.CorsPluginConfig;
-import se.myhappyplants.javalin.user.User;
-import se.myhappyplants.javalin.user.UserController;
+import org.mindrot.jbcrypt.BCrypt;
+
+import se.myhappyplants.javalin.plants.Plant;
+import se.myhappyplants.javalin.user.NewUserRequest;
+import se.myhappyplants.javalin.utils.DbConnection;
 
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -30,7 +37,8 @@ public class Main {
             config.bundledPlugins.enableCors(cors -> {
                 cors.addRule(CorsPluginConfig.CorsRule::anyHost);
             });
-            // Routing!
+
+            // Routing
             config.router.apiBuilder(() -> {
                 // Users api routes
                 path("", () ->
@@ -39,26 +47,21 @@ public class Main {
                 );
                 path("v1/", () -> {
                     path("users", () -> {
-                        get(UserController::getAll);
-                        post(UserController::create);
-                        path("{userId}", () -> {
-                            get(UserController::getOne);
-                            patch(UserController::update);
-                            delete(UserController::delete);
-                        });
+                        post(Main::createUser);
+
+                        // path("{userId}", () -> {
+                        //     get(UserController::getOne);
+                        //     patch(UserController::update);
+                        //     delete(UserController::delete);
+                        // });
                     });
                     path("plants", () -> {
                         get(ctx -> {
                             ctx.result("You requested all plants");
                         });
-                        path("search", () ->
-                                get(ctx -> {
-                                    String plant = ctx.queryParam("plant");
-                                    HttpResponse<String> result = getPlants(plant);
-
-                                    ctx.result(result.body());
-                                })
-                        );
+                        path("search", () -> {
+                            get(Main::getPlants);
+                        });
                     });
                 });
             });
@@ -74,11 +77,16 @@ public class Main {
             tags = {"Plants"},
             queryParams = {@OpenApiParam(name = "plant", description = "The plant name")},
             responses = {
-                    @OpenApiResponse(status = "200", content = {@OpenApiContent(from = User[].class)})
+                    @OpenApiResponse(status = "200", content = {@OpenApiContent(from = Plant[].class)}),
+                    @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
             }
     )
-    public static HttpResponse<String> getPlants(String plant) throws ExecutionException, InterruptedException {
+    public static void getPlants(Context ctx) throws ExecutionException, InterruptedException {
         String TrefleKey = System.getenv("TREFLE_API_KEY");
+
+        // for example when you want to search for a plant called "rose"
+        // you type in the url: http://localhost:7002/v1/plants/search?plant=rose
+        String plant = ctx.queryParam("plant");
 
         HttpClient client = HttpClient.newHttpClient();
 
@@ -92,6 +100,44 @@ public class Main {
 
         HttpResponse<String> result = response.get();
 
-        return result;
+        ctx.result(result.body());
+    }
+
+    @OpenApi(
+            summary = "Create user",
+            operationId = "createUser",
+            path = "/v1/users",
+            methods = HttpMethod.POST,
+            tags = {"User"},
+            requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = NewUserRequest.class)}),
+            responses = {
+                    @OpenApiResponse(status = "201"),
+                    @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
+            }
+    )
+    public static void createUser(Context ctx) {
+        NewUserRequest user = ctx.bodyAsClass(NewUserRequest.class);
+        Connection database;
+        try {
+            database = DbConnection.getInstance().getConnection();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        String hashedPassword = BCrypt.hashpw(user.password, BCrypt.gensalt());
+        String sqlSafeUsername = user.username.replace("'", "''");
+        String query = "INSERT INTO user (username, email, password, notification_activated, fun_facts_activated) VALUES (?, ?, ?, 1, 1);";
+
+        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+            preparedStatement.setString(1, sqlSafeUsername);
+            preparedStatement.setString(2, user.email);
+            preparedStatement.setString(3, hashedPassword);
+
+            preparedStatement.executeUpdate();
+        } catch (SQLException sqlException) {
+            sqlException.printStackTrace();
+        }
+
+        ctx.status(201);
     }
 }

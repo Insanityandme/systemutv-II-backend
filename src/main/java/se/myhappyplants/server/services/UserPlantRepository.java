@@ -1,6 +1,6 @@
 package se.myhappyplants.server.services;
 
-import se.myhappyplants.shared.Plant;
+import se.myhappyplants.javalin.plants.Plant;
 import se.myhappyplants.shared.PlantDetails;
 import se.myhappyplants.shared.User;
 

@@ -59,7 +59,6 @@ public class User implements Serializable {
      * @param funFactsActivated      True if fun facts wanted
      */
     public User(int uniqueId, String email, String username, boolean isNotificationsActivated, boolean funFactsActivated) {
-
         this.uniqueId = uniqueId;
         this.email = email;
         this.username = username;

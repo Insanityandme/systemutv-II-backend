@@ -1,4 +1,4 @@
-package se.myhappyplants.shared;
+package se.myhappyplants.javalin.plants;
 
 import se.myhappyplants.client.model.PictureRandomizer;
 

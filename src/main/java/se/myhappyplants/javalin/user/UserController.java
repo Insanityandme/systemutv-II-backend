@@ -3,10 +3,10 @@ package se.myhappyplants.javalin.user;
 import io.javalin.openapi.*;
 import se.myhappyplants.javalin.ErrorResponse;
 import io.javalin.http.Context;
-import io.javalin.http.NotFoundResponse;
 
 // This is a controller, it should contain logic related to client/server IO
 public class UserController {
+    /*
     @OpenApi(
             summary = "Create user",
             operationId = "createUser",
@@ -24,6 +24,7 @@ public class UserController {
         UserService.save(user.email, user.username, user.email);
         ctx.status(201);
     }
+     */
 
     @OpenApi(
             summary = "Get all users",

@@ -1,11 +1,10 @@
 package se.myhappyplants.server.services;
 
 import se.myhappyplants.shared.WaterCalculator;
-import se.myhappyplants.shared.Plant;
+import se.myhappyplants.javalin.plants.Plant;
 import se.myhappyplants.shared.PlantDetails;
 
 import java.io.IOException;
-import java.net.UnknownHostException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;

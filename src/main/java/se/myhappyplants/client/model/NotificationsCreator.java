@@ -2,9 +2,8 @@ package se.myhappyplants.client.model;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
-import se.myhappyplants.shared.Plant;
+import se.myhappyplants.javalin.plants.Plant;
 
 import java.util.ArrayList;
 
