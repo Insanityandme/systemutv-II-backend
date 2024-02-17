@@ -50,8 +50,6 @@ public class PlantRepository {
         return plantList;
     }
 
-
-
     public PlantDetails getPlantDetails(Plant plant) {
         PlantDetails details = null;
         String query = "SELECT * FROM plantdetails WHERE plant_id = ?;";

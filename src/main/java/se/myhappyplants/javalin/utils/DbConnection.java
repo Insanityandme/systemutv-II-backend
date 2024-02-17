@@ -8,6 +8,7 @@ public class DbConnection {
     private static DbConnection instance = null;
     private Connection conn = null;
 
+    // Tar hand om kraven F.U.1
     private DbConnection() {
     }
 

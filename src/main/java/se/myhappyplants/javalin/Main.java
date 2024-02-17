@@ -46,6 +46,11 @@ public class Main {
                         get(ctx -> ctx.redirect("/swagger"))
                 );
                 path("v1/", () -> {
+                    path("login", () -> {
+                        post(ctx -> {
+                            ctx.result("You requested to login");
+                        });
+                    });
                     path("users", () -> {
                         post(Main::createUser);
 
@@ -93,8 +98,8 @@ public class Main {
         HttpRequest request = HttpRequest.newBuilder(
                         URI.create("https://trefle.io/api/v1/plants/search?token=" + TrefleKey + "&q=" + plant))
                 .header("accept", "application/json")
-
                 .build();
+
         CompletableFuture<HttpResponse<String>> response =
                 client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
 
