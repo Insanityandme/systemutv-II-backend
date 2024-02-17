@@ -8,6 +8,7 @@ import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
 import io.javalin.plugin.bundled.CorsPluginConfig;
 import org.mindrot.jbcrypt.BCrypt;
 
+import se.myhappyplants.javalin.login.NewLoginRequest;
 import se.myhappyplants.javalin.plants.Plant;
 import se.myhappyplants.javalin.user.NewUserRequest;
 import se.myhappyplants.javalin.utils.DbConnection;
@@ -18,6 +19,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -47,18 +49,10 @@ public class Main {
                 );
                 path("v1/", () -> {
                     path("login", () -> {
-                        post(ctx -> {
-                            ctx.result("You requested to login");
-                        });
+                        post(Main::login);
                     });
                     path("users", () -> {
                         post(Main::createUser);
-
-                        // path("{userId}", () -> {
-                        //     get(UserController::getOne);
-                        //     patch(UserController::update);
-                        //     delete(UserController::delete);
-                        // });
                     });
                     path("plants", () -> {
                         get(ctx -> {
@@ -71,7 +65,6 @@ public class Main {
                 });
             });
         }).start(7002);
-
     }
 
     @OpenApi(
@@ -143,6 +136,54 @@ public class Main {
             sqlException.printStackTrace();
         }
 
+        // TODO add error handling
         ctx.status(201);
+    }
+
+    @OpenApi(
+            summary = "Login",
+            operationId = "login",
+            path = "/v1/login",
+            methods = HttpMethod.POST,
+            tags = {"User"},
+            requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = NewLoginRequest.class)}),
+            responses = {
+                    @OpenApiResponse(status = "201"),
+                    @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
+            }
+    )
+    public static void login(Context ctx) {
+        NewLoginRequest login = ctx.bodyAsClass(NewLoginRequest.class);
+        Connection database;
+
+        try {
+            database = DbConnection.getInstance().getConnection();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        boolean isVerified = false;
+        String query = "SELECT password FROM user WHERE email = ?;";
+
+        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+            preparedStatement.setString(1, login.email);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                String hashedPassword = resultSet.getString("password");
+                isVerified = BCrypt.checkpw(login.password, hashedPassword);
+            }
+        } catch (SQLException sqlException) {
+            sqlException.printStackTrace();
+        }
+
+        // TODO add more robust error handling
+        if (isVerified) {
+            ctx.status(201);
+            ctx.result("Login successful");
+        } else {
+            ctx.status(404);
+            ctx.result("Login failed");
+        }
     }
 }
