@@ -1,5 +1,7 @@
 package se.myhappyplants.javalin;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.openapi.*;
@@ -12,6 +14,7 @@ import se.myhappyplants.javalin.login.NewLoginRequest;
 import se.myhappyplants.javalin.plants.Plant;
 import se.myhappyplants.javalin.user.NewUserRequest;
 import se.myhappyplants.javalin.utils.DbConnection;
+import se.myhappyplants.shared.User;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -53,6 +56,7 @@ public class Main {
                     });
                     path("users", () -> {
                         post(Main::createUser);
+                        get(Main::findByEmail);
                     });
                     path("plants", () -> {
                         get(ctx -> {
@@ -113,14 +117,10 @@ public class Main {
                     @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
             }
     )
-    public static void createUser(Context ctx) {
+    public static void createUser(Context ctx) throws SQLException {
         NewUserRequest user = ctx.bodyAsClass(NewUserRequest.class);
         Connection database;
-        try {
-            database = DbConnection.getInstance().getConnection();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        database = DbConnection.getInstance().getConnection();
 
         String hashedPassword = BCrypt.hashpw(user.password, BCrypt.gensalt());
         String sqlSafeUsername = user.username.replace("'", "''");
@@ -140,12 +140,64 @@ public class Main {
         ctx.status(201);
     }
 
+
+    @OpenApi(
+            summary = "Get user based on email",
+            operationId = "findByEmail",
+            path = "/v1/users",
+            methods = HttpMethod.GET,
+            tags = {"User"},
+            queryParams = {@OpenApiParam(name = "email", description = "The users email")},
+            responses = {
+                    @OpenApiResponse(status = "200", content = {@OpenApiContent(from = User.class)}),
+                    @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
+            }
+    )
+    public static void findByEmail(Context ctx) throws SQLException, JsonProcessingException {
+        String email = ctx.queryParam("email");
+
+        Connection database;
+        database = DbConnection.getInstance().getConnection();
+
+        User user = null;
+        int uniqueID = 0;
+        String username = null;
+        boolean notificationActivated = false;
+        boolean funFactsActivated = false;
+        String query = "SELECT id, username, notification_activated, fun_facts_activated FROM user WHERE email = ?;";
+
+        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+            preparedStatement.setString(1, email);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                uniqueID = resultSet.getInt("id");
+                username = resultSet.getString("username");
+                notificationActivated = resultSet.getBoolean("notification_activated");
+                funFactsActivated = resultSet.getBoolean("fun_facts_activated");
+            }
+            user = new User(uniqueID, email, username, notificationActivated, funFactsActivated);
+        } catch (SQLException sqlException) {
+            sqlException.printStackTrace();
+        }
+
+        ObjectMapper mapper = new ObjectMapper();
+        String json = mapper.writeValueAsString(user);
+        if (user != null) {
+            ctx.status(200);
+            ctx.result(String.valueOf(json));
+        } else {
+            ctx.status(404);
+            ctx.result("User not found");
+        }
+    }
+
     @OpenApi(
             summary = "Login",
             operationId = "login",
             path = "/v1/login",
             methods = HttpMethod.POST,
-            tags = {"User"},
+            tags = {"Login"},
             requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = NewLoginRequest.class)}),
             responses = {
                     @OpenApiResponse(status = "201"),
