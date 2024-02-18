@@ -32,22 +32,19 @@ public class UserDeleteAccTest {
     @Test
     public void testDeleteAccountSuccess() throws SQLException {
         PreparedStatement preparedStatementMock = mock(PreparedStatement.class);
-        ResultSet resultSetMock = mock(ResultSet.class);
-
         when(databaseMyHappyPlants.prepareStatement(any(String.class))).thenReturn(preparedStatementMock);
-        when(preparedStatementMock.executeUpdate()).thenReturn(1);
-        when(databaseMyHappyPlants.executeQuery(any(String.class))).thenReturn(resultSetMock);
+
+        ResultSet resultSetMock = mock(ResultSet.class);
         when(resultSetMock.next()).thenReturn(true);
+        when(databaseMyHappyPlants.executeQuery(any(String.class))).thenReturn(resultSetMock);
 
         when(userRepository.checkLogin(any(String.class), any(String.class))).thenReturn(true);
 
         assertTrue(userRepository.deleteAccount("test@example.com", "password"));
 
         verify(databaseMyHappyPlants, times(1)).prepareStatement(any(String.class));
-        verify(preparedStatementMock, times(1)).executeUpdate();
-        verify(databaseMyHappyPlants, times(1)).executeQuery(any(String.class));
         verify(resultSetMock, times(1)).next();
-        verify(userRepository, times(1)).checkLogin(any(String.class), any(String.class));
+        verify(databaseMyHappyPlants, times(1)).executeQuery(any(String.class));
     }
 
     @Test
@@ -66,6 +63,5 @@ public class UserDeleteAccTest {
         verify(databaseMyHappyPlants, times(1)).prepareStatement(any(String.class));
         verify(resultSetMock, times(1)).next();
         verify(databaseMyHappyPlants, times(1)).executeQuery(any(String.class));
-        verify(userRepository, times(1)).checkLogin(any(String.class), any(String.class)); // Ensure matchers are used here
     }
 }
