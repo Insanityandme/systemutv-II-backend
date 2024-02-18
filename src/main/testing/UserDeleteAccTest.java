@@ -38,7 +38,9 @@ public class UserDeleteAccTest {
         when(resultSetMock.next()).thenReturn(true);
         when(databaseMyHappyPlants.executeQuery(any(String.class))).thenReturn(resultSetMock);
 
-        when(userRepository.checkLogin(any(String.class), any(String.class))).thenReturn(true);
+        when(userRepository.checkLogin(eq("test@example.com"), eq("password"))).thenReturn(true);
+
+
 
         assertTrue(userRepository.deleteAccount("test@example.com", "password"));
 
@@ -56,7 +58,10 @@ public class UserDeleteAccTest {
         when(resultSetMock.next()).thenReturn(false);
         when(databaseMyHappyPlants.executeQuery(any(String.class))).thenReturn(resultSetMock);
 
-        when(userRepository.checkLogin(any(String.class), any(String.class))).thenReturn(false);
+        when(userRepository.checkLogin(eq("test@example.com"), eq("password"))).thenReturn(true);
+
+
+
 
         assertFalse(userRepository.deleteAccount("test@example.com", "password"));
 
