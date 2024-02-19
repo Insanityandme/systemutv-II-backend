@@ -32,6 +32,7 @@ public class DbConnection {
 
     public static DbConnection getInstance() throws SQLException {
         if (instance != null && !instance.getConnection().isClosed()) {
+            instance.getConnection().setAutoCommit(true);
             return instance;
         }
 
