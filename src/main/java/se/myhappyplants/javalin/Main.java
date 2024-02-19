@@ -56,8 +56,6 @@ public class Main {
                     });
                     path("users", () -> {
                         post(Main::createUser);
-                        // TODO: remove this get request
-                        get(Main::findByEmail);
                         path("{userid}", () -> {
                             delete(Main::deleteUser);
                         });
