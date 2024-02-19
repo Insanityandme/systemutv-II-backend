@@ -4,7 +4,7 @@ import se.myhappyplants.server.model.IResponseHandler;
 import se.myhappyplants.server.services.PlantRepository;
 import se.myhappyplants.shared.Message;
 import se.myhappyplants.javalin.plants.Plant;
-import se.myhappyplants.shared.PlantDetails;
+import se.myhappyplants.javalin.plants.PlantDetails;
 /**
  * Class that gets the plant details
  */

@@ -2,7 +2,7 @@ package se.myhappyplants.server.services;
 
 import se.myhappyplants.shared.WaterCalculator;
 import se.myhappyplants.javalin.plants.Plant;
-import se.myhappyplants.shared.PlantDetails;
+import se.myhappyplants.javalin.plants.PlantDetails;
 
 import java.io.IOException;
 import java.sql.PreparedStatement;

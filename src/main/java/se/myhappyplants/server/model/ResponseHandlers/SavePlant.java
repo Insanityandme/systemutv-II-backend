@@ -4,7 +4,7 @@ import se.myhappyplants.server.model.IResponseHandler;
 import se.myhappyplants.server.services.UserPlantRepository;
 import se.myhappyplants.shared.Message;
 import se.myhappyplants.javalin.plants.Plant;
-import se.myhappyplants.shared.PlantDetails;
+import se.myhappyplants.javalin.plants.PlantDetails;
 import se.myhappyplants.shared.User;
 /**
  * Class that saved a users plant

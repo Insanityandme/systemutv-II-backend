@@ -12,6 +12,8 @@ import io.javalin.plugin.bundled.CorsPluginConfig;
 import org.mindrot.jbcrypt.BCrypt;
 
 import se.myhappyplants.javalin.login.NewLoginRequest;
+import se.myhappyplants.javalin.plants.NewPlantDetailsRequest;
+import se.myhappyplants.javalin.plants.NewPlantRequest;
 import se.myhappyplants.javalin.plants.Plant;
 import se.myhappyplants.javalin.user.NewUserRequest;
 import se.myhappyplants.javalin.utils.DbConnection;
@@ -75,6 +77,9 @@ public class Main {
         }).start(7002);
     }
 
+    /**
+     * PLANT API
+     */
     // Requirement: F.DP.1
     @OpenApi(
             summary = "Get plants based on search parameter",
@@ -110,6 +115,70 @@ public class Main {
         ctx.result(result.body());
     }
 
+    // TODO: when creating a new plant make sure you send all data back to the client
+    @OpenApi(
+            summary = "Create plant",
+            operationId = "createPlant",
+            path = "/plants",
+            methods = HttpMethod.POST,
+            tags = {"Plant"},
+            requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = NewPlantRequest.class)}),
+            responses = {
+                    @OpenApiResponse(status = "201"),
+                    @OpenApiResponse(status = "400", content = {@OpenApiContent(from = ErrorResponse.class)})
+            }
+    )
+    public static void savePlant(Context ctx) {
+        int userId = ctx.pathParamAsClass("userId", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+        NewPlantRequest plant = ctx.bodyAsClass(NewPlantRequest.class);
+        NewPlantDetailsRequest details = ctx.bodyAsClass(NewPlantDetailsRequest.class);
+
+        Connection database;
+        try {
+            database = DbConnection.getInstance().getConnection();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        boolean success = false;
+        String sqlSafeNickname = plant.nickname.replace("'", "''");
+
+        String plantQuery = "INSERT INTO plant (user_id, nickname, plant_id, last_watered, image_url) VALUES (?, ?, ?, ?, ?);";
+        String detailsQuery = "INSERT INTO plantdetails (scientific_name, genus, family, common_name, image_url, light, url_wikipedia_en, water_frequency, plant_id)" +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);";
+
+        try (PreparedStatement plantStatement = database.prepareStatement(plantQuery)) {
+            plantStatement.setInt(1, userId);
+            plantStatement.setString(2, sqlSafeNickname);
+            plantStatement.setString(3, plant.id);
+            plantStatement.setDate(4, plant.lastWatered);
+            plantStatement.setString(5, plant.imageURL);
+            plantStatement.executeUpdate();
+
+            // if (!doesPlantDetailExist(plant.id)) {
+            //     try (PreparedStatement detailsStatement = database.prepareStatement(detailsQuery)) {
+            //         detailsStatement.setString(1, details.scientificName);
+            //         detailsStatement.setString(2, details.genus);
+            //         detailsStatement.setString(3, details.family);
+            //         detailsStatement.setString(4, plant.commonName);
+            //         detailsStatement.setString(5, plant.imageURL);
+            //         detailsStatement.setString(6, "0");
+            //         detailsStatement.setString(7, "0");
+            //         detailsStatement.setString(8, "0");
+            //         detailsStatement.setString(9, plant.id);
+            //         detailsStatement.executeUpdate();
+            //     }
+            // }
+
+            success = true;
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+    }
+
+    /**
+     * USER API
+     */
     // Requirement: F.DP.4
     @OpenApi(
             summary = "Create user",
@@ -265,6 +334,4 @@ public class Main {
         }
     }
 
-
-    // TODO: when creating a new plant make sure you send all data back to the client
 }

@@ -1,7 +1,7 @@
 package se.myhappyplants.server.services;
 
 import se.myhappyplants.javalin.plants.Plant;
-import se.myhappyplants.shared.PlantDetails;
+import se.myhappyplants.javalin.plants.PlantDetails;
 import se.myhappyplants.shared.User;
 
 import java.io.IOException;

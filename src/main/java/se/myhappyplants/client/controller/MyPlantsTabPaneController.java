@@ -19,6 +19,7 @@ import se.myhappyplants.client.view.LibraryPlantPane;
 import se.myhappyplants.client.view.MessageBox;
 import se.myhappyplants.client.view.PopupBox;
 import se.myhappyplants.javalin.plants.Plant;
+import se.myhappyplants.javalin.plants.PlantDetails;
 import se.myhappyplants.shared.*;
 import se.myhappyplants.client.model.SetAvatar;
 

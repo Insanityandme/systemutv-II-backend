@@ -4,7 +4,7 @@ import java.io.File;
 
 public class User {
     private int id;
-    private String email;
+    private final String email;
     private String username;
     private String password;
     private String avatarURL;
