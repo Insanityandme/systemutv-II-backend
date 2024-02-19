@@ -56,6 +56,7 @@ public class Main {
                     });
                     path("users", () -> {
                         post(Main::createUser);
+                        // TODO: remove this get request
                         get(Main::findByEmail);
                         path("{userid}", () -> {
                             delete(Main::deleteUser);
@@ -123,10 +124,15 @@ public class Main {
                     @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
             }
     )
-    public static void createUser(Context ctx) throws SQLException {
+    public static void createUser(Context ctx) {
         NewUserRequest user = ctx.bodyAsClass(NewUserRequest.class);
         Connection database;
-        database = DbConnection.getInstance().getConnection();
+
+        try {
+            database = DbConnection.getInstance().getConnection();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
 
         String hashedPassword = BCrypt.hashpw(user.password, BCrypt.gensalt());
         String sqlSafeUsername = user.username.replace("'", "''");
@@ -145,7 +151,6 @@ public class Main {
         // TODO add error handling
         ctx.status(201);
     }
-
 
     // Requirement: Need a requirement
     @OpenApi(
@@ -212,8 +217,9 @@ public class Main {
                     @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
             }
     )
-    public static void login(Context ctx) throws JsonProcessingException {
+    public static void login(Context ctx) {
         NewLoginRequest login = ctx.bodyAsClass(NewLoginRequest.class);
+
         Connection database;
 
         try {
@@ -223,12 +229,12 @@ public class Main {
         }
 
         boolean isVerified = false;
-
         User user = null;
         int id = 0;
         String username = null;
         boolean notificationActivated = false;
         boolean funFactsActivated = false;
+
         String query = "SELECT id, username, password, notification_activated, fun_facts_activated FROM user WHERE email = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
@@ -251,21 +257,29 @@ public class Main {
 
         if (isVerified) {
             ObjectMapper mapper = new ObjectMapper();
-            String json = mapper.writeValueAsString(user);
+            String json;
 
-            ctx.status(200);
+            try {
+                json = mapper.writeValueAsString(user);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+
             ctx.result(json);
+            ctx.status(200);
         } else {
             ctx.status(404);
             ctx.result("Login failed");
         }
     }
 
+    // Requirement: Need a requirement
     @OpenApi(
             summary = "Delete user by ID",
             operationId = "deleteUserByID",
             path = "/v1/users/:userid",
             methods = HttpMethod.DELETE,
+            pathParams = {@OpenApiParam(name = "userId", type = Integer.class, description = "The user ID")},
             tags = {"User"},
             responses = {
                     @OpenApiResponse(status = "204"),
@@ -273,7 +287,39 @@ public class Main {
                     @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
             }
     )
-    public static void deleteUser(Context ctx) {
+    public static void deleteUser(Context ctx) throws SQLException {
+        boolean accountDeleted = false;
+        Connection database;
+        database = DbConnection.getInstance().getConnection();
+
+        String querySelect = "SELECT id FROM user WHERE email = ?;";
+
+        try (PreparedStatement preparedStatementSelect = database.prepareStatement(querySelect)) {
+            // preparedStatementSelect.setString(1, email);
+
+            ResultSet resultSet = preparedStatementSelect.executeQuery();
+
+            if (resultSet.next()) {
+                int id = resultSet.getInt("id");
+                String queryDeletePlants = "DELETE FROM Plant WHERE user_id = ?;";
+                String queryDeleteUser = "DELETE FROM User WHERE id = ?;";
+
+                try (PreparedStatement preparedStatementDeletePlants = database.prepareStatement(queryDeletePlants);
+                     PreparedStatement preparedStatementDeleteUser = database.prepareStatement(queryDeleteUser)) {
+
+                    preparedStatementDeletePlants.setInt(1, id);
+                    preparedStatementDeleteUser.setInt(1, id);
+
+                    preparedStatementDeletePlants.executeUpdate();
+                    preparedStatementDeleteUser.executeUpdate();
+
+                    accountDeleted = true;
+                } catch (SQLException sqlException) {
+                }
+            }
+        } catch (SQLException sqlException) {
+            sqlException.printStackTrace();
+        }
     }
 
     // TODO: when creating a new plant make sure you send all data back to the client
