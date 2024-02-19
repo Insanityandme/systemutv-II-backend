@@ -197,6 +197,7 @@ public class Main {
         }
     }
 
+    // Requirement: needs a new requirement
     @OpenApi(
             summary = "Update plant by ID",
             operationId = "updatePlantById",
