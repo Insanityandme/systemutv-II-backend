@@ -71,6 +71,7 @@ public class Main {
         }).start(7002);
     }
 
+    // Requirement: Need a requirement
     @OpenApi(
             summary = "Get plants based on search parameter",
             operationId = "getPlants",
@@ -105,6 +106,7 @@ public class Main {
         ctx.result(result.body());
     }
 
+    // Requirement: F.DP.4
     @OpenApi(
             summary = "Create user",
             operationId = "createUser",
@@ -192,6 +194,7 @@ public class Main {
         }
     }
 
+    // Requirement: F.DP.3
     @OpenApi(
             summary = "Login",
             operationId = "login",
