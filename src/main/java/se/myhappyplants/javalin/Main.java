@@ -14,7 +14,7 @@ import se.myhappyplants.javalin.login.NewLoginRequest;
 import se.myhappyplants.javalin.plants.Plant;
 import se.myhappyplants.javalin.user.NewUserRequest;
 import se.myhappyplants.javalin.utils.DbConnection;
-import se.myhappyplants.shared.User;
+import se.myhappyplants.javalin.user.User;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -57,6 +57,10 @@ public class Main {
                     path("users", () -> {
                         post(Main::createUser);
                         get(Main::findByEmail);
+                        path("{userid}", () -> {
+                            delete(Main::deleteUser);
+                        });
+                        delete(Main::deleteUser);
                     });
                     path("plants", () -> {
                         get(ctx -> {
@@ -71,7 +75,7 @@ public class Main {
         }).start(7002);
     }
 
-    // Requirement: Need a requirement
+    // Requirement: F.DP.1
     @OpenApi(
             summary = "Get plants based on search parameter",
             operationId = "getPlants",
@@ -143,6 +147,7 @@ public class Main {
     }
 
 
+    // Requirement: Need a requirement
     @OpenApi(
             summary = "Get user based on email",
             operationId = "findByEmail",
@@ -203,11 +208,11 @@ public class Main {
             tags = {"Login"},
             requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = NewLoginRequest.class)}),
             responses = {
-                    @OpenApiResponse(status = "201"),
+                    @OpenApiResponse(status = "200", content = {@OpenApiContent(from = User.class)}),
                     @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
             }
     )
-    public static void login(Context ctx) {
+    public static void login(Context ctx) throws JsonProcessingException {
         NewLoginRequest login = ctx.bodyAsClass(NewLoginRequest.class);
         Connection database;
 
@@ -218,7 +223,13 @@ public class Main {
         }
 
         boolean isVerified = false;
-        String query = "SELECT password FROM user WHERE email = ?;";
+
+        User user = null;
+        int id = 0;
+        String username = null;
+        boolean notificationActivated = false;
+        boolean funFactsActivated = false;
+        String query = "SELECT id, username, password, notification_activated, fun_facts_activated FROM user WHERE email = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
             preparedStatement.setString(1, login.email);
@@ -227,18 +238,43 @@ public class Main {
             if (resultSet.next()) {
                 String hashedPassword = resultSet.getString("password");
                 isVerified = BCrypt.checkpw(login.password, hashedPassword);
+
+                id = resultSet.getInt("id");
+                username = resultSet.getString("username");
+                notificationActivated = resultSet.getBoolean("notification_activated");
+                funFactsActivated = resultSet.getBoolean("fun_facts_activated");
             }
+            user = new User(id, login.email, username, notificationActivated, funFactsActivated);
         } catch (SQLException sqlException) {
             sqlException.printStackTrace();
         }
 
-        // TODO add more robust error handling
         if (isVerified) {
-            ctx.status(201);
-            ctx.result("Login successful");
+            ObjectMapper mapper = new ObjectMapper();
+            String json = mapper.writeValueAsString(user);
+
+            ctx.status(200);
+            ctx.result(json);
         } else {
             ctx.status(404);
             ctx.result("Login failed");
         }
     }
+
+    @OpenApi(
+            summary = "Delete user by ID",
+            operationId = "deleteUserByID",
+            path = "/v1/users/:userid",
+            methods = HttpMethod.DELETE,
+            tags = {"User"},
+            responses = {
+                    @OpenApiResponse(status = "204"),
+                    @OpenApiResponse(status = "400", content = {@OpenApiContent(from = ErrorResponse.class)}),
+                    @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
+            }
+    )
+    public static void deleteUser(Context ctx) {
+    }
+
+    // TODO: when creating a new plant make sure you send all data back to the client
 }

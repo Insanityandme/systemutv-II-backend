@@ -3,7 +3,7 @@ package se.myhappyplants.javalin.user;
 import java.io.File;
 
 public class User {
-    private int uniqueId;
+    private int id;
     private String email;
     private String username;
     private String password;
@@ -38,7 +38,7 @@ public class User {
     }
 
     public User(int uniqueID, String email, String username, boolean notificationsActivated) {
-        this.uniqueId = uniqueID;
+        this.id = uniqueID;
         this.email = email;
         this.username = username;
         this.isNotificationsActivated = notificationsActivated;
@@ -47,22 +47,22 @@ public class User {
     /**
      * Constructor used to return a users details from the database
      *
-     * @param uniqueId                 A user's unique id in the database
+     * @param id                 A user's unique id in the database
      * @param email                    Email address
      * @param username                 Username
      * @param isNotificationsActivated True if notifications wanted
      * @param funFactsActivated        True if fun facts wanted
      */
-    public User(int uniqueId, String email, String username, boolean isNotificationsActivated, boolean funFactsActivated) {
-        this.uniqueId = uniqueId;
+    public User(int id, String email, String username, boolean isNotificationsActivated, boolean funFactsActivated) {
+        this.id = id;
         this.email = email;
         this.username = username;
         this.isNotificationsActivated = isNotificationsActivated;
         this.funFactsActivated = funFactsActivated;
     }
 
-    public int getUniqueId() {
-        return uniqueId;
+    public int getId() {
+        return id;
     }
 
     public String getUsername() {
