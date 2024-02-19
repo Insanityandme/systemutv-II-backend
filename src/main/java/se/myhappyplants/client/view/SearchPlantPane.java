@@ -18,7 +18,7 @@ import se.myhappyplants.client.controller.SearchTabPaneController;
 import se.myhappyplants.client.model.ImageLibrary;
 import se.myhappyplants.shared.WaterCalculator;
 import se.myhappyplants.javalin.plants.Plant;
-import se.myhappyplants.shared.PlantDetails;
+import se.myhappyplants.javalin.plants.PlantDetails;
 
 import java.util.concurrent.atomic.AtomicReference;
 

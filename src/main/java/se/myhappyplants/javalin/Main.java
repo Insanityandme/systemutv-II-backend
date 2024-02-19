@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
+import io.javalin.http.InternalServerErrorResponse;
+import io.javalin.http.NotFoundResponse;
 import io.javalin.openapi.*;
 import io.javalin.openapi.plugin.OpenApiPlugin;
 import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
@@ -11,6 +13,8 @@ import io.javalin.plugin.bundled.CorsPluginConfig;
 import org.mindrot.jbcrypt.BCrypt;
 
 import se.myhappyplants.javalin.login.NewLoginRequest;
+import se.myhappyplants.javalin.plants.NewPlantDetailsRequest;
+import se.myhappyplants.javalin.plants.NewPlantRequest;
 import se.myhappyplants.javalin.plants.Plant;
 import se.myhappyplants.javalin.user.NewUserRequest;
 import se.myhappyplants.javalin.utils.DbConnection;
@@ -54,31 +58,36 @@ public class Main {
                     path("login", () -> {
                         post(Main::login);
                     });
-                    path("users", () -> {
+                    path("register" , () -> {
                         post(Main::createUser);
-                        path("{userid}", () -> {
+                    });
+                    path("users", () -> {
+                        path("{id}", () -> {
                             delete(Main::deleteUser);
+                            path("plants", () -> {
+                                path("{plantId}", () -> {
+                                    patch(Main::updatePlant);
+                                });
+                                post(Main::savePlant);
+                            });
                         });
-                        delete(Main::deleteUser);
                     });
                     path("plants", () -> {
-                        get(ctx -> {
-                            ctx.result("You requested all plants");
-                        });
-                        path("search", () -> {
-                            get(Main::getPlants);
-                        });
+                        get(Main::getPlants);
                     });
                 });
             });
         }).start(7002);
     }
 
+    /**
+     * PLANT API
+     */
     // Requirement: F.DP.1
     @OpenApi(
             summary = "Get plants based on search parameter",
             operationId = "getPlants",
-            path = "/v1/plants/search",
+            path = "/v1/plants",
             methods = HttpMethod.GET,
             tags = {"Plants"},
             queryParams = {@OpenApiParam(name = "plant", description = "The plant name")},
@@ -109,13 +118,119 @@ public class Main {
         ctx.result(result.body());
     }
 
+    // TODO: when creating a new plant make sure you send all data back to the client
+    // Requirement: F.DP.2
+    @OpenApi(
+            summary = "Add plant to user",
+            operationId = "savePlant",
+            path = "/v1/users/{id}/plants",
+            methods = HttpMethod.POST,
+            tags = {"User"},
+            requestBody = @OpenApiRequestBody(content = {
+                    @OpenApiContent(from = NewPlantDetailsRequest.class),
+                    @OpenApiContent(from = NewPlantRequest.class),
+            }),
+            responses = {
+                    @OpenApiResponse(status = "201"),
+                    @OpenApiResponse(status = "400", content = {@OpenApiContent(from = ErrorResponse.class)})
+            }
+    )
+    public static void savePlant(Context ctx) {
+        int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+        NewPlantRequest plant = ctx.bodyAsClass(NewPlantRequest.class);
+        NewPlantDetailsRequest details = ctx.bodyAsClass(NewPlantDetailsRequest.class);
+
+        Connection database;
+        try {
+            database = DbConnection.getInstance().getConnection();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        boolean success = false;
+        String sqlSafeNickname = plant.nickname.replace("'", "''");
+
+        String plantQuery = "INSERT INTO plant (user_id, nickname, plant_id, last_watered, image_url) VALUES (?, ?, ?, ?, ?);";
+        String detailsQuery = "INSERT INTO plantdetails (scientific_name, genus, family, common_name, image_url, light, url_wikipedia_en, water_frequency, plant_id)" +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);";
+
+        try (PreparedStatement plantStatement = database.prepareStatement(plantQuery)) {
+            plantStatement.setInt(1, userId);
+            plantStatement.setString(2, sqlSafeNickname);
+            plantStatement.setString(3, plant.id);
+            plantStatement.setDate(4, plant.lastWatered);
+            plantStatement.setString(5, plant.imageURL);
+            plantStatement.executeUpdate();
+
+            // Checks if plant details already exist in the database
+            // We might want to have several of the same plants in our dashboard
+            // But no duplicate details about them!
+            String query = "SELECT COUNT(*) FROM plantdetails WHERE plant_id = ?";
+            boolean doesPlantDetailExist = false;
+            try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+                preparedStatement.setString(1, plant.id);
+                ResultSet resultSet = preparedStatement.executeQuery();
+                if (resultSet.next()) {
+                    int count = resultSet.getInt(1);
+                    doesPlantDetailExist = count > 0;
+                }
+            }
+
+            if (!doesPlantDetailExist) {
+                try (PreparedStatement detailsStatement = database.prepareStatement(detailsQuery)) {
+                    detailsStatement.setString(1, details.scientificName);
+                    detailsStatement.setString(2, details.genus);
+                    detailsStatement.setString(3, details.family);
+                    detailsStatement.setString(4, plant.commonName);
+                    detailsStatement.setString(5, plant.imageURL);
+                    detailsStatement.setString(6, "0");
+                    detailsStatement.setString(7, "0");
+                    detailsStatement.setString(8, "0");
+                    detailsStatement.setString(9, plant.id);
+                    detailsStatement.executeUpdate();
+                }
+            }
+
+            success = true;
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+    }
+
+    @OpenApi(
+            summary = "Update plant by ID",
+            operationId = "updatePlantById",
+            path = "/v1/users/{id}/plants/{plantId}",
+            methods = HttpMethod.PATCH,
+            pathParams = {
+                    @OpenApiParam(name = "id", type = Integer.class, description = "The user ID"),
+                    @OpenApiParam(name = "plantId", type = Integer.class, description = "The plant ID"),
+            },
+            tags = {"User"},
+            requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = NewPlantRequest.class)}),
+            responses = {
+                    @OpenApiResponse(status = "200"),
+                    @OpenApiResponse(status = "400", content = {@OpenApiContent(from = ErrorResponse.class)}),
+                    @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
+            }
+    )
+    public static void updatePlant(Context ctx) {
+        // TODO make a switch case for the different fields that can be updated
+        // Depending on the body of the request, update the plant accordingly
+
+        // TODO send back the updated plant data to the client
+    }
+
+    /**
+     * USER API
+     */
     // Requirement: F.DP.4
     @OpenApi(
             summary = "Create user",
             operationId = "createUser",
-            path = "/v1/users",
+            path = "/v1/register",
             methods = HttpMethod.POST,
-            tags = {"User"},
+            tags = {"Authentication"},
             requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = NewUserRequest.class)}),
             responses = {
                     @OpenApiResponse(status = "201"),
@@ -156,7 +271,7 @@ public class Main {
             operationId = "login",
             path = "/v1/login",
             methods = HttpMethod.POST,
-            tags = {"Login"},
+            tags = {"Authentication"},
             requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = NewLoginRequest.class)}),
             responses = {
                     @OpenApiResponse(status = "200", content = {@OpenApiContent(from = User.class)}),
@@ -219,13 +334,13 @@ public class Main {
         }
     }
 
-    // Requirement: Need a requirement
+    // Requirement: F.DP.6
     @OpenApi(
             summary = "Delete user by ID",
             operationId = "deleteUserByID",
-            path = "/v1/users/:userid",
+            path = "/v1/users/{id}",
             methods = HttpMethod.DELETE,
-            pathParams = {@OpenApiParam(name = "userId", type = Integer.class, description = "The user ID")},
+            pathParams = {@OpenApiParam(name = "id", type = Integer.class, description = "The user ID")},
             tags = {"User"},
             responses = {
                     @OpenApiResponse(status = "204"),
@@ -234,39 +349,38 @@ public class Main {
             }
     )
     public static void deleteUser(Context ctx) throws SQLException {
-        boolean accountDeleted = false;
+        int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+
+        boolean accountDeleted;
         Connection database;
         database = DbConnection.getInstance().getConnection();
 
-        String querySelect = "SELECT id FROM user WHERE email = ?;";
+        String queryDeletePlants = "DELETE FROM Plant WHERE user_id = ?;";
+        String queryDeleteUser = "DELETE FROM User WHERE id = ?;";
 
-        try (PreparedStatement preparedStatementSelect = database.prepareStatement(querySelect)) {
-            // preparedStatementSelect.setString(1, email);
+        try (PreparedStatement preparedStatementDeletePlants = database.prepareStatement(queryDeletePlants);
+             PreparedStatement preparedStatementDeleteUser = database.prepareStatement(queryDeleteUser)) {
 
-            ResultSet resultSet = preparedStatementSelect.executeQuery();
+            preparedStatementDeletePlants.setInt(1, userId);
+            preparedStatementDeleteUser.setInt(1, userId);
 
-            if (resultSet.next()) {
-                int id = resultSet.getInt("id");
-                String queryDeletePlants = "DELETE FROM Plant WHERE user_id = ?;";
-                String queryDeleteUser = "DELETE FROM User WHERE id = ?;";
+            database.setAutoCommit(false);
+            preparedStatementDeletePlants.executeUpdate();
+            preparedStatementDeleteUser.executeUpdate();
+            database.commit();
 
-                try (PreparedStatement preparedStatementDeletePlants = database.prepareStatement(queryDeletePlants);
-                     PreparedStatement preparedStatementDeleteUser = database.prepareStatement(queryDeleteUser)) {
-
-                    preparedStatementDeletePlants.setInt(1, id);
-                    preparedStatementDeleteUser.setInt(1, id);
-
-                    preparedStatementDeletePlants.executeUpdate();
-                    preparedStatementDeleteUser.executeUpdate();
-
-                    accountDeleted = true;
-                } catch (SQLException sqlException) {
-                }
-            }
+            accountDeleted = true;
         } catch (SQLException sqlException) {
+            database.rollback();
             sqlException.printStackTrace();
+            throw new InternalServerErrorResponse("Failed to delete user");
+        }
+
+        if (!accountDeleted) {
+            throw new NotFoundResponse("User not found");
+        } else {
+            ctx.status(204);
         }
     }
 
-    // TODO: when creating a new plant make sure you send all data back to the client
 }

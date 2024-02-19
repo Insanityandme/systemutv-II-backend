@@ -15,7 +15,7 @@ import se.myhappyplants.client.model.BoxTitle;
 import se.myhappyplants.client.model.PictureRandomizer;
 import se.myhappyplants.shared.WaterCalculator;
 import se.myhappyplants.javalin.plants.Plant;
-import se.myhappyplants.shared.PlantDetails;
+import se.myhappyplants.javalin.plants.PlantDetails;
 
 import java.io.File;
 import java.time.LocalDate;

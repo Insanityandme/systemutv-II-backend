@@ -2,89 +2,29 @@ package se.myhappyplants.javalin.plants;
 
 import se.myhappyplants.client.model.PictureRandomizer;
 
-import java.io.Serializable;
 import java.sql.Date;
 import java.time.LocalDate;
 
-/**
- * Class defining a plant
- * Created by: Frida Jacobsson
- * Updated by: Linn Borgström, Eric Simonson, Susanne Vikström
- */
-public class Plant implements Serializable {
-    private String plantId;
-    private String commonName;
-    private String scientificName;
-    private String familyName;
-    private String imageURL;
-    private String nickname;
-    private Date lastWatered;
-    private long waterFrequency;
+public class NewPlantRequest {
+    public String id;
+    public String commonName;
 
-    /**
-     * Creates a plant object from information
-     * in the Species database
-     *
-     * @param plantId        Unique plant id in Species database
-     * @param commonName     Common name
-     * @param scientificName Scientific name
-     * @param familyName     Family name
-     * @param imageURL       Image location
-     */
-    public Plant(String plantId, String commonName, String scientificName, String familyName, String imageURL) {
-        this.plantId = plantId;
+    public String scientificName;
+    public String familyName;
+    public String imageURL;
+    public String nickname;
+    public Date lastWatered;
+    public long waterFrequency;
+
+    public NewPlantRequest() {}
+
+    public NewPlantRequest(String id, String commonName, String scientificName, String familyName, String imageURL) {
+        this.id = id;
         this.commonName = commonName;
         this.scientificName = scientificName;
         this.familyName = familyName;
         this.imageURL = imageURL;
     }
-
-    public Plant(String nickname, String plantId, Date lastWatered, long waterFrequency) {
-        this.nickname = nickname;
-        this.plantId = plantId;
-        this.lastWatered = lastWatered;
-        this.waterFrequency = waterFrequency;
-    }
-
-    public Plant(String nickname, String plantID, Date lastWatered) {
-        this.nickname = nickname;
-        this.plantId = plantID;
-        this.lastWatered = lastWatered;
-    }
-    /**
-     * Creates a plant object from a users library
-     * in the MyHappyPlants database
-     *
-     * @param nickname
-     * @param plantId        Unique plant id in Species database
-     * @param lastWatered    Date the plant was last watered
-     * @param waterFrequency How often the plant needs water in milliseconds
-     * @param imageURL       Image location
-     */
-    public Plant(String nickname, String plantId, Date lastWatered, long waterFrequency, String imageURL) {
-        this.nickname = nickname;
-        this.plantId = plantId;
-        this.lastWatered = lastWatered;
-        this.waterFrequency = waterFrequency;
-        this.imageURL = imageURL;
-    }
-
-    /**
-     * Creates a plant object that can be used to update
-     * a users library in the MyHappyPlants database
-     *
-     * @param nickname
-     * @param plantId     Unique plant id in Species database
-     * @param lastWatered Date the plant was last watered
-     * @param imageURL    Image location
-     */
-    public Plant(String nickname, String plantId, Date lastWatered, String imageURL) {
-        this.nickname = nickname;
-        this.plantId = plantId;
-        this.lastWatered = lastWatered;
-        this.imageURL = imageURL;
-    }
-
     public String toString() {
         String toString = String.format("Common name: %s \tFamily name: %s \tScientific name: %s ", commonName, familyName, scientificName);
         return toString;
@@ -106,12 +46,14 @@ public class Plant implements Serializable {
         return scientificName;
     }
 
-    public String getPlantId() {
-        return plantId;
+    public String getId() {
+        return id;
     }
+
     public void setImageURL(String imageURL) {
         this.imageURL = imageURL;
     }
+
     /**
      * Image location for selected plant
      *
@@ -120,7 +62,7 @@ public class Plant implements Serializable {
 
     //Tar hand om krav F.SI.1
     public String getImageURL() {
-        if(imageURL == null) {
+        if (imageURL == null) {
             imageURL = PictureRandomizer.getRandomPictureURL();
         }
         String httpImageURL = imageURL;
@@ -149,8 +91,7 @@ public class Plant implements Serializable {
         double progress = 1.0 - ((double) difference / (double) waterFrequency);
         if (progress <= 0.02) {
             progress = 0.02;
-        }
-        else if (progress >= 0.95) {
+        } else if (progress >= 0.95) {
             progress = 1.0;
         }
         return progress;
@@ -185,6 +126,4 @@ public class Plant implements Serializable {
             return "This plant doesn't need watering right now.";
         }
     }
-
-
 }

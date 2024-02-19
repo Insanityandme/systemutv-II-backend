@@ -23,7 +23,7 @@ import se.myhappyplants.client.view.SearchPlantPane;
 import se.myhappyplants.shared.Message;
 import se.myhappyplants.javalin.plants.Plant;
 import se.myhappyplants.client.model.SetAvatar;
-import se.myhappyplants.shared.PlantDetails;
+import se.myhappyplants.javalin.plants.PlantDetails;
 
 import java.io.IOException;
 import java.net.URI;

@@ -1,21 +1,15 @@
-package se.myhappyplants.shared;
+package se.myhappyplants.javalin.plants;
 
-import java.io.Serializable;
+public class NewPlantDetailsRequest {
+    public String genus;
+    public String scientificName;
+    public int light;
+    public int waterFrequency;
+    public String family;
 
-/**
- * Container class for more detailed information about a plant
- * Created by: Frida Jacobsson
- * Updated by:
- **/
-public class PlantDetails implements Serializable {
+    public NewPlantDetailsRequest() {}
 
-    private String genus;
-    private String scientificName;
-    private int light;
-    private int waterFrequency;
-    private String family;
-
-    public PlantDetails(String genus, String scientificName, int light, int waterFrequency, String family) {
+    public NewPlantDetailsRequest(String genus, String scientificName, int light, int waterFrequency, String family) {
         this.scientificName = scientificName;
         this.genus = genus;
         this.light = light;
