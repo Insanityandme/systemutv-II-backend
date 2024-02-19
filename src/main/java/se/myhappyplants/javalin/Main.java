@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
+import io.javalin.http.NotFoundResponse;
 import io.javalin.openapi.*;
 import io.javalin.openapi.plugin.OpenApiPlugin;
 import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
@@ -56,7 +57,7 @@ public class Main {
                     });
                     path("users", () -> {
                         post(Main::createUser);
-                        path("{userid}", () -> {
+                        path("{userId}", () -> {
                             delete(Main::deleteUser);
                         });
                         delete(Main::deleteUser);
@@ -219,11 +220,11 @@ public class Main {
         }
     }
 
-    // Requirement: Need a requirement
+    // Requirement: F.DP.6
     @OpenApi(
             summary = "Delete user by ID",
             operationId = "deleteUserByID",
-            path = "/v1/users/:userid",
+            path = "/v1/users/{userId}",
             methods = HttpMethod.DELETE,
             pathParams = {@OpenApiParam(name = "userId", type = Integer.class, description = "The user ID")},
             tags = {"User"},
@@ -234,39 +235,36 @@ public class Main {
             }
     )
     public static void deleteUser(Context ctx) throws SQLException {
+        int userId = ctx.pathParamAsClass("userId", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+
         boolean accountDeleted = false;
         Connection database;
         database = DbConnection.getInstance().getConnection();
 
-        String querySelect = "SELECT id FROM user WHERE email = ?;";
+        String queryDeletePlants = "DELETE FROM Plant WHERE user_id = ?;";
+        String queryDeleteUser = "DELETE FROM User WHERE id = ?;";
 
-        try (PreparedStatement preparedStatementSelect = database.prepareStatement(querySelect)) {
-            // preparedStatementSelect.setString(1, email);
+        try (PreparedStatement preparedStatementDeletePlants = database.prepareStatement(queryDeletePlants);
+             PreparedStatement preparedStatementDeleteUser = database.prepareStatement(queryDeleteUser)) {
 
-            ResultSet resultSet = preparedStatementSelect.executeQuery();
+            preparedStatementDeletePlants.setInt(1, userId);
+            preparedStatementDeleteUser.setInt(1, userId);
 
-            if (resultSet.next()) {
-                int id = resultSet.getInt("id");
-                String queryDeletePlants = "DELETE FROM Plant WHERE user_id = ?;";
-                String queryDeleteUser = "DELETE FROM User WHERE id = ?;";
+            preparedStatementDeletePlants.executeUpdate();
+            preparedStatementDeleteUser.executeUpdate();
 
-                try (PreparedStatement preparedStatementDeletePlants = database.prepareStatement(queryDeletePlants);
-                     PreparedStatement preparedStatementDeleteUser = database.prepareStatement(queryDeleteUser)) {
-
-                    preparedStatementDeletePlants.setInt(1, id);
-                    preparedStatementDeleteUser.setInt(1, id);
-
-                    preparedStatementDeletePlants.executeUpdate();
-                    preparedStatementDeleteUser.executeUpdate();
-
-                    accountDeleted = true;
-                } catch (SQLException sqlException) {
-                }
-            }
+            accountDeleted = true;
         } catch (SQLException sqlException) {
             sqlException.printStackTrace();
         }
+
+        if (!accountDeleted) {
+            throw new NotFoundResponse("User not found");
+        } else {
+            ctx.status(204);
+        }
     }
+
 
     // TODO: when creating a new plant make sure you send all data back to the client
 }
