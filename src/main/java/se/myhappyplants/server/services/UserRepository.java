@@ -3,19 +3,11 @@ package se.myhappyplants.server.services;
 import org.mindrot.jbcrypt.BCrypt;
 import se.myhappyplants.shared.User;
 
-import java.net.UnknownHostException;
 import java.sql.*;
-
-/**
- * Class responsible for calling the database about users.
- * Created by: Frida Jacobsson 2021-03-30
- * Updated by: Frida Jacobsson 2021-05-21
- */
 
 //Tar hand om kraven F.U.1
 public class UserRepository {
-
-    private IQueryExecutor database;
+    private final IQueryExecutor database;
 
     public UserRepository(IQueryExecutor database){
         this.database = database;
@@ -27,7 +19,7 @@ public class UserRepository {
      * @param user An instance of a newly created User that should be stored in the database.
      * @return A boolean value, true if the user was stored successfully
      */
-    public boolean saveUser(User user) {
+    public boolean registerUser(User user) {
         boolean success = false;
         String hashedPassword = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
         String sqlSafeUsername = user.getUsername().replace("'", "''");

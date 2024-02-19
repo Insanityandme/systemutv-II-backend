@@ -1,6 +1,6 @@
 package se.myhappyplants.server.services;
 
-import se.myhappyplants.shared.Plant;
+import se.myhappyplants.javalin.plants.Plant;
 import se.myhappyplants.shared.PlantDetails;
 import se.myhappyplants.shared.User;
 
@@ -98,9 +98,6 @@ public class UserPlantRepository {
     }
 
 
-
-
-
     /**
      * Method that returns all the plants connected to the logged in user.
      * Author: Linn Borgström,
@@ -130,9 +127,6 @@ public class UserPlantRepository {
 
         return plantList;
     }
-
-
-
 
 
     /**
@@ -209,8 +203,6 @@ public class UserPlantRepository {
 
         return plantDeleted;
     }
-
-
 
 
     /**

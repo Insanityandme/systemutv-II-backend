@@ -4,11 +4,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-/**
- * Class for handling connection with a specific database
- * Created by: Frida Jacobsson 2021-05-21
- */
-public class DatabaseConnection implements IDatabaseConnection {
+public class DatabaseConnection {
 
     private Connection conn;
     private String databaseName;
@@ -17,10 +13,13 @@ public class DatabaseConnection implements IDatabaseConnection {
         this.databaseName = databaseName;
     }
 
+    public DatabaseConnection() {
+        this.databaseName = "myhappyplants";
+    }
 
 
     //Tar hand om kraven F.U.1
-    private Connection createConnection() throws SQLException {
+    private Connection connect() throws SQLException {
         if (conn == null || conn.isClosed()) {
             try {
                 Class.forName("org.sqlite.JDBC");
@@ -34,17 +33,15 @@ public class DatabaseConnection implements IDatabaseConnection {
         return conn;
     }
 
-    @Override
     public Connection getConnection() {
         try {
-            return createConnection();
+            return connect();
         } catch (SQLException e) {
             e.printStackTrace();
             return null;
         }
     }
 
-    @Override
     public void closeConnection() {
         if (conn != null) {
             try {

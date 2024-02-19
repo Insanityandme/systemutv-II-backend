@@ -2,6 +2,7 @@ package se.myhappyplants.server;
 
 import se.myhappyplants.server.controller.ResponseController;
 import se.myhappyplants.server.services.*;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -17,8 +18,7 @@ import java.util.concurrent.Executors;
 public class StartServer {
     public static void main(String[] args) {
         try {
-
-            IDatabaseConnection connectionMyHappyPlants1 = new DatabaseConnection("myHappyPlantsDB");
+            DatabaseConnection connectionMyHappyPlants1 = new DatabaseConnection("myHappyPlantsDB");
             IQueryExecutor databaseMyHappyPlants = new QueryExecutor(connectionMyHappyPlants1);
             UserRepository userRepository = new UserRepository(databaseMyHappyPlants);
             PlantRepository plantRepository = new PlantRepository(databaseMyHappyPlants);

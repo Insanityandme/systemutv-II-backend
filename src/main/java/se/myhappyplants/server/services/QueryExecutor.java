@@ -11,9 +11,9 @@ import java.sql.Statement;
  */
 public class QueryExecutor implements IQueryExecutor {
 
-    private IDatabaseConnection connection;
+    private DatabaseConnection connection;
 
-    public QueryExecutor(IDatabaseConnection connection) {
+    public QueryExecutor(DatabaseConnection connection) {
         this.connection = connection;
     }
 
