@@ -3,8 +3,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import se.myhappyplants.server.services.IQueryExecutor;
-import se.myhappyplants.server.services.UserRepository;
+import se.myhappyplants.server.services.*;
 
 import io.javalin.http.Context;
 import se.myhappyplants.shared.User;
@@ -14,7 +13,7 @@ import java.sql.SQLException;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
-public class UserRepositoryTest {
+public class UserDeleteAccTest {
 
     @Mock
     private IQueryExecutor database;
@@ -26,6 +25,10 @@ public class UserRepositoryTest {
 
     @BeforeEach
     public void setUp() {
+
+        IDatabaseConnection connectionMyHappyPlants1 = new DatabaseConnection("myHappyPlantsDB");
+        database = new QueryExecutor(connectionMyHappyPlants1);
+        userRepository = new UserRepository(database);
         ctx = mock(io.javalin.http.Context.class);
         userRepository = mock(UserRepository.class);
         MockitoAnnotations.openMocks(this);
