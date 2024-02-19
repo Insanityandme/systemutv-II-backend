@@ -152,58 +152,6 @@ public class Main {
         ctx.status(201);
     }
 
-    // Requirement: Need a requirement
-    @OpenApi(
-            summary = "Get user based on email",
-            operationId = "findByEmail",
-            path = "/v1/users",
-            methods = HttpMethod.GET,
-            tags = {"User"},
-            queryParams = {@OpenApiParam(name = "email", description = "The users email")},
-            responses = {
-                    @OpenApiResponse(status = "200", content = {@OpenApiContent(from = User.class)}),
-                    @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
-            }
-    )
-    public static void findByEmail(Context ctx) throws SQLException, JsonProcessingException {
-        String email = ctx.queryParam("email");
-
-        Connection database;
-        database = DbConnection.getInstance().getConnection();
-
-        User user = null;
-        int uniqueID = 0;
-        String username = null;
-        boolean notificationActivated = false;
-        boolean funFactsActivated = false;
-        String query = "SELECT id, username, notification_activated, fun_facts_activated FROM user WHERE email = ?;";
-
-        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
-            preparedStatement.setString(1, email);
-
-            ResultSet resultSet = preparedStatement.executeQuery();
-            while (resultSet.next()) {
-                uniqueID = resultSet.getInt("id");
-                username = resultSet.getString("username");
-                notificationActivated = resultSet.getBoolean("notification_activated");
-                funFactsActivated = resultSet.getBoolean("fun_facts_activated");
-            }
-            user = new User(uniqueID, email, username, notificationActivated, funFactsActivated);
-        } catch (SQLException sqlException) {
-            sqlException.printStackTrace();
-        }
-
-        ObjectMapper mapper = new ObjectMapper();
-        String json = mapper.writeValueAsString(user);
-        if (user != null) {
-            ctx.status(200);
-            ctx.result(String.valueOf(json));
-        } else {
-            ctx.status(404);
-            ctx.result("User not found");
-        }
-    }
-
     // Requirement: F.DP.3
     @OpenApi(
             summary = "Login",
