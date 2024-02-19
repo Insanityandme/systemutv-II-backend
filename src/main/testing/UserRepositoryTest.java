@@ -73,7 +73,7 @@ public class UserRepositoryTest {
 
         when(userRepository.checkLogin(email, password)).thenReturn(true);
 
-        boolean result = userRepository.deleteAccount( email, password);
+        boolean result = userRepository.deleteAccount(email, password);
 
         assertTrue(result);
 
