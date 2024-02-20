@@ -58,7 +58,7 @@ public class Main {
                     path("login", () -> {
                         post(Main::login);
                     });
-                    path("register" , () -> {
+                    path("register", () -> {
                         post(Main::createUser);
                     });
                     path("users", () -> {
@@ -96,7 +96,7 @@ public class Main {
                     @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
             }
     )
-    public static void getPlants(Context ctx) throws ExecutionException, InterruptedException {
+    public static void getPlants(Context ctx) {
         String TrefleKey = System.getenv("TREFLE_API_KEY");
 
         // for example when you want to search for a plant called "rose"
@@ -113,7 +113,12 @@ public class Main {
         CompletableFuture<HttpResponse<String>> response =
                 client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
 
-        HttpResponse<String> result = response.get();
+        HttpResponse<String> result;
+        try {
+            result = response.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
 
         ctx.result(result.body());
     }
@@ -349,39 +354,41 @@ public class Main {
                     @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
             }
     )
-    public static void deleteUser(Context ctx) throws SQLException {
+    public static void deleteUser(Context ctx) {
         int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
 
-        boolean accountDeleted;
         Connection database;
-        database = DbConnection.getInstance().getConnection();
+        try {
+            database = DbConnection.getInstance().getConnection();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
 
         String queryDeletePlants = "DELETE FROM Plant WHERE user_id = ?;";
         String queryDeleteUser = "DELETE FROM User WHERE id = ?;";
 
         try (PreparedStatement preparedStatementDeletePlants = database.prepareStatement(queryDeletePlants);
              PreparedStatement preparedStatementDeleteUser = database.prepareStatement(queryDeleteUser)) {
-
             preparedStatementDeletePlants.setInt(1, userId);
             preparedStatementDeleteUser.setInt(1, userId);
 
             database.setAutoCommit(false);
-            preparedStatementDeletePlants.executeUpdate();
-            preparedStatementDeleteUser.executeUpdate();
-            database.commit();
-
-            accountDeleted = true;
+            int deleteUser = preparedStatementDeleteUser.executeUpdate();
+            if (deleteUser == 0) {
+                throw new NotFoundResponse("User not found");
+            } else {
+                preparedStatementDeletePlants.executeUpdate();
+                database.commit();
+            }
         } catch (SQLException sqlException) {
-            database.rollback();
-            sqlException.printStackTrace();
-            throw new InternalServerErrorResponse("Failed to delete user");
+            try {
+                database.rollback();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
         }
 
-        if (!accountDeleted) {
-            throw new NotFoundResponse("User not found");
-        } else {
-            ctx.status(204);
-        }
+        ctx.status(204);
     }
 
 }
