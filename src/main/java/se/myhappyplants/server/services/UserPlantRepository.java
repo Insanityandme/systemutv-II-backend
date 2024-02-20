@@ -252,6 +252,7 @@ public class UserPlantRepository {
         return nicknameChanged;
     }
 
+
     public boolean changeAllToWatered(User user) {
         boolean dateChanged = false;
         LocalDate date = java.time.LocalDate.now();

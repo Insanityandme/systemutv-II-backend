@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
-import io.javalin.http.InternalServerErrorResponse;
 import io.javalin.http.NotFoundResponse;
 import io.javalin.openapi.*;
 import io.javalin.openapi.plugin.OpenApiPlugin;
@@ -15,9 +14,9 @@ import org.mindrot.jbcrypt.BCrypt;
 
 import se.myhappyplants.javalin.login.NewLoginRequest;
 import se.myhappyplants.javalin.plant.NewPlantRequest;
+import se.myhappyplants.javalin.plant.Plant;
 import se.myhappyplants.javalin.plant.TreflePlant;
 import se.myhappyplants.javalin.user.NewUserRequest;
-import se.myhappyplants.javalin.utils.DbConnection;
 import se.myhappyplants.javalin.user.User;
 
 import java.net.URI;
@@ -25,10 +24,12 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.sql.*;
+import java.time.LocalDate;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static io.javalin.apibuilder.ApiBuilder.*;
+import static se.myhappyplants.javalin.utils.Helper.*;
 
 public class Main {
     public static void main(String[] args) {
@@ -62,8 +63,11 @@ public class Main {
                         path("{id}", () -> {
                             delete(Main::deleteUser);
                             path("plants", () -> {
+                                patch(Main::updateAllPlants);
                                 path("{plantId}", () -> {
+                                    get(Main::getPlant);
                                     patch(Main::updatePlant);
+                                    delete(Main::deletePlant);
                                 });
                                 post(Main::savePlant);
                             });
@@ -197,7 +201,7 @@ public class Main {
         }
     }
 
-    // Requirement: needs a new requirement
+    // Requirement: F.DP.7
     @OpenApi(
             summary = "Update plant by ID",
             operationId = "updatePlantById",
@@ -240,14 +244,171 @@ public class Main {
                 } catch (SQLException sqlException) {
                     sqlException.printStackTrace();
                 }
+            } else if (jsonNode.get("image_url") != null) {
+                String imageURL = jsonNode.get("image_url").asText();
+                String query = "UPDATE plant SET image_url = ? WHERE user_id = ? AND id = ?;";
+
+                try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+                    preparedStatement.setString(1, imageURL);
+                    preparedStatement.setInt(2, userId);
+                    preparedStatement.setInt(3, plantId);
+                    preparedStatement.executeUpdate();
+
+                    String json = String.format("{\"imageURL\": \"%s\"}", imageURL);
+                    ctx.result(json);
+                    ctx.status(200);
+                } catch (SQLException sqlException) {
+                    sqlException.printStackTrace();
+                }
             } else if (jsonNode.get("lastWatered") != null) {
-                String lastWatered = jsonNode.get("lastWatered").asText();
+                LocalDate date = LocalDate.parse(jsonNode.get("lastWatered").asText());
+                String query = "UPDATE plant SET last_watered = ? WHERE user_id = ? AND id = ?;";
+
+                try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+                    preparedStatement.setDate(1, Date.valueOf(date));
+                    preparedStatement.setInt(2, userId);
+                    preparedStatement.setInt(3, plantId);
+                    preparedStatement.executeUpdate();
+
+                    String json = String.format("{\"lastWatered\": \"%s\"}", date);
+                    ctx.result(json);
+                    ctx.status(200);
+                } catch (SQLException sqlException) {
+                    sqlException.printStackTrace();
+                }
             }
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
+    }
 
-        // TODO send back the updated plant data to the client
+    // Requirement: F.DP.9
+    @OpenApi(
+            summary = "Update all plants by user ID",
+            operationId = "updateAllPlants",
+            path = "/v1/users/{id}/plants",
+            methods = HttpMethod.PATCH,
+            pathParams = {
+                    @OpenApiParam(name = "id", type = Integer.class, description = "The user ID"),
+            },
+            tags = {"User"},
+            requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = NewPlantRequest.class)}),
+            responses = {
+                    @OpenApiResponse(status = "200"),
+                    @OpenApiResponse(status = "400", content = {@OpenApiContent(from = ErrorResponse.class)}),
+                    @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
+            }
+    )
+    public static void updateAllPlants(Context ctx) {
+        int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+
+        Connection database = getConnection();
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode jsonNode = objectMapper.readTree(ctx.body());
+
+            if (jsonNode.get("lastWatered") != null) {
+                LocalDate date = java.time.LocalDate.now();
+                String query = "UPDATE plant SET last_watered = ? WHERE user_id = ?;";
+                try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+                    preparedStatement.setDate(1, Date.valueOf(date));
+                    preparedStatement.setInt(2, userId);
+                    preparedStatement.executeUpdate();
+
+                    String json = String.format("{\"lastWatered\": \"%s\"}", date);
+                    ctx.result(json);
+                    ctx.status(200);
+                } catch (SQLException sqlException) {
+                    sqlException.printStackTrace();
+                }
+            }
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // Requirement: F.DP.8
+    @OpenApi(
+            summary = "Delete plant by ID",
+            operationId = "deletePlantById",
+            path = "/v1/users/{id}/plants/{plantId}",
+            methods = HttpMethod.DELETE,
+            pathParams = {
+                    @OpenApiParam(name = "id", type = Integer.class, description = "The user ID"),
+                    @OpenApiParam(name = "plantId", type = Integer.class, description = "The plant ID"),
+            },
+            tags = {"User"},
+            responses = {
+                    @OpenApiResponse(status = "204"),
+                    @OpenApiResponse(status = "400", content = {@OpenApiContent(from = ErrorResponse.class)}),
+                    @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
+            }
+    )
+    public static void deletePlant(Context ctx) {
+        int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+        int plantId = ctx.pathParamAsClass("plantId", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+
+        Connection database = getConnection();
+        String query = "DELETE FROM plant WHERE user_id = ? AND id = ?;";
+
+        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+            preparedStatement.setInt(1, userId);
+            preparedStatement.setInt(2, plantId);
+            int deleted = preparedStatement.executeUpdate();
+            if (deleted == 0) {
+                throw new NotFoundResponse("Plant not found");
+            }
+
+            ctx.status(204);
+        } catch (SQLException sqlException) {
+            sqlException.printStackTrace();
+        }
+    }
+
+    // Requirement: F.DP.10
+    @OpenApi(
+            summary = "Get plant based on user ID and plant ID",
+            operationId = "getPlant",
+            path = "/v1/users/{id}/plants/{plantId}",
+            methods = HttpMethod.GET,
+            tags = {"User"},
+            pathParams = {
+                    @OpenApiParam(name = "id", type = Integer.class, description = "The user ID"),
+                    @OpenApiParam(name = "plantId", description = "The plant ID")},
+            responses = {
+                    @OpenApiResponse(status = "200", content = {@OpenApiContent(from = Plant.class)}),
+                    @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
+            }
+    )
+    public static void getPlant(Context ctx) {
+        int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+        int plantId = ctx.pathParamAsClass("plantId", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+
+        Connection database = getConnection();
+        String query = "SELECT * FROM plant WHERE user_id = ? AND id = ?;";
+
+        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+            preparedStatement.setInt(1, userId);
+            preparedStatement.setInt(2, plantId);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                String nickname = resultSet.getString("nickname");
+                String plantIdString = resultSet.getString("plant_id");
+                Date lastWatered = resultSet.getDate("last_watered");
+                String imageURL = resultSet.getString("image_url");
+
+                long waterFrequency = getWaterFrequency(plantIdString);
+                Plant plant = new Plant(nickname, plantIdString, lastWatered, waterFrequency, imageURL);
+
+                String json = objecToJson(plant);
+                ctx.result(json);
+                ctx.status(200);
+            } else {
+                throw new NotFoundResponse("Plant not found");
+            }
+        } catch (SQLException sqlException) {
+            sqlException.printStackTrace();
+        }
     }
 
     /**
@@ -387,32 +548,4 @@ public class Main {
 
         ctx.status(204);
     }
-
-    /**
-     * HELPER METHODS
-     */
-    public static Connection getConnection() {
-        Connection database;
-
-        try {
-            database = DbConnection.getInstance().getConnection();
-        } catch (SQLException e) {
-            throw new InternalServerErrorResponse("Unable to establish connection to database");
-        }
-        return database;
-    }
-
-    public static String objecToJson(Object object) {
-        ObjectMapper mapper = new ObjectMapper();
-        String json;
-
-        try {
-            json = mapper.writeValueAsString(object);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-
-        return json;
-    }
-
 }
