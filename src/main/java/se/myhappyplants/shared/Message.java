@@ -1,7 +1,6 @@
 package se.myhappyplants.shared;
 
-import se.myhappyplants.javalin.plants.Plant;
-import se.myhappyplants.javalin.plants.PlantDetails;
+import se.myhappyplants.javalin.plant.Plant;
 
 import java.io.Serializable;
 import java.time.LocalDate;

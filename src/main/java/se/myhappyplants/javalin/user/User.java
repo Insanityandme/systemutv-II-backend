@@ -11,54 +11,26 @@ public class User {
     private boolean isNotificationsActivated = true;
     private boolean funFactsActivated = true;
 
-    /**
-     * Constructor used when registering a new user account
-     *
-     * @param email
-     * @param username
-     * @param password
-     * @param isNotificationsActivated
-     */
-    public User(String email, String username, String password, boolean isNotificationsActivated) {
+    public User(String email, String username, String password, String avatarURL, boolean isNotificationsActivated, boolean funFactsActivated) {
         this.email = email;
         this.username = username;
         this.password = password;
+        this.avatarURL = avatarURL;
         this.isNotificationsActivated = isNotificationsActivated;
+        this.funFactsActivated = funFactsActivated;
     }
 
-    /**
-     * Simple constructor for login requests
-     *
-     * @param email
-     * @param password
-     */
-    public User(String email, String password) {
-        this.email = email;
-        this.password = password;
-    }
-
-    public User(int uniqueID, String email, String username, boolean notificationsActivated) {
-        this.id = uniqueID;
-        this.email = email;
-        this.username = username;
-        this.isNotificationsActivated = notificationsActivated;
-    }
-
-    /**
-     * Constructor used to return a users details from the database
-     *
-     * @param id                 A user's unique id in the database
-     * @param email                    Email address
-     * @param username                 Username
-     * @param isNotificationsActivated True if notifications wanted
-     * @param funFactsActivated        True if fun facts wanted
-     */
     public User(int id, String email, String username, boolean isNotificationsActivated, boolean funFactsActivated) {
         this.id = id;
         this.email = email;
         this.username = username;
         this.isNotificationsActivated = isNotificationsActivated;
         this.funFactsActivated = funFactsActivated;
+    }
+
+    public User(String email, String username) {
+        this.email = email;
+        this.username = username;
     }
 
     public int getId() {

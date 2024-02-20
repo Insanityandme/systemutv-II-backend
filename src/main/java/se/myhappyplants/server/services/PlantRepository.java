@@ -1,8 +1,8 @@
 package se.myhappyplants.server.services;
 
+import se.myhappyplants.shared.PlantDetails;
 import se.myhappyplants.shared.WaterCalculator;
-import se.myhappyplants.javalin.plants.Plant;
-import se.myhappyplants.javalin.plants.PlantDetails;
+import se.myhappyplants.javalin.plant.Plant;
 
 import java.io.IOException;
 import java.sql.PreparedStatement;
@@ -55,7 +55,7 @@ public class PlantRepository {
         String query = "SELECT * FROM plantdetails WHERE plant_id = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
-            preparedStatement.setString(1, plant.getPlantId());
+            preparedStatement.setString(1, plant.getId());
 
             ResultSet resultSet = preparedStatement.executeQuery();
 
@@ -71,7 +71,7 @@ public class PlantRepository {
 
                 details = new PlantDetails(genus, scientificName, light, waterFrequency, family);
             } else {
-                System.out.println("No results found for plant_id: " + plant.getPlantId());
+                System.out.println("No results found for plant_id: " + plant.getId());
             }
         } catch (SQLException sqlException) {
             sqlException.printStackTrace();

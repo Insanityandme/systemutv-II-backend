@@ -1,6 +1,7 @@
 package se.myhappyplants.javalin;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
@@ -13,9 +14,8 @@ import io.javalin.plugin.bundled.CorsPluginConfig;
 import org.mindrot.jbcrypt.BCrypt;
 
 import se.myhappyplants.javalin.login.NewLoginRequest;
-import se.myhappyplants.javalin.plants.NewPlantDetailsRequest;
-import se.myhappyplants.javalin.plants.NewPlantRequest;
-import se.myhappyplants.javalin.plants.Plant;
+import se.myhappyplants.javalin.plant.NewPlantRequest;
+import se.myhappyplants.javalin.plant.TreflePlant;
 import se.myhappyplants.javalin.user.NewUserRequest;
 import se.myhappyplants.javalin.utils.DbConnection;
 import se.myhappyplants.javalin.user.User;
@@ -24,10 +24,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -92,7 +89,7 @@ public class Main {
             tags = {"Plants"},
             queryParams = {@OpenApiParam(name = "plant", description = "The plant name")},
             responses = {
-                    @OpenApiResponse(status = "200", content = {@OpenApiContent(from = Plant[].class)}),
+                    @OpenApiResponse(status = "200", content = {@OpenApiContent(from = TreflePlant[].class)}),
                     @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
             }
     )
@@ -123,7 +120,6 @@ public class Main {
         ctx.result(result.body());
     }
 
-    // TODO: when creating a new plant make sure you send all data back to the client
     // Requirement: F.DP.2
     @OpenApi(
             summary = "Add plant to user",
@@ -131,10 +127,8 @@ public class Main {
             path = "/v1/users/{id}/plants",
             methods = HttpMethod.POST,
             tags = {"User"},
-            requestBody = @OpenApiRequestBody(content = {
-                    @OpenApiContent(from = NewPlantDetailsRequest.class),
-                    @OpenApiContent(from = NewPlantRequest.class),
-            }),
+            pathParams = {@OpenApiParam(name = "id", type = Integer.class, description = "The user ID")},
+            requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = NewPlantRequest.class)}),
             responses = {
                     @OpenApiResponse(status = "201"),
                     @OpenApiResponse(status = "400", content = {@OpenApiContent(from = ErrorResponse.class)})
@@ -143,18 +137,10 @@ public class Main {
     public static void savePlant(Context ctx) {
         int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
         NewPlantRequest plant = ctx.bodyAsClass(NewPlantRequest.class);
-        NewPlantDetailsRequest details = ctx.bodyAsClass(NewPlantDetailsRequest.class);
+        boolean isCreated = false;
+        Connection database = getConnection();
 
-        Connection database;
-        try {
-            database = DbConnection.getInstance().getConnection();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-
-        boolean success = false;
         String sqlSafeNickname = plant.nickname.replace("'", "''");
-
         String plantQuery = "INSERT INTO plant (user_id, nickname, plant_id, last_watered, image_url) VALUES (?, ?, ?, ?, ?);";
         String detailsQuery = "INSERT INTO plantdetails (scientific_name, genus, family, common_name, image_url, light, url_wikipedia_en, water_frequency, plant_id)" +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);";
@@ -163,7 +149,7 @@ public class Main {
             plantStatement.setInt(1, userId);
             plantStatement.setString(2, sqlSafeNickname);
             plantStatement.setString(3, plant.id);
-            plantStatement.setDate(4, plant.lastWatered);
+            plantStatement.setDate(4, Date.valueOf(plant.lastWatered));
             plantStatement.setString(5, plant.imageURL);
             plantStatement.executeUpdate();
 
@@ -183,9 +169,9 @@ public class Main {
 
             if (!doesPlantDetailExist) {
                 try (PreparedStatement detailsStatement = database.prepareStatement(detailsQuery)) {
-                    detailsStatement.setString(1, details.scientificName);
-                    detailsStatement.setString(2, details.genus);
-                    detailsStatement.setString(3, details.family);
+                    detailsStatement.setString(1, plant.scientificName);
+                    detailsStatement.setString(2, plant.genus);
+                    detailsStatement.setString(3, plant.family);
                     detailsStatement.setString(4, plant.commonName);
                     detailsStatement.setString(5, plant.imageURL);
                     detailsStatement.setString(6, "0");
@@ -193,12 +179,21 @@ public class Main {
                     detailsStatement.setString(8, "0");
                     detailsStatement.setString(9, plant.id);
                     detailsStatement.executeUpdate();
+
+                    isCreated = true;
                 }
             }
+        } catch (SQLException exception) {
+            exception.printStackTrace();
+        }
 
-            success = true;
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
+        if (isCreated) {
+            String json = objecToJson(plant);
+            ctx.result(json);
+            ctx.status(200);
+        } else {
+            ctx.status(404);
+            ctx.result("You already have a plant with that nickname");
         }
     }
 
@@ -221,8 +216,36 @@ public class Main {
             }
     )
     public static void updatePlant(Context ctx) {
-        // TODO make a switch case for the different fields that can be updated
-        // Depending on the body of the request, update the plant accordingly
+        int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+        int plantId = ctx.pathParamAsClass("plantId", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+
+        Connection database = getConnection();
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode jsonNode = objectMapper.readTree(ctx.body());
+
+            if (jsonNode.get("nickname") != null) {
+                String nickname = jsonNode.get("nickname").asText();
+                String sqlSafeNewNickname = nickname.replace("'", "''");
+                String query = "UPDATE plant SET nickname = ? WHERE user_id = ? AND id = ?;";
+                try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+                    preparedStatement.setString(1, sqlSafeNewNickname);
+                    preparedStatement.setInt(2, userId);
+                    preparedStatement.setInt(3, plantId);
+                    preparedStatement.executeUpdate();
+
+                    String json = String.format("{\"nickname\": \"%s\"}", nickname);
+                    ctx.result(json);
+                    ctx.status(200);
+                } catch (SQLException sqlException) {
+                    sqlException.printStackTrace();
+                }
+            } else if (jsonNode.get("lastWatered") != null) {
+                String lastWatered = jsonNode.get("lastWatered").asText();
+            }
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
 
         // TODO send back the updated plant data to the client
     }
@@ -245,13 +268,7 @@ public class Main {
     )
     public static void createUser(Context ctx) {
         NewUserRequest user = ctx.bodyAsClass(NewUserRequest.class);
-        Connection database;
-
-        try {
-            database = DbConnection.getInstance().getConnection();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        Connection database = getConnection();
 
         String hashedPassword = BCrypt.hashpw(user.password, BCrypt.gensalt());
         String sqlSafeUsername = user.username.replace("'", "''");
@@ -285,15 +302,8 @@ public class Main {
             }
     )
     public static void login(Context ctx) {
-        NewLoginRequest login = ctx.bodyAsClass(NewLoginRequest.class);
-
-        Connection database;
-
-        try {
-            database = DbConnection.getInstance().getConnection();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        NewLoginRequest newLoginRequest = ctx.bodyAsClass(NewLoginRequest.class);
+        Connection database = getConnection();
 
         boolean isVerified = false;
         User user = null;
@@ -305,33 +315,25 @@ public class Main {
         String query = "SELECT id, username, password, notification_activated, fun_facts_activated FROM user WHERE email = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
-            preparedStatement.setString(1, login.email);
+            preparedStatement.setString(1, newLoginRequest.email);
 
             ResultSet resultSet = preparedStatement.executeQuery();
             if (resultSet.next()) {
                 String hashedPassword = resultSet.getString("password");
-                isVerified = BCrypt.checkpw(login.password, hashedPassword);
+                isVerified = BCrypt.checkpw(newLoginRequest.password, hashedPassword);
 
                 id = resultSet.getInt("id");
                 username = resultSet.getString("username");
                 notificationActivated = resultSet.getBoolean("notification_activated");
                 funFactsActivated = resultSet.getBoolean("fun_facts_activated");
             }
-            user = new User(id, login.email, username, notificationActivated, funFactsActivated);
+            user = new User(id, newLoginRequest.email, username, notificationActivated, funFactsActivated);
         } catch (SQLException sqlException) {
             sqlException.printStackTrace();
         }
 
         if (isVerified) {
-            ObjectMapper mapper = new ObjectMapper();
-            String json;
-
-            try {
-                json = mapper.writeValueAsString(user);
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
-            }
-
+            String json = objecToJson(user);
             ctx.result(json);
             ctx.status(200);
         } else {
@@ -357,12 +359,7 @@ public class Main {
     public static void deleteUser(Context ctx) {
         int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
 
-        Connection database;
-        try {
-            database = DbConnection.getInstance().getConnection();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        Connection database = getConnection();
 
         String queryDeletePlants = "DELETE FROM Plant WHERE user_id = ?;";
         String queryDeleteUser = "DELETE FROM User WHERE id = ?;";
@@ -389,6 +386,33 @@ public class Main {
         }
 
         ctx.status(204);
+    }
+
+    /**
+     * HELPER METHODS
+     */
+    public static Connection getConnection() {
+        Connection database;
+
+        try {
+            database = DbConnection.getInstance().getConnection();
+        } catch (SQLException e) {
+            throw new InternalServerErrorResponse("Unable to establish connection to database");
+        }
+        return database;
+    }
+
+    public static String objecToJson(Object object) {
+        ObjectMapper mapper = new ObjectMapper();
+        String json;
+
+        try {
+            json = mapper.writeValueAsString(object);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
+        return json;
     }
 
 }

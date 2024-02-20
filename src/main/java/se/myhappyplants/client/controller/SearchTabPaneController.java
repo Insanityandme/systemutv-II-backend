@@ -21,9 +21,9 @@ import se.myhappyplants.client.view.MessageBox;
 import se.myhappyplants.client.view.PopupBox;
 import se.myhappyplants.client.view.SearchPlantPane;
 import se.myhappyplants.shared.Message;
-import se.myhappyplants.javalin.plants.Plant;
+import se.myhappyplants.javalin.plant.Plant;
 import se.myhappyplants.client.model.SetAvatar;
-import se.myhappyplants.javalin.plants.PlantDetails;
+import se.myhappyplants.shared.PlantDetails;
 
 import java.io.IOException;
 import java.net.URI;
@@ -289,7 +289,7 @@ public class SearchTabPaneController {
     //Tar hand om krav F.SI.1
     private int getIndexOfPlant(Plant plant) {
         for (int i = 0; i < searchResults.size(); i++) {
-            if (searchResults.get(i).getPlantId().equals(plant.getPlantId())) {
+            if (searchResults.get(i).getId().equals(plant.getId())) {
                 return i;
             }
         }

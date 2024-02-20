@@ -18,8 +18,7 @@ import se.myhappyplants.client.service.ServerConnection;
 import se.myhappyplants.client.view.LibraryPlantPane;
 import se.myhappyplants.client.view.MessageBox;
 import se.myhappyplants.client.view.PopupBox;
-import se.myhappyplants.javalin.plants.Plant;
-import se.myhappyplants.javalin.plants.PlantDetails;
+import se.myhappyplants.javalin.plant.Plant;
 import se.myhappyplants.shared.*;
 import se.myhappyplants.client.model.SetAvatar;
 
@@ -215,7 +214,7 @@ public class MyPlantsTabPaneController {
         }
         long currentDateMilli = System.currentTimeMillis();
         Date date = new Date(currentDateMilli);
-        Plant plantToAdd = new Plant(uniqueNickName, selectedPlant.getPlantId(), date,imageURL);
+        Plant plantToAdd = new Plant(uniqueNickName, selectedPlant.getId(), date,imageURL);
         PopupBox.display(MessageText.sucessfullyAddPlant.toString());
         addPlantToDB(plantToAdd,details);
     }

@@ -1,6 +1,6 @@
 package se.myhappyplants.client.view;
 
-import se.myhappyplants.javalin.plants.Plant;
+import se.myhappyplants.javalin.plant.Plant;
 
 /**
  * General methods to be used by all plant panes
