@@ -56,7 +56,10 @@ public class UserDeleteAccTest {
         userPlantRepositorySpy = spy(new UserPlantRepository(plantRepositorySpy, queryExecutorSpy));
         responseControllerSpy = spy(new ResponseController(userRepositorySpy, userPlantRepositorySpy, plantRepositorySpy));
         testUser = new User("test@gmail.com", "123", "123", true);
-        userRepositorySpy.saveUser(testUser);
+        if(!userRepositorySpy.checkLogin("test@gmail.com","123")){
+            userRepositorySpy.saveUser(testUser);
+        }
+
 
 
     }
@@ -70,7 +73,6 @@ public class UserDeleteAccTest {
 
     @Test
     public void deleteAccount_NonexistentUser_Failure() {
-
         boolean result = userRepositorySpy.deleteAccount("nonexistent@gmail.com", "password123");
         assertFalse(result);
 
@@ -92,6 +94,20 @@ public class UserDeleteAccTest {
     public void userTurnOffFunFacts(){
         boolean result = userRepositorySpy.changeFunFacts(testUser,false);
         assertTrue(result);
+    }
+
+    @Test
+    public void userTurnOnNotifications(){
+        boolean result = userRepositorySpy.changeNotifications(testUser,true);
+        assertTrue(result);
+
+    }
+
+    @Test
+    public void userTurnOffNotifications(){
+        boolean result = userRepositorySpy.changeNotifications(testUser,false);
+        assertTrue(result);
+
     }
 
 
