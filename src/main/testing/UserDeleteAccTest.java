@@ -1,20 +1,13 @@
-import io.javalin.http.BadRequestResponse;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import se.myhappyplants.server.controller.ResponseController;
 import se.myhappyplants.server.services.*;
-
-import io.javalin.http.Context;
 import se.myhappyplants.shared.User;
-
 import java.net.UnknownHostException;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
@@ -84,31 +77,7 @@ public class UserDeleteAccTest {
         assertFalse(result);
     }
 
-    @Test
-    public void userTurnOnFunFacts(){
-        boolean result = userRepositorySpy.changeFunFacts(testUser,true);
-        assertTrue(result);
-    }
 
-    @Test
-    public void userTurnOffFunFacts(){
-        boolean result = userRepositorySpy.changeFunFacts(testUser,false);
-        assertTrue(result);
-    }
-
-    @Test
-    public void userTurnOnNotifications(){
-        boolean result = userRepositorySpy.changeNotifications(testUser,true);
-        assertTrue(result);
-
-    }
-
-    @Test
-    public void userTurnOffNotifications(){
-        boolean result = userRepositorySpy.changeNotifications(testUser,false);
-        assertTrue(result);
-
-    }
 
 
 

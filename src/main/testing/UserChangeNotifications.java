@@ -12,7 +12,7 @@ import java.sql.SQLException;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.spy;
 
-public class UserChangeFunFacts {
+public class UserChangeNotifications {
 
     @Mock
     private IDatabaseConnection databaseConnectionMock;
@@ -40,6 +40,7 @@ public class UserChangeFunFacts {
 
     private User testUser;
 
+
     @BeforeEach
     public void setUp() throws UnknownHostException, SQLException {
         databaseConnectionSpy = spy(new DatabaseConnection("myHappyPlantsDBTEST"));
@@ -58,14 +59,18 @@ public class UserChangeFunFacts {
     }
 
     @Test
-    public void turnOnFunFacts(){
-        boolean result = userRepositorySpy.changeFunFacts(testUser,true);
+    public void turnOnNotifications(){
+        boolean result = userRepositorySpy.changeNotifications(testUser,true);
         assertTrue(result);
+
     }
 
     @Test
-    public void turnOffFunFacts(){
-        boolean result = userRepositorySpy.changeFunFacts(testUser,false);
+    public void turnOffNotifications(){
+        boolean result = userRepositorySpy.changeNotifications(testUser,false);
         assertTrue(result);
+
     }
+
+
 }
