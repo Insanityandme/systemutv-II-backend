@@ -110,7 +110,6 @@ public class Javalin {
             preparedStatement.setString(1, sqlSafeUsername);
             preparedStatement.setString(2, user.email);
             preparedStatement.setString(3, hashedPassword);
-
             try {
                 preparedStatement.executeUpdate();
                 ctx.status(201);
@@ -118,7 +117,6 @@ public class Javalin {
                 ctx.status(409);
                 ctx.result("User already exists");
             }
-
         } catch (SQLException sqlException) {
             sqlException.printStackTrace();
         }
@@ -195,36 +193,52 @@ public class Javalin {
     )
     public static void deleteUser(Context ctx) {
         int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
-        // "{"password": "the password"}"
-        // TODO: Add a check for the password
+        NewDeleteRequest deleteRequest = ctx.bodyAsClass(NewDeleteRequest.class);
 
         Connection database = getConnection();
+        String query = "SELECT password FROM user WHERE id = ?;";
 
-        String queryDeletePlants = "DELETE FROM Plant WHERE user_id = ?;";
-        String queryDeleteUser = "DELETE FROM User WHERE id = ?;";
+        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+            preparedStatement.setInt(1, userId);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                String hashedPassword = resultSet.getString("password");
+                boolean isVerified = BCrypt.checkpw(deleteRequest.password, hashedPassword);
 
-        try (PreparedStatement preparedStatementDeletePlants = database.prepareStatement(queryDeletePlants);
-             PreparedStatement preparedStatementDeleteUser = database.prepareStatement(queryDeleteUser)) {
-            preparedStatementDeletePlants.setInt(1, userId);
-            preparedStatementDeleteUser.setInt(1, userId);
+                if (isVerified) {
+                    String queryDeletePlants = "DELETE FROM Plant WHERE user_id = ?;";
+                    String queryDeleteUser = "DELETE FROM User WHERE id = ?;";
 
-            database.setAutoCommit(false);
-            int deleteUser = preparedStatementDeleteUser.executeUpdate();
-            if (deleteUser == 0) {
-                throw new NotFoundResponse("User not found");
-            } else {
-                preparedStatementDeletePlants.executeUpdate();
-                database.commit();
+                    try (PreparedStatement preparedStatementDeletePlants = database.prepareStatement(queryDeletePlants);
+                         PreparedStatement preparedStatementDeleteUser = database.prepareStatement(queryDeleteUser)) {
+                        preparedStatementDeletePlants.setInt(1, userId);
+                        preparedStatementDeleteUser.setInt(1, userId);
+
+                        database.setAutoCommit(false);
+                        int deleteUser = preparedStatementDeleteUser.executeUpdate();
+                        if (deleteUser == 0) {
+                            throw new NotFoundResponse("User not found");
+                        } else {
+                            preparedStatementDeletePlants.executeUpdate();
+                            database.commit();
+                        }
+                    } catch (SQLException sqlException) {
+                        try {
+                            database.rollback();
+                        } catch (SQLException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+
+                    ctx.status(204);
+                } else {
+                    ctx.status(400);
+                    ctx.result("Password incorrect");
+                }
             }
         } catch (SQLException sqlException) {
-            try {
-                database.rollback();
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
+            sqlException.printStackTrace();
         }
-
-        ctx.status(204);
     }
 
     // Requirement: F.DP.1
