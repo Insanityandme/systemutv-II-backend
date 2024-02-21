@@ -142,7 +142,6 @@ hs_err_pid*
 Icon
 
 # Ignore myHappyPlantsDB.db file and any .db files
-src/main/resources/myHappyPlantsDB.db
 *.db
 
 # Thumbnails
