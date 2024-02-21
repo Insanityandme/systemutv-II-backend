@@ -2,6 +2,7 @@ package se.myhappyplants.javalin.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.javalin.http.InternalServerErrorResponse;
 import se.myhappyplants.shared.WaterCalculator;
 
@@ -25,6 +26,9 @@ public class Helper {
 
     public static String objecToJson(Object object) {
         ObjectMapper mapper = new ObjectMapper();
+        // This is necessary for LocalDate objects to work with Jackson...
+        mapper.registerModule(new JavaTimeModule());
+
         String json;
 
         try {

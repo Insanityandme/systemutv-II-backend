@@ -16,6 +16,7 @@ import se.myhappyplants.javalin.login.NewLoginRequest;
 import se.myhappyplants.javalin.plant.NewPlantRequest;
 import se.myhappyplants.javalin.plant.Plant;
 import se.myhappyplants.javalin.plant.TreflePlant;
+import se.myhappyplants.javalin.user.NewDeleteRequest;
 import se.myhappyplants.javalin.user.NewUserRequest;
 import se.myhappyplants.javalin.user.User;
 import se.myhappyplants.javalin.utils.ErrorResponse;
@@ -185,6 +186,7 @@ public class Javalin {
             methods = HttpMethod.DELETE,
             pathParams = {@OpenApiParam(name = "id", type = Integer.class, description = "The user ID")},
             tags = {"User"},
+            requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = NewDeleteRequest.class)}),
             responses = {
                     @OpenApiResponse(status = "204"),
                     @OpenApiResponse(status = "400", content = {@OpenApiContent(from = ErrorResponse.class)}),
@@ -193,6 +195,8 @@ public class Javalin {
     )
     public static void deleteUser(Context ctx) {
         int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+        // "{"password": "the password"}"
+        // TODO: Add a check for the password
 
         Connection database = getConnection();
 
@@ -323,9 +327,10 @@ public class Javalin {
                     detailsStatement.setString(9, plant.id);
                     detailsStatement.executeUpdate();
 
-                    isCreated = true;
                 }
             }
+
+            isCreated = true;
         } catch (SQLException exception) {
             exception.printStackTrace();
         }
@@ -335,7 +340,7 @@ public class Javalin {
             ctx.result(json);
             ctx.status(200);
         } else {
-            ctx.status(404);
+            ctx.status(409);
             ctx.result("You already have a plant with that nickname");
         }
     }
