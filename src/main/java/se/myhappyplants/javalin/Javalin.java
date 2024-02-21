@@ -28,6 +28,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.sql.*;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -63,26 +64,26 @@ public class Javalin {
                         post(Javalin::createUser);
                     });
                     path("facts", () -> {
-                                path("{factId}", () -> {
-                                    get(Javalin::getFact);
+                        path("{factId}", () -> {
+                            get(Javalin::getFact);
+                        });
+                    });
+                    path("users", () -> {
+                        path("{id}", () -> {
+                            delete(Javalin::deleteUser);
+                            path("plants", () -> {
+                                // get(Javalin::getPlantByNickname);
+                                get(Javalin::getAllPlants);
+                                patch(Javalin::updateAllPlants);
+                                path("{plantId}", () -> {
+                                    get(Javalin::getPlant);
+                                    patch(Javalin::updatePlant);
+                                    delete(Javalin::deletePlant);
                                 });
+                                post(Javalin::savePlant);
                             });
-                            path("users", () -> {
-                                path("{id}", () -> {
-                                    delete(Javalin::deleteUser);
-                                    path("plants", () -> {
-                                        // get(Javalin::getPlantByNickname);
-                                        get(Javalin::getAllPlants);
-                                        patch(Javalin::updateAllPlants);
-                                        path("{plantId}", () -> {
-                                            get(Javalin::getPlant);
-                                            patch(Javalin::updatePlant);
-                                            delete(Javalin::deletePlant);
-                                        });
-                                        post(Javalin::savePlant);
-                                    });
-                                });
-                            });
+                        });
+                    });
                     path("plants", () -> {
                         get(Javalin::getPlants);
                     });
@@ -144,23 +145,34 @@ public class Javalin {
     )
     public static void getAllPlants(Context context) {
         int userId = context.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
-        ArrayList<Plant> plants = new ArrayList<>();
+        ArrayList<NewPlantRequest> plants = new ArrayList<>();
 
         Connection database = getConnection();
-        String query = "SELECT * FROM plant WHERE user_id = ?;";
+        String queryUserPlant = "SELECT * FROM plant WHERE user_id = ?;";
+        String queryPlantDetails = "SELECT * FROM plantdetails WHERE plant_id = ?";
 
-        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+        try (PreparedStatement preparedStatement = database.prepareStatement(queryUserPlant)) {
             preparedStatement.setInt(1, userId);
             ResultSet resultSet = preparedStatement.executeQuery();
+            NewPlantRequest plant = new NewPlantRequest();
             while (resultSet.next()) {
-                String nickname = resultSet.getString("nickname");
-                String plantId = resultSet.getString("plant_id");
-                Date lastWatered = resultSet.getDate("last_watered");
-                String imageURL = resultSet.getString("image_url");
-                long waterFrequency = getWaterFrequency(plantId);
-                Plant plant = new Plant(nickname, plantId, lastWatered, waterFrequency, imageURL);
-                plants.add(plant);
+                plant.id = resultSet.getString("plant_id");
+                plant.nickname = resultSet.getString("nickname");
+                plant.lastWatered = resultSet.getDate("last_watered");
+                plant.imageURL = resultSet.getString("image_url");
+
+                try (PreparedStatement preparedStatement2 = database.prepareStatement(queryPlantDetails)) {
+                    preparedStatement2.setString(1, plant.id);
+                    ResultSet resultSet2 = preparedStatement2.executeQuery();
+                    plant.commonName = resultSet2.getString("common_name");
+                    plant.scientificName = resultSet2.getString("scientific_name");
+                    plant.genus = resultSet2.getString("genus");
+                    plant.family = resultSet2.getString("family");
+                    plant.waterFrequency = getWaterFrequency(plant.id);
+                    plant.light = resultSet2.getInt("light");
+                }
             }
+            plants.add(plant);
         } catch (SQLException sqlException) {
             sqlException.printStackTrace();
         }
@@ -396,7 +408,7 @@ public class Javalin {
             plantStatement.setInt(1, userId);
             plantStatement.setString(2, sqlSafeNickname);
             plantStatement.setString(3, plant.id);
-            plantStatement.setDate(4, Date.valueOf(plant.lastWatered));
+            plantStatement.setDate(4, plant.lastWatered);
             plantStatement.setString(5, plant.imageURL);
             plantStatement.executeUpdate();
 
@@ -426,7 +438,6 @@ public class Javalin {
                     detailsStatement.setString(8, "0");
                     detailsStatement.setString(9, plant.id);
                     detailsStatement.executeUpdate();
-
                 }
             }
 

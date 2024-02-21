@@ -2,17 +2,17 @@ package se.myhappyplants.javalin.plant;
 
 import se.myhappyplants.client.model.PictureRandomizer;
 
-import java.time.LocalDate;
+import java.sql.Date;
+
 
 public class NewPlantRequest {
     public String id;
     public String commonName;
 
     public String scientificName;
-    public String familyName;
     public String imageURL;
     public String nickname;
-    public LocalDate lastWatered;
+    public Date lastWatered;
     public long waterFrequency;
     public String genus;
     public int light;
@@ -21,12 +21,11 @@ public class NewPlantRequest {
     public NewPlantRequest() {
     }
 
-    public NewPlantRequest(String id, String commonName, String scientificName, String familyName, String imageURL,
-                           String nickname, LocalDate lastWatered, long waterFrequency, int light, String genus, String family) {
+    public NewPlantRequest(String id, String commonName, String scientificName, String imageURL,
+                           String nickname, Date lastWatered, long waterFrequency, int light, String genus, String family) {
         this.id = id;
         this.commonName = commonName;
         this.scientificName = scientificName;
-        this.familyName = familyName;
         this.imageURL = imageURL;
         this.nickname = nickname;
         this.lastWatered = lastWatered;
@@ -58,14 +57,6 @@ public class NewPlantRequest {
 
     public void setFamily(String family) {
         this.family = family;
-    }
-
-    public String getFamilyName() {
-        return familyName;
-    }
-
-    public void setFamilyName(String familyName) {
-        this.familyName = familyName;
     }
 
     public String getGenus() {
@@ -112,11 +103,11 @@ public class NewPlantRequest {
         this.scientificName = scientificName;
     }
 
-    public LocalDate getLastWatered() {
+    public Date getLastWatered() {
         return lastWatered;
     }
 
-    public void setLastWatered(LocalDate date) {
+    public void setLastWatered(Date date) {
         this.lastWatered = date;
     }
 
@@ -128,7 +119,7 @@ public class NewPlantRequest {
     public String toString() {
         return String.format("Plant: %s, %s, %s, %s, %s, %s, %s, %s, %s, %s",
                 id, commonName, scientificName,
-                familyName, imageURL, nickname,
+                imageURL, nickname,
                 lastWatered, waterFrequency, light, genus, family);
     }
 
