@@ -27,6 +27,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.sql.*;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -65,7 +66,8 @@ public class Javalin {
                         path("{id}", () -> {
                             delete(Javalin::deleteUser);
                             path("plants", () -> {
-                                get(Javalin::getPlantByNickname);
+                                // get(Javalin::getPlantByNickname);
+                                get(Javalin::getAllPlants);
                                 patch(Javalin::updateAllPlants);
                                 path("{plantId}", () -> {
                                     get(Javalin::getPlant);
@@ -82,6 +84,47 @@ public class Javalin {
                 });
             });
         }).start(7002);
+    }
+
+    // Requirement: F.DP.4
+    @OpenApi(
+            summary = "Get all plants",
+            operationId = "getAllPlants",
+            path = "/v1/users/{id}/plants",
+            pathParams = {@OpenApiParam(name = "id", type = Integer.class, description = "The user ID")},
+            methods = HttpMethod.GET,
+            tags = {"User"},
+            responses = {
+                    @OpenApiResponse(status = "200", content = {@OpenApiContent(from = Plant[].class)}),
+                    @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
+            }
+    )
+    public static void getAllPlants(Context context) {
+        int userId = context.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+        ArrayList<Plant> plants = new ArrayList<>();
+
+        Connection database = getConnection();
+        String query = "SELECT * FROM plant WHERE user_id = ?;";
+
+        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+            preparedStatement.setInt(1, userId);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                String nickname = resultSet.getString("nickname");
+                String plantId = resultSet.getString("plant_id");
+                Date lastWatered = resultSet.getDate("last_watered");
+                String imageURL = resultSet.getString("image_url");
+                long waterFrequency = getWaterFrequency(plantId);
+                Plant plant = new Plant(nickname, plantId, lastWatered, waterFrequency, imageURL);
+                plants.add(plant);
+            }
+        } catch (SQLException sqlException) {
+            sqlException.printStackTrace();
+        }
+
+        String json = objecToJson(plants);
+        context.result(json);
+        context.status(200);
     }
 
     // Requirement: F.DP.4
@@ -569,52 +612,52 @@ public class Javalin {
         }
     }
 
-    // Requirement:
-    @OpenApi(
-            summary = "Get plant based on user ID and plant nickname",
-            operationId = "getPlant",
-            path = "/v1/users/{id}/plants?nickname=",
-            methods = HttpMethod.GET,
-            tags = {"User"},
-            pathParams = {
-                    @OpenApiParam(name = "id", type = Integer.class, description = "The user ID"),
-            },
-            queryParams = {
-                    @OpenApiParam(name = "nickname", description = "The plant name"),
-            },
-            responses = {
-                    @OpenApiResponse(status = "200", content = {@OpenApiContent(from = Plant.class)}),
-                    @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
-            }
-    )
-    public static void getPlantByNickname(Context ctx) {
-        int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
-        String nickname = ctx.queryParamAsClass("nickname", String.class).check(Objects::nonNull, "You must choose a name").get();
+    // // Requirement:
+    // @OpenApi(
+    //         summary = "Get plant based on user ID and plant nickname",
+    //         operationId = "getPlant",
+    //         path = "/v1/users/{id}/plants?nickname=",
+    //         methods = HttpMethod.GET,
+    //         tags = {"User"},
+    //         pathParams = {
+    //                 @OpenApiParam(name = "id", type = Integer.class, description = "The user ID"),
+    //         },
+    //         queryParams = {
+    //                 @OpenApiParam(name = "nickname", description = "The plant name"),
+    //         },
+    //         responses = {
+    //                 @OpenApiResponse(status = "200", content = {@OpenApiContent(from = Plant.class)}),
+    //                 @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
+    //         }
+    // )
+    // public static void getPlantByNickname(Context ctx) {
+    //     int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+    //     String nickname = ctx.queryParamAsClass("nickname", String.class).check(Objects::nonNull, "You must choose a name").get();
 
-        Connection database = getConnection();
-        String sqlSafeNickname = nickname.replace("'", "''");
-        String query = "SELECT nickname, plant_id, last_watered, image_url FROM plant WHERE user_id = ? AND nickname = ?;";
+    //     Connection database = getConnection();
+    //     String sqlSafeNickname = nickname.replace("'", "''");
+    //     String query = "SELECT nickname, plant_id, last_watered, image_url FROM plant WHERE user_id = ? AND nickname = ?;";
 
-        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
-            preparedStatement.setInt(1, userId);
-            preparedStatement.setString(2, sqlSafeNickname);
-            ResultSet resultSet = preparedStatement.executeQuery();
+    //     try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+    //         preparedStatement.setInt(1, userId);
+    //         preparedStatement.setString(2, sqlSafeNickname);
+    //         ResultSet resultSet = preparedStatement.executeQuery();
 
-            if (resultSet.next()) {
-                String plantId = resultSet.getString("plant_id");
-                Date lastWatered = resultSet.getDate("last_watered");
-                String imageURL = resultSet.getString("image_url");
-                long waterFrequency = getWaterFrequency(plantId);
-                Plant plant = new Plant(nickname, plantId, lastWatered, waterFrequency, imageURL);
+    //         if (resultSet.next()) {
+    //             String plantId = resultSet.getString("plant_id");
+    //             Date lastWatered = resultSet.getDate("last_watered");
+    //             String imageURL = resultSet.getString("image_url");
+    //             long waterFrequency = getWaterFrequency(plantId);
+    //             Plant plant = new Plant(nickname, plantId, lastWatered, waterFrequency, imageURL);
 
-                String json = objecToJson(plant);
-                ctx.result(json);
-                ctx.status(200);
-            } else {
-                throw new NotFoundResponse("Plant not found");
-            }
-        } catch (SQLException sqlException) {
-            sqlException.printStackTrace();
-        }
-    }
+    //             String json = objecToJson(plant);
+    //             ctx.result(json);
+    //             ctx.status(200);
+    //         } else {
+    //             throw new NotFoundResponse("Plant not found");
+    //         }
+    //     } catch (SQLException sqlException) {
+    //         sqlException.printStackTrace();
+    //     }
+    // }
 }
