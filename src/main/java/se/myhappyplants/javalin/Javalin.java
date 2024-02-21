@@ -13,6 +13,7 @@ import io.javalin.plugin.bundled.CorsPluginConfig;
 import org.mindrot.jbcrypt.BCrypt;
 import org.sqlite.SQLiteException;
 import se.myhappyplants.javalin.login.NewLoginRequest;
+import se.myhappyplants.javalin.plant.Fact;
 import se.myhappyplants.javalin.plant.NewPlantRequest;
 import se.myhappyplants.javalin.plant.Plant;
 import se.myhappyplants.javalin.plant.TreflePlant;
@@ -28,7 +29,6 @@ import java.net.http.HttpResponse;
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -62,28 +62,71 @@ public class Javalin {
                     path("register", () -> {
                         post(Javalin::createUser);
                     });
-                    path("users", () -> {
-                        path("{id}", () -> {
-                            delete(Javalin::deleteUser);
-                            path("plants", () -> {
-                                // get(Javalin::getPlantByNickname);
-                                get(Javalin::getAllPlants);
-                                patch(Javalin::updateAllPlants);
-                                path("{plantId}", () -> {
-                                    get(Javalin::getPlant);
-                                    patch(Javalin::updatePlant);
-                                    delete(Javalin::deletePlant);
+                    path("facts", () -> {
+                                path("{factId}", () -> {
+                                    get(Javalin::getFact);
                                 });
-                                post(Javalin::savePlant);
                             });
-                        });
-                    });
+                            path("users", () -> {
+                                path("{id}", () -> {
+                                    delete(Javalin::deleteUser);
+                                    path("plants", () -> {
+                                        // get(Javalin::getPlantByNickname);
+                                        get(Javalin::getAllPlants);
+                                        patch(Javalin::updateAllPlants);
+                                        path("{plantId}", () -> {
+                                            get(Javalin::getPlant);
+                                            patch(Javalin::updatePlant);
+                                            delete(Javalin::deletePlant);
+                                        });
+                                        post(Javalin::savePlant);
+                                    });
+                                });
+                            });
                     path("plants", () -> {
                         get(Javalin::getPlants);
                     });
                 });
             });
         }).start(7002);
+    }
+
+    // Requirement:
+    @OpenApi(
+            summary = "Get fact based on ID",
+            operationId = "getFact",
+            path = "/v1/facts/{factId}",
+            pathParams = {@OpenApiParam(name = "factId", type = Integer.class, description = "The fact ID")},
+            methods = HttpMethod.GET,
+            tags = {"Fun Facts"},
+            responses = {
+                    @OpenApiResponse(status = "200", content = {@OpenApiContent(from = Fact[].class)}),
+                    @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
+            }
+    )
+    public static void getFact(Context ctx) {
+        int factId = ctx.pathParamAsClass("factId", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+        Connection database = getConnection();
+        String fact = "";
+        String query = "SELECT fact FROM fun_facts WHERE id = ?;";
+
+        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+            preparedStatement.setInt(1, factId);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                fact = resultSet.getString("fact");
+
+                if (fact.isEmpty()) {
+                    throw new NotFoundResponse("Fact not found");
+                } else {
+                    String json = objecToJson(fact);
+                    ctx.result(json);
+                    ctx.status(200);
+                }
+            }
+        } catch (SQLException sqlException) {
+            sqlException.printStackTrace();
+        }
     }
 
     // Requirement: F.DP.4
