@@ -3,21 +3,22 @@ package se.myhappyplants.javalin;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.NotFoundResponse;
 import io.javalin.openapi.*;
 import io.javalin.openapi.plugin.OpenApiPlugin;
 import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
 import io.javalin.plugin.bundled.CorsPluginConfig;
-import org.mindrot.jbcrypt.BCrypt;
 
+import org.mindrot.jbcrypt.BCrypt;
+import org.sqlite.SQLiteException;
 import se.myhappyplants.javalin.login.NewLoginRequest;
 import se.myhappyplants.javalin.plant.NewPlantRequest;
 import se.myhappyplants.javalin.plant.Plant;
 import se.myhappyplants.javalin.plant.TreflePlant;
 import se.myhappyplants.javalin.user.NewUserRequest;
 import se.myhappyplants.javalin.user.User;
+import se.myhappyplants.javalin.utils.ErrorResponse;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -25,19 +26,20 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.sql.*;
 import java.time.LocalDate;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static io.javalin.apibuilder.ApiBuilder.*;
 import static se.myhappyplants.javalin.utils.Helper.*;
 
-public class Main {
+public class Javalin {
     public static void main(String[] args) {
-        Javalin.create(config -> {
+        io.javalin.Javalin.create(config -> {
             // Plugin for documentation and testing our api
             config.registerPlugin(new OpenApiPlugin(pluginConfig -> {
                 pluginConfig.withDefinitionConfiguration((version, definition) -> {
-                    definition.withOpenApiInfo(info -> info.setTitle("Happy Plants OpenAPI"));
+                    definition.withOpenApiInfo(info -> info.setTitle("Happy Plants API"));
                 });
             }));
             config.registerPlugin(new SwaggerPlugin());
@@ -47,48 +49,185 @@ public class Main {
 
             // Routing
             config.router.apiBuilder(() -> {
-                // Users api routes
                 path("", () ->
-                        // redirect me to the swagger page
+                        // redirect to documentation page on "/"
                         get(ctx -> ctx.redirect("/swagger"))
                 );
                 path("v1/", () -> {
                     path("login", () -> {
-                        post(Main::login);
+                        post(Javalin::login);
                     });
                     path("register", () -> {
-                        post(Main::createUser);
+                        post(Javalin::createUser);
                     });
                     path("users", () -> {
                         path("{id}", () -> {
-                            delete(Main::deleteUser);
+                            delete(Javalin::deleteUser);
                             path("plants", () -> {
-                                patch(Main::updateAllPlants);
+                                get(Javalin::getPlantByNickname);
+                                patch(Javalin::updateAllPlants);
                                 path("{plantId}", () -> {
-                                    get(Main::getPlant);
-                                    patch(Main::updatePlant);
-                                    delete(Main::deletePlant);
+                                    get(Javalin::getPlant);
+                                    patch(Javalin::updatePlant);
+                                    delete(Javalin::deletePlant);
                                 });
-                                post(Main::savePlant);
+                                post(Javalin::savePlant);
                             });
                         });
                     });
                     path("plants", () -> {
-                        get(Main::getPlants);
+                        get(Javalin::getPlants);
                     });
                 });
             });
         }).start(7002);
     }
 
-    /**
-     * PLANT API
-     */
+    // Requirement: F.DP.4
+    @OpenApi(
+            summary = "Create user",
+            operationId = "createUser",
+            path = "/v1/register",
+            methods = HttpMethod.POST,
+            tags = {"Authentication"},
+            requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = NewUserRequest.class)}),
+            responses = {
+                    @OpenApiResponse(status = "201"),
+                    @OpenApiResponse(status = "409", content = {@OpenApiContent(from = ErrorResponse.class)}),
+                    @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
+            }
+    )
+    public static void createUser(Context ctx) {
+        NewUserRequest user = ctx.bodyAsClass(NewUserRequest.class);
+        Connection database = getConnection();
+
+        String hashedPassword = BCrypt.hashpw(user.password, BCrypt.gensalt());
+        String sqlSafeUsername = user.username.replace("'", "''");
+        String query = "INSERT INTO user (username, email, password, notification_activated, fun_facts_activated) VALUES (?, ?, ?, 1, 1);";
+
+        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+            preparedStatement.setString(1, sqlSafeUsername);
+            preparedStatement.setString(2, user.email);
+            preparedStatement.setString(3, hashedPassword);
+
+            try {
+                preparedStatement.executeUpdate();
+                ctx.status(201);
+            } catch (SQLiteException exception) {
+                ctx.status(409);
+                ctx.result("User already exists");
+            }
+
+        } catch (SQLException sqlException) {
+            sqlException.printStackTrace();
+        }
+    }
+
+    // Requirement: F.DP.3
+    @OpenApi(
+            summary = "Login",
+            operationId = "login",
+            path = "/v1/login",
+            methods = HttpMethod.POST,
+            tags = {"Authentication"},
+            requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = NewLoginRequest.class)}),
+            responses = {
+                    @OpenApiResponse(status = "200", content = {@OpenApiContent(from = User.class)}),
+                    @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
+            }
+    )
+    public static void login(Context ctx) {
+        NewLoginRequest newLoginRequest = ctx.bodyAsClass(NewLoginRequest.class);
+        Connection database = getConnection();
+
+        boolean isVerified = false;
+        User user = null;
+        int id = 0;
+        String username = null;
+        boolean notificationActivated = false;
+        boolean funFactsActivated = false;
+
+        String query = "SELECT id, username, password, notification_activated, fun_facts_activated FROM user WHERE email = ?;";
+
+        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+            preparedStatement.setString(1, newLoginRequest.email);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                String hashedPassword = resultSet.getString("password");
+                isVerified = BCrypt.checkpw(newLoginRequest.password, hashedPassword);
+
+                id = resultSet.getInt("id");
+                username = resultSet.getString("username");
+                notificationActivated = resultSet.getBoolean("notification_activated");
+                funFactsActivated = resultSet.getBoolean("fun_facts_activated");
+            }
+            user = new User(id, newLoginRequest.email, username, notificationActivated, funFactsActivated);
+        } catch (SQLException sqlException) {
+            sqlException.printStackTrace();
+        }
+
+        if (isVerified) {
+            String json = objecToJson(user);
+            ctx.result(json);
+            ctx.status(200);
+        } else {
+            ctx.status(404);
+            ctx.result("Login failed");
+        }
+    }
+
+    // Requirement: F.DP.6
+    @OpenApi(
+            summary = "Delete user by ID",
+            operationId = "deleteUserByID",
+            path = "/v1/users/{id}",
+            methods = HttpMethod.DELETE,
+            pathParams = {@OpenApiParam(name = "id", type = Integer.class, description = "The user ID")},
+            tags = {"User"},
+            responses = {
+                    @OpenApiResponse(status = "204"),
+                    @OpenApiResponse(status = "400", content = {@OpenApiContent(from = ErrorResponse.class)}),
+                    @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
+            }
+    )
+    public static void deleteUser(Context ctx) {
+        int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+
+        Connection database = getConnection();
+
+        String queryDeletePlants = "DELETE FROM Plant WHERE user_id = ?;";
+        String queryDeleteUser = "DELETE FROM User WHERE id = ?;";
+
+        try (PreparedStatement preparedStatementDeletePlants = database.prepareStatement(queryDeletePlants);
+             PreparedStatement preparedStatementDeleteUser = database.prepareStatement(queryDeleteUser)) {
+            preparedStatementDeletePlants.setInt(1, userId);
+            preparedStatementDeleteUser.setInt(1, userId);
+
+            database.setAutoCommit(false);
+            int deleteUser = preparedStatementDeleteUser.executeUpdate();
+            if (deleteUser == 0) {
+                throw new NotFoundResponse("User not found");
+            } else {
+                preparedStatementDeletePlants.executeUpdate();
+                database.commit();
+            }
+        } catch (SQLException sqlException) {
+            try {
+                database.rollback();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        ctx.status(204);
+    }
+
     // Requirement: F.DP.1
     @OpenApi(
             summary = "Get plants based on search parameter",
             operationId = "getPlants",
-            path = "/v1/plants",
+            path = "/v1/plants?plant=",
             methods = HttpMethod.GET,
             tags = {"Plants"},
             queryParams = {@OpenApiParam(name = "plant", description = "The plant name")},
@@ -211,7 +350,7 @@ public class Main {
                     @OpenApiParam(name = "id", type = Integer.class, description = "The user ID"),
                     @OpenApiParam(name = "plantId", type = Integer.class, description = "The plant ID"),
             },
-            tags = {"User"},
+            tags = {"User Plants"},
             requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = NewPlantRequest.class)}),
             responses = {
                     @OpenApiResponse(status = "200"),
@@ -337,7 +476,7 @@ public class Main {
                     @OpenApiParam(name = "id", type = Integer.class, description = "The user ID"),
                     @OpenApiParam(name = "plantId", type = Integer.class, description = "The plant ID"),
             },
-            tags = {"User"},
+            tags = {"User Plants"},
             responses = {
                     @OpenApiResponse(status = "204"),
                     @OpenApiResponse(status = "400", content = {@OpenApiContent(from = ErrorResponse.class)}),
@@ -354,8 +493,8 @@ public class Main {
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
             preparedStatement.setInt(1, userId);
             preparedStatement.setInt(2, plantId);
-            int deleted = preparedStatement.executeUpdate();
-            if (deleted == 0) {
+            int result = preparedStatement.executeUpdate();
+            if (result == 0) {
                 throw new NotFoundResponse("Plant not found");
             }
 
@@ -371,7 +510,7 @@ public class Main {
             operationId = "getPlant",
             path = "/v1/users/{id}/plants/{plantId}",
             methods = HttpMethod.GET,
-            tags = {"User"},
+            tags = {"User Plants"},
             pathParams = {
                     @OpenApiParam(name = "id", type = Integer.class, description = "The user ID"),
                     @OpenApiParam(name = "plantId", description = "The plant ID")},
@@ -411,141 +550,52 @@ public class Main {
         }
     }
 
-    /**
-     * USER API
-     */
-    // Requirement: F.DP.4
+    // Requirement:
     @OpenApi(
-            summary = "Create user",
-            operationId = "createUser",
-            path = "/v1/register",
-            methods = HttpMethod.POST,
-            tags = {"Authentication"},
-            requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = NewUserRequest.class)}),
-            responses = {
-                    @OpenApiResponse(status = "201"),
-                    @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
-            }
-    )
-    public static void createUser(Context ctx) {
-        NewUserRequest user = ctx.bodyAsClass(NewUserRequest.class);
-        Connection database = getConnection();
-
-        String hashedPassword = BCrypt.hashpw(user.password, BCrypt.gensalt());
-        String sqlSafeUsername = user.username.replace("'", "''");
-        String query = "INSERT INTO user (username, email, password, notification_activated, fun_facts_activated) VALUES (?, ?, ?, 1, 1);";
-
-        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
-            preparedStatement.setString(1, sqlSafeUsername);
-            preparedStatement.setString(2, user.email);
-            preparedStatement.setString(3, hashedPassword);
-
-            preparedStatement.executeUpdate();
-        } catch (SQLException sqlException) {
-            sqlException.printStackTrace();
-        }
-
-        // TODO add error handling
-        ctx.status(201);
-    }
-
-    // Requirement: F.DP.3
-    @OpenApi(
-            summary = "Login",
-            operationId = "login",
-            path = "/v1/login",
-            methods = HttpMethod.POST,
-            tags = {"Authentication"},
-            requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = NewLoginRequest.class)}),
-            responses = {
-                    @OpenApiResponse(status = "200", content = {@OpenApiContent(from = User.class)}),
-                    @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
-            }
-    )
-    public static void login(Context ctx) {
-        NewLoginRequest newLoginRequest = ctx.bodyAsClass(NewLoginRequest.class);
-        Connection database = getConnection();
-
-        boolean isVerified = false;
-        User user = null;
-        int id = 0;
-        String username = null;
-        boolean notificationActivated = false;
-        boolean funFactsActivated = false;
-
-        String query = "SELECT id, username, password, notification_activated, fun_facts_activated FROM user WHERE email = ?;";
-
-        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
-            preparedStatement.setString(1, newLoginRequest.email);
-
-            ResultSet resultSet = preparedStatement.executeQuery();
-            if (resultSet.next()) {
-                String hashedPassword = resultSet.getString("password");
-                isVerified = BCrypt.checkpw(newLoginRequest.password, hashedPassword);
-
-                id = resultSet.getInt("id");
-                username = resultSet.getString("username");
-                notificationActivated = resultSet.getBoolean("notification_activated");
-                funFactsActivated = resultSet.getBoolean("fun_facts_activated");
-            }
-            user = new User(id, newLoginRequest.email, username, notificationActivated, funFactsActivated);
-        } catch (SQLException sqlException) {
-            sqlException.printStackTrace();
-        }
-
-        if (isVerified) {
-            String json = objecToJson(user);
-            ctx.result(json);
-            ctx.status(200);
-        } else {
-            ctx.status(404);
-            ctx.result("Login failed");
-        }
-    }
-
-    // Requirement: F.DP.6
-    @OpenApi(
-            summary = "Delete user by ID",
-            operationId = "deleteUserByID",
-            path = "/v1/users/{id}",
-            methods = HttpMethod.DELETE,
-            pathParams = {@OpenApiParam(name = "id", type = Integer.class, description = "The user ID")},
+            summary = "Get plant based on user ID and plant nickname",
+            operationId = "getPlant",
+            path = "/v1/users/{id}/plants?nickname=",
+            methods = HttpMethod.GET,
             tags = {"User"},
+            pathParams = {
+                    @OpenApiParam(name = "id", type = Integer.class, description = "The user ID"),
+            },
+            queryParams = {
+                    @OpenApiParam(name = "nickname", description = "The plant name"),
+            },
             responses = {
-                    @OpenApiResponse(status = "204"),
-                    @OpenApiResponse(status = "400", content = {@OpenApiContent(from = ErrorResponse.class)}),
+                    @OpenApiResponse(status = "200", content = {@OpenApiContent(from = Plant.class)}),
                     @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
             }
     )
-    public static void deleteUser(Context ctx) {
+    public static void getPlantByNickname(Context ctx) {
         int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+        String nickname = ctx.queryParamAsClass("nickname", String.class).check(Objects::nonNull, "You must choose a name").get();
 
         Connection database = getConnection();
+        String sqlSafeNickname = nickname.replace("'", "''");
+        String query = "SELECT nickname, plant_id, last_watered, image_url FROM plant WHERE user_id = ? AND nickname = ?;";
 
-        String queryDeletePlants = "DELETE FROM Plant WHERE user_id = ?;";
-        String queryDeleteUser = "DELETE FROM User WHERE id = ?;";
+        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+            preparedStatement.setInt(1, userId);
+            preparedStatement.setString(2, sqlSafeNickname);
+            ResultSet resultSet = preparedStatement.executeQuery();
 
-        try (PreparedStatement preparedStatementDeletePlants = database.prepareStatement(queryDeletePlants);
-             PreparedStatement preparedStatementDeleteUser = database.prepareStatement(queryDeleteUser)) {
-            preparedStatementDeletePlants.setInt(1, userId);
-            preparedStatementDeleteUser.setInt(1, userId);
+            if (resultSet.next()) {
+                String plantId = resultSet.getString("plant_id");
+                Date lastWatered = resultSet.getDate("last_watered");
+                String imageURL = resultSet.getString("image_url");
+                long waterFrequency = getWaterFrequency(plantId);
+                Plant plant = new Plant(nickname, plantId, lastWatered, waterFrequency, imageURL);
 
-            database.setAutoCommit(false);
-            int deleteUser = preparedStatementDeleteUser.executeUpdate();
-            if (deleteUser == 0) {
-                throw new NotFoundResponse("User not found");
+                String json = objecToJson(plant);
+                ctx.result(json);
+                ctx.status(200);
             } else {
-                preparedStatementDeletePlants.executeUpdate();
-                database.commit();
+                throw new NotFoundResponse("Plant not found");
             }
         } catch (SQLException sqlException) {
-            try {
-                database.rollback();
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
+            sqlException.printStackTrace();
         }
-
-        ctx.status(204);
     }
 }

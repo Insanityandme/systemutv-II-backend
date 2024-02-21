@@ -1,13 +1,10 @@
-import se.myhappyplants.javalin.Main;
+import se.myhappyplants.javalin.Javalin;
 import se.myhappyplants.server.services.UserRepository;
 
 import io.javalin.http.Context;
 
 import org.junit.jupiter.api.*;
 
-import java.sql.SQLException;
-
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class UserNewLoginTestRequest {
@@ -21,7 +18,7 @@ public class UserNewLoginTestRequest {
     @BeforeEach
     public void setUp() {
         ctx = mock(Context.class);
-        Main.createUser(ctx);
+        Javalin.createUser(ctx);
         // userRepository = mock(UserRepository.class);
         //userController = new UserController(userRepository);
     }
@@ -46,7 +43,7 @@ public class UserNewLoginTestRequest {
         when(userRepository.checkLogin("plantlovergmail.com", "wrong")).thenReturn(false);
 
         //userController.loginUser(ctx);
-        Main.login(ctx);
+        Javalin.login(ctx);
 
         verify(userRepository).checkLogin("plantlovergmail.com", "wrong");
     }
