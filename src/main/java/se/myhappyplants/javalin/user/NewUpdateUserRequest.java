@@ -5,16 +5,16 @@ public class NewUpdateUserRequest {
     public String username;
     public String password;
     public String avatarURL;
-    public boolean isNotificationsActivated = true;
+    public boolean notificationsActivated = true;
     public boolean funFactsActivated = true;
     public NewUpdateUserRequest() {}
 
-    public NewUpdateUserRequest(String email, String username, String password, String avatarURL, boolean isNotificationsActivated, boolean funFactsActivated) {
+    public NewUpdateUserRequest(String email, String username, String password, String avatarURL, boolean notificationsActivated, boolean funFactsActivated) {
         this.email = email;
         this.username = username;
         this.password = password;
         this.avatarURL = avatarURL;
-        this.isNotificationsActivated = isNotificationsActivated;
+        this.notificationsActivated = notificationsActivated;
         this.funFactsActivated = funFactsActivated;
     }
     public void setPassword(String password) {
@@ -54,12 +54,12 @@ public class NewUpdateUserRequest {
     }
 
     public void setNotificationsActivated(boolean notificationsActivated) {
-        isNotificationsActivated = notificationsActivated;
+        this.notificationsActivated = notificationsActivated;
     }
 
 
     public boolean isNotificationsActivated() {
-        return isNotificationsActivated;
+        return notificationsActivated;
     }
 
     public boolean isFunFactsActivated() {

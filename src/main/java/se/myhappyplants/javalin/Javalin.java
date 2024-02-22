@@ -28,6 +28,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.sql.*;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
@@ -73,7 +74,6 @@ public class Javalin {
                             patch(Javalin::updateUser);
                             delete(Javalin::deleteUser);
                             path("plants", () -> {
-                                // get(Javalin::getPlantByNickname);
                                 get(Javalin::getAllPlants);
                                 patch(Javalin::updateAllPlants);
                                 path("{plantId}", () -> {
@@ -138,7 +138,7 @@ public class Javalin {
             path = "/v1/users/{id}/plants",
             pathParams = {@OpenApiParam(name = "id", type = Integer.class, description = "The user ID")},
             methods = HttpMethod.GET,
-            tags = {"User"},
+            tags = {"User Plants"},
             responses = {
                     @OpenApiResponse(status = "200", content = {@OpenApiContent(from = Plant[].class)}),
                     @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
@@ -157,13 +157,13 @@ public class Javalin {
             ResultSet resultSet = preparedStatement.executeQuery();
             NewPlantRequest plant = new NewPlantRequest();
             while (resultSet.next()) {
-                plant.id = resultSet.getString("plant_id");
+                plant.id = resultSet.getInt("plant_id");
                 plant.nickname = resultSet.getString("nickname");
-                plant.lastWatered = resultSet.getDate("last_watered");
+                plant.lastWatered = resultSet.getDate("last_watered").toString();
                 plant.imageURL = resultSet.getString("image_url");
 
                 try (PreparedStatement preparedStatement2 = database.prepareStatement(queryPlantDetails)) {
-                    preparedStatement2.setString(1, plant.id);
+                    preparedStatement2.setInt(1, plant.id);
                     ResultSet resultSet2 = preparedStatement2.executeQuery();
                     plant.commonName = resultSet2.getString("common_name");
                     plant.scientificName = resultSet2.getString("scientific_name");
@@ -386,7 +386,7 @@ public class Javalin {
             operationId = "savePlant",
             path = "/v1/users/{id}/plants",
             methods = HttpMethod.POST,
-            tags = {"User"},
+            tags = {"User Plant"},
             pathParams = {@OpenApiParam(name = "id", type = Integer.class, description = "The user ID")},
             requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = NewPlantRequest.class)}),
             responses = {
@@ -400,6 +400,16 @@ public class Javalin {
         boolean isCreated = false;
         Connection database = getConnection();
 
+        // check if date is the correct format
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            sdf.parse(plant.lastWatered);
+        } catch (Exception e) {
+            ctx.status(400);
+            ctx.result("Date is not in the correct format, are you sure you are using yyyy-MM-dd?");
+            return;
+        }
+
         String sqlSafeNickname = plant.nickname.replace("'", "''");
         String plantQuery = "INSERT INTO plant (user_id, nickname, plant_id, last_watered, image_url) VALUES (?, ?, ?, ?, ?);";
         String detailsQuery = "INSERT INTO plantdetails (scientific_name, genus, family, common_name, image_url, light, url_wikipedia_en, water_frequency, plant_id)" +
@@ -408,8 +418,8 @@ public class Javalin {
         try (PreparedStatement plantStatement = database.prepareStatement(plantQuery)) {
             plantStatement.setInt(1, userId);
             plantStatement.setString(2, sqlSafeNickname);
-            plantStatement.setString(3, plant.id);
-            plantStatement.setDate(4, plant.lastWatered);
+            plantStatement.setInt(3, plant.id);
+            plantStatement.setDate(4, Date.valueOf(plant.lastWatered));
             plantStatement.setString(5, plant.imageURL);
             plantStatement.executeUpdate();
 
@@ -419,7 +429,7 @@ public class Javalin {
             String query = "SELECT COUNT(*) FROM plantdetails WHERE plant_id = ?";
             boolean doesPlantDetailExist = false;
             try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
-                preparedStatement.setString(1, plant.id);
+                preparedStatement.setInt(1, plant.id);
                 ResultSet resultSet = preparedStatement.executeQuery();
                 if (resultSet.next()) {
                     int count = resultSet.getInt(1);
@@ -437,7 +447,7 @@ public class Javalin {
                     detailsStatement.setString(6, "0");
                     detailsStatement.setString(7, "0");
                     detailsStatement.setString(8, "0");
-                    detailsStatement.setString(9, plant.id);
+                    detailsStatement.setInt(9, plant.id);
                     detailsStatement.executeUpdate();
                 }
             }
@@ -467,7 +477,7 @@ public class Javalin {
                     @OpenApiParam(name = "id", type = Integer.class, description = "The user ID"),
                     @OpenApiParam(name = "plantId", type = Integer.class, description = "The plant ID"),
             },
-            tags = {"User Plants"},
+            tags = {"User Plant"},
             requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = NewPlantRequest.class)}),
             responses = {
                     @OpenApiResponse(status = "200"),
@@ -478,6 +488,17 @@ public class Javalin {
     public static void updatePlant(Context ctx) {
         int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
         int plantId = ctx.pathParamAsClass("plantId", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+        NewPlantRequest plant = ctx.bodyAsClass(NewPlantRequest.class);
+
+        // check if date is the correct format
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            sdf.parse(plant.lastWatered);
+        } catch (Exception e) {
+            ctx.status(400);
+            ctx.result("Date is not in the correct format, are you sure you are using yyyy-MM-dd?");
+            return;
+        }
 
         Connection database = getConnection();
         try {
@@ -547,8 +568,10 @@ public class Javalin {
             pathParams = {
                     @OpenApiParam(name = "id", type = Integer.class, description = "The user ID"),
             },
-            tags = {"User"},
-            requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = NewPlantRequest.class)}),
+            tags = {"User Plants"},
+            requestBody = @OpenApiRequestBody(
+                    description = "You can use one field at a time to update the plants",
+                    content = {@OpenApiContent(from = NewPlantRequest.class)}),
             responses = {
                     @OpenApiResponse(status = "200"),
                     @OpenApiResponse(status = "400", content = {@OpenApiContent(from = ErrorResponse.class)}),
@@ -557,6 +580,17 @@ public class Javalin {
     )
     public static void updateAllPlants(Context ctx) {
         int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+        NewPlantRequest plant = ctx.bodyAsClass(NewPlantRequest.class);
+
+        // check if date is the correct format
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            sdf.parse(plant.lastWatered);
+        } catch (Exception e) {
+            ctx.status(400);
+            ctx.result("Date is not in the correct format, are you sure you are using yyyy-MM-dd?");
+            return;
+        }
 
         Connection database = getConnection();
         try {
@@ -564,14 +598,13 @@ public class Javalin {
             JsonNode jsonNode = objectMapper.readTree(ctx.body());
 
             if (jsonNode.get("lastWatered") != null) {
-                LocalDate date = java.time.LocalDate.now();
                 String query = "UPDATE plant SET last_watered = ? WHERE user_id = ?;";
                 try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
-                    preparedStatement.setDate(1, Date.valueOf(date));
+                    preparedStatement.setDate(1, Date.valueOf(plant.lastWatered));
                     preparedStatement.setInt(2, userId);
                     preparedStatement.executeUpdate();
 
-                    String json = String.format("{\"lastWatered\": \"%s\"}", date);
+                    String json = String.format("{\"lastWatered\": \"%s\"}", plant.lastWatered);
                     ctx.result(json);
                     ctx.status(200);
                 } catch (SQLException sqlException) {
@@ -593,7 +626,7 @@ public class Javalin {
                     @OpenApiParam(name = "id", type = Integer.class, description = "The user ID"),
                     @OpenApiParam(name = "plantId", type = Integer.class, description = "The plant ID"),
             },
-            tags = {"User Plants"},
+            tags = {"User Plant"},
             responses = {
                     @OpenApiResponse(status = "204"),
                     @OpenApiResponse(status = "400", content = {@OpenApiContent(from = ErrorResponse.class)}),
@@ -627,7 +660,7 @@ public class Javalin {
             operationId = "getPlant",
             path = "/v1/users/{id}/plants/{plantId}",
             methods = HttpMethod.GET,
-            tags = {"User Plants"},
+            tags = {"User Plant"},
             pathParams = {
                     @OpenApiParam(name = "id", type = Integer.class, description = "The user ID"),
                     @OpenApiParam(name = "plantId", description = "The plant ID")},
@@ -649,12 +682,12 @@ public class Javalin {
             ResultSet resultSet = preparedStatement.executeQuery();
             if (resultSet.next()) {
                 String nickname = resultSet.getString("nickname");
-                String plantIdString = resultSet.getString("plant_id");
+                int plantIdDb = resultSet.getInt("plant_id");
                 Date lastWatered = resultSet.getDate("last_watered");
                 String imageURL = resultSet.getString("image_url");
 
-                long waterFrequency = getWaterFrequency(plantIdString);
-                Plant plant = new Plant(nickname, plantIdString, lastWatered, waterFrequency, imageURL);
+                long waterFrequency = getWaterFrequency(plantIdDb);
+                Plant plant = new Plant(nickname, plantIdDb, lastWatered.toString(), waterFrequency, imageURL);
 
                 String json = objecToJson(plant);
                 ctx.result(json);
@@ -677,7 +710,11 @@ public class Javalin {
                     @OpenApiParam(name = "id", type = Integer.class, description = "The user ID"),
             },
             tags = {"User"},
-            requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = NewUpdateUserRequest.class)}),
+            requestBody = @OpenApiRequestBody(
+                    description = "You can use one field at a time to update the user, always include the password.",
+                    content = {
+                    @OpenApiContent(from = NewUpdateUserRequest.class),
+            }),
             responses = {
                     @OpenApiResponse(status = "200"),
                     @OpenApiResponse(status = "400", content = {@OpenApiContent(from = ErrorResponse.class)}),
@@ -686,31 +723,43 @@ public class Javalin {
     )
     public static void updateUser(Context ctx) {
         int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
-        NewUpdateUserRequest user = ctx.bodyAsClass(NewUpdateUserRequest.class);
 
         Connection database = getConnection();
-        if (checkPassword(userId, user.password)) {
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode jsonNode;
-            try {
-                jsonNode = objectMapper.readTree(ctx.body());
-                if (jsonNode.get("funFactsActivated") != null) {
-                    boolean funFactsActivated = jsonNode.get("funFactsActivated").asBoolean();
-                    String query = "UPDATE user SET fun_facts_activated = ? WHERE id = ?;";
-                    try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
-                        preparedStatement.setBoolean(1, funFactsActivated);
-                        preparedStatement.setInt(2, userId);
-                        preparedStatement.executeUpdate();
-                    } catch (SQLException sqlException) {
-                        sqlException.printStackTrace();
-                    }
-                }
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
+        String password = "";
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonNode;
+        try {
+            jsonNode = objectMapper.readTree(ctx.body());
+            if (jsonNode.get("password") != null) {
+                password = jsonNode.get("password").asText();
             }
-
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
         }
 
+        if (checkPassword(userId, password)) {
+            if (jsonNode.get("funFactsActivated") != null) {
+                boolean funFactsActivated = jsonNode.get("funFactsActivated").asBoolean();
+                String query = "UPDATE user SET fun_facts_activated = ? WHERE id = ?;";
+                try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+                    preparedStatement.setBoolean(1, funFactsActivated);
+                    preparedStatement.setInt(2, userId);
+                    preparedStatement.executeUpdate();
+                } catch (SQLException sqlException) {
+                    sqlException.printStackTrace();
+                }
+            } else if (jsonNode.get("notificationsActivated") != null) {
+                boolean notificationActivated = jsonNode.get("notificationsActivated").asBoolean();
+                System.out.println("hi mom");
+                String query = "UPDATE user SET notification_activated = ? WHERE id = ?;";
+                try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+                    preparedStatement.setBoolean(1, notificationActivated);
+                    preparedStatement.setInt(2, userId);
+                    preparedStatement.executeUpdate();
+                } catch (SQLException sqlException) {
+                    sqlException.printStackTrace();
+                }
+            }
+        }
     }
-
 }

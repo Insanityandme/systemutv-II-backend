@@ -76,14 +76,14 @@ public class Helper {
         return waterFrequencyMilli;
     }
 
-    public static long getWaterFrequency(String plantId) {
+    public static long getWaterFrequency(int plantId) {
         Connection database = getConnection();
 
         long waterFrequency = -1;
         String query = "SELECT water_frequency FROM plantdetails WHERE id = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
-            preparedStatement.setString(1, plantId);
+            preparedStatement.setInt(1, plantId);
 
             ResultSet resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
@@ -106,4 +106,5 @@ public class Helper {
             return false;
         }
     }
+
 }
