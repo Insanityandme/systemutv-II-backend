@@ -33,7 +33,7 @@ public class UserRegisterTest {
         //userController.createUser(ctx);
 
         //Kollar att saveUser i userRepository anropas med en User som har rätt username
-        verify(userRepository).saveUser(argThat(user -> user.getUsername().equals("PlantLover")));
+        verify(userRepository).registerUser(argThat(user -> user.getUsername().equals("PlantLover")));
     }
 
     @Test
@@ -61,7 +61,7 @@ public class UserRegisterTest {
         //userController.createUser(ctx);
 
         //Kollar att saveUser i userRepository anropas med en User som har rätt email
-        verify(userRepository).saveUser(argThat(user -> user.getEmail().equals("plantlover@gmail.com")));
+        verify(userRepository).registerUser(argThat(user -> user.getEmail().equals("plantlover@gmail.com")));
     }
 
     @Test
@@ -70,11 +70,11 @@ public class UserRegisterTest {
         when(ctx.queryParam("username")).thenReturn("PlantLover");
         when(ctx.queryParam("password")).thenReturn("test");
 
-        when(userRepository.saveUser(argThat(user -> user.getEmail().equals("invalidemail")))).thenReturn(false);
+        when(userRepository.registerUser(argThat(user -> user.getEmail().equals("invalidemail")))).thenReturn(false);
 
         //userController.register(ctx);
 
-        verify(userRepository).saveUser(argThat(user -> user.getEmail().equals("invalidemail")));
+        verify(userRepository).registerUser(argThat(user -> user.getEmail().equals("invalidemail")));
     }
 
     @Test
@@ -85,19 +85,19 @@ public class UserRegisterTest {
 
         //Alternativt får vi skapa en metod i userRepository som specifikt kollar om email-adressen är upptagen istället
         //för att använda saveUser
-        when(userRepository.saveUser(argThat(user -> user.getEmail().equals("existinguser@gmail.com")))).thenReturn(false);
+        when(userRepository.registerUser(argThat(user -> user.getEmail().equals("existinguser@gmail.com")))).thenReturn(false);
 
         //userController.register(ctx);
 
         //Till för att kolla så att saveUser verkligen anropades med dessa värden under testet
-        verify(userRepository).saveUser(argThat(user ->
+        verify(userRepository).registerUser(argThat(user ->
                 user.getUsername().equals("user") &&
                         user.getEmail().equals("nonexistinguser@gmail.com") &&
                         user.getPassword().equals("test")
         ));
 
         // Kollar så att userRepository.saveUser-metoden med emailen "existinguser@gmail.com" returnerar false
-        assertFalse(userRepository.saveUser(argThat(user -> user.getEmail().equals("existinguser@gmail.com"))));
+        assertFalse(userRepository.registerUser(argThat(user -> user.getEmail().equals("existinguser@gmail.com"))));
     }
 
     @Test

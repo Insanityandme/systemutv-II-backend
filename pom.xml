@@ -16,6 +16,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>2.16.1</version>
+        </dependency>
+        <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>2.10.1</version>
@@ -42,11 +47,6 @@
             <version>15.0.1</version>
         </dependency>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>2.0.3</version>
-        </dependency>
-        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
             <version>5.8.1</version>
@@ -69,22 +69,41 @@
             <artifactId>javalin-bundle</artifactId>
             <version>6.0.0</version>
         </dependency>
+        <!-- For Documentation -->
+        <dependency>
+            <groupId>io.javalin.community.openapi</groupId>
+            <artifactId>javalin-openapi-plugin</artifactId>
+            <version>6.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.javalin.community.openapi</groupId>
+            <artifactId>javalin-swagger-plugin</artifactId>
+            <version>6.0.0</version>
+        </dependency>
+
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <version>3.24.2</version>
+            <version>3.25.2</version>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
     <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.0</version>
+                <version>3.10.1</version>
                 <configuration>
-                    <release>15</release>
+                    <source>11</source>
+                    <target>11</target>
+                    <annotationProcessorPaths>
+                        <annotationProcessorPath>
+                            <groupId>io.javalin.community.openapi</groupId>
+                            <artifactId>openapi-annotation-processor</artifactId>
+                            <version>6.0.0</version>
+                        </annotationProcessorPath>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
             <plugin>
@@ -104,7 +123,7 @@
                     <archive>
                         <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>se.myhappyplants.client.controller.StartClient</mainClass>
+                            <mainClass>se.myhappyplants.javalin.Javalin</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

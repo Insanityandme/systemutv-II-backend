@@ -8,7 +8,6 @@ import java.io.*;
  * Updated by: Linn Borgström, 2021-05-17
  */
 public class User implements Serializable {
-
     private int uniqueId;
     private String email;
     private String username;
@@ -60,7 +59,6 @@ public class User implements Serializable {
      * @param funFactsActivated      True if fun facts wanted
      */
     public User(int uniqueId, String email, String username, boolean isNotificationsActivated, boolean funFactsActivated) {
-
         this.uniqueId = uniqueId;
         this.email = email;
         this.username = username;

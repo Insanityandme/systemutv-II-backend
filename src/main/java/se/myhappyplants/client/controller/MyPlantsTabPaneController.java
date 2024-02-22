@@ -18,6 +18,7 @@ import se.myhappyplants.client.service.ServerConnection;
 import se.myhappyplants.client.view.LibraryPlantPane;
 import se.myhappyplants.client.view.MessageBox;
 import se.myhappyplants.client.view.PopupBox;
+import se.myhappyplants.javalin.plant.Plant;
 import se.myhappyplants.shared.*;
 import se.myhappyplants.client.model.SetAvatar;
 
@@ -26,16 +27,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
-import java.net.URL;
-import java.nio.file.FileAlreadyExistsException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.net.URL;
-import java.nio.file.FileAlreadyExistsException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -223,7 +214,7 @@ public class MyPlantsTabPaneController {
         }
         long currentDateMilli = System.currentTimeMillis();
         Date date = new Date(currentDateMilli);
-        Plant plantToAdd = new Plant(uniqueNickName, selectedPlant.getPlantId(), date,imageURL);
+        Plant plantToAdd = new Plant(uniqueNickName, selectedPlant.getId(), date,imageURL);
         PopupBox.display(MessageText.sucessfullyAddPlant.toString());
         addPlantToDB(plantToAdd,details);
     }

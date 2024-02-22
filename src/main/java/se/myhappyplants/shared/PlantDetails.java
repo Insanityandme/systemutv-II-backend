@@ -1,34 +1,34 @@
 package se.myhappyplants.shared;
 
-import java.io.Serializable;
-
-/**
- * Container class for more detailed information about a plant
- * Created by: Frida Jacobsson
- * Updated by:
- **/
-public class PlantDetails implements Serializable {
-
-    private String genus;
+public class PlantDetails {
     private String scientificName;
+    private String commonName;
+    private String family;
+    private String genus;
     private int light;
     private int waterFrequency;
-    private String family;
 
     public PlantDetails(String genus, String scientificName, int light, int waterFrequency, String family) {
-        this.scientificName = scientificName;
         this.genus = genus;
+        this.scientificName = scientificName;
         this.light = light;
         this.waterFrequency = waterFrequency;
         this.family = family;
     }
+    public String getGenus() {
+        return genus;
+    }
+
+    public String getFamily() {
+        return family;
+    }
+
+    public String getCommonName() {
+        return commonName;
+    }
 
     public String getScientificName() {
         return scientificName;
-    }
-
-    public String getGenus() {
-        return genus;
     }
 
     public int getLight() {
@@ -37,9 +37,5 @@ public class PlantDetails implements Serializable {
 
     public int getWaterFrequency() {
         return waterFrequency;
-    }
-
-    public String getFamily() {
-        return family;
     }
 }

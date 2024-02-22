@@ -1,6 +1,6 @@
 package se.myhappyplants.server.services;
 
-import se.myhappyplants.shared.Plant;
+import se.myhappyplants.javalin.plant.Plant;
 import se.myhappyplants.shared.PlantDetails;
 import se.myhappyplants.shared.User;
 
@@ -56,12 +56,12 @@ public class UserPlantRepository {
         try (PreparedStatement plantStatement = database.prepareStatement(plantQuery)) {
             plantStatement.setInt(1, user.getUniqueId());
             plantStatement.setString(2, sqlSafeNickname);
-            plantStatement.setString(3, plant.getPlantId());
+            plantStatement.setString(3, plant.getId());
             plantStatement.setDate(4, plant.getLastWatered());
             plantStatement.setString(5, plant.getImageURL());
             plantStatement.executeUpdate();
 
-            if (!doesPlantDetailExist(plant.getPlantId())) {
+            if (!doesPlantDetailExist(plant.getId())) {
                 try (PreparedStatement detailsStatement = database.prepareStatement(detailsQuery)) {
                     detailsStatement.setString(1, details.getScientificName());
                     detailsStatement.setString(2, details.getGenus());
@@ -71,7 +71,7 @@ public class UserPlantRepository {
                     detailsStatement.setString(6, "0");
                     detailsStatement.setString(7, "0");
                     detailsStatement.setString(8, "0");
-                    detailsStatement.setString(9, plant.getPlantId());
+                    detailsStatement.setString(9, plant.getId());
                     detailsStatement.executeUpdate();
                 }
             }
@@ -96,9 +96,6 @@ public class UserPlantRepository {
         }
         return false;
     }
-
-
-
 
 
     /**
@@ -130,9 +127,6 @@ public class UserPlantRepository {
 
         return plantList;
     }
-
-
-
 
 
     /**
@@ -211,8 +205,6 @@ public class UserPlantRepository {
     }
 
 
-
-
     /**
      * Method that makes a query to change the last watered date of a specific plant in table Plant
      *
@@ -259,6 +251,7 @@ public class UserPlantRepository {
 
         return nicknameChanged;
     }
+
 
     public boolean changeAllToWatered(User user) {
         boolean dateChanged = false;

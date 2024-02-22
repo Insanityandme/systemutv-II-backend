@@ -3,7 +3,7 @@ package se.myhappyplants.server.model.ResponseHandlers;
 import se.myhappyplants.server.model.IResponseHandler;
 import se.myhappyplants.server.services.UserPlantRepository;
 import se.myhappyplants.shared.Message;
-import se.myhappyplants.shared.Plant;
+import se.myhappyplants.javalin.plant.Plant;
 import se.myhappyplants.shared.User;
 /**
  * Class that handles the change when the user wants to delete a plant

@@ -13,9 +13,9 @@ import javafx.util.Duration;
 import se.myhappyplants.client.controller.MyPlantsTabPaneController;
 import se.myhappyplants.client.model.BoxTitle;
 import se.myhappyplants.client.model.PictureRandomizer;
-import se.myhappyplants.shared.WaterCalculator;
-import se.myhappyplants.shared.Plant;
 import se.myhappyplants.shared.PlantDetails;
+import se.myhappyplants.shared.WaterCalculator;
+import se.myhappyplants.javalin.plant.Plant;
 
 import java.io.File;
 import java.time.LocalDate;

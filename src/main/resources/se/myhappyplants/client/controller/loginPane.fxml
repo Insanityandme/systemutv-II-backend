@@ -41,7 +41,7 @@
                         </ImageView>
             <ImageView fitHeight="130.0" fitWidth="116.0" layoutX="430.0" layoutY="168.0" pickOnBounds="true" preserveRatio="true">
                <image>
-                  <Image url="@../../../../Blommor/login.png" />
+                  <Image url="@../../../../Blommor/newLoginRequest.png" />
                </image>
             </ImageView>
             <ImageView fitHeight="170.0" fitWidth="250.0" layoutX="334.0" pickOnBounds="true" preserveRatio="true">

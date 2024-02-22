@@ -16,14 +16,12 @@ import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Text;
 import se.myhappyplants.client.model.*;
-import se.myhappyplants.client.service.ServerConnection;
 import se.myhappyplants.client.view.AutocompleteSearchField;
 import se.myhappyplants.client.view.MessageBox;
 import se.myhappyplants.client.view.PopupBox;
 import se.myhappyplants.client.view.SearchPlantPane;
 import se.myhappyplants.shared.Message;
-import se.myhappyplants.shared.MessageType;
-import se.myhappyplants.shared.Plant;
+import se.myhappyplants.javalin.plant.Plant;
 import se.myhappyplants.client.model.SetAvatar;
 import se.myhappyplants.shared.PlantDetails;
 
@@ -291,7 +289,7 @@ public class SearchTabPaneController {
     //Tar hand om krav F.SI.1
     private int getIndexOfPlant(Plant plant) {
         for (int i = 0; i < searchResults.size(); i++) {
-            if (searchResults.get(i).getPlantId().equals(plant.getPlantId())) {
+            if (searchResults.get(i).getId().equals(plant.getId())) {
                 return i;
             }
         }
