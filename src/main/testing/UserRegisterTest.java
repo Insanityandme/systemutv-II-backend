@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class UserRegisterTest {
-
     //Föreslår att när vi byter till Javalin som backend att vi har en UserController klass som
     //hanterar alla requests som berör användare (register, login osv.).
 

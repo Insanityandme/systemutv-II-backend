@@ -1,18 +1,20 @@
 package se.myhappyplants.javalin.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.javalin.http.InternalServerErrorResponse;
-import se.myhappyplants.shared.WaterCalculator;
+import org.mindrot.jbcrypt.BCrypt;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class Helper {
+    public static Connection database = getConnection();
+
     public static Connection getConnection() {
         Connection database;
 
@@ -30,14 +32,31 @@ public class Helper {
         mapper.registerModule(new JavaTimeModule());
 
         String json;
-
         try {
             json = mapper.writeValueAsString(object);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
-
         return json;
+    }
+
+    public static boolean checkPassword(int userId, String password) {
+        String query = "SELECT password FROM user WHERE id = ?;";
+        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+            preparedStatement.setInt(1, userId);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                String hashedPassword = resultSet.getString("password");
+                boolean isVerified = BCrypt.checkpw(password, hashedPassword);
+                if (isVerified) {
+                    return true;
+                }
+            }
+        } catch (SQLException sqlException) {
+            sqlException.printStackTrace();
+        }
+
+        return false;
     }
 
     public static long calculateWaterFrequencyForWatering(int waterFrequency) {
@@ -57,7 +76,7 @@ public class Helper {
         return waterFrequencyMilli;
     }
 
-    public static long getWaterFrequency(String plantId)  {
+    public static long getWaterFrequency(String plantId) {
         Connection database = getConnection();
 
         long waterFrequency = -1;
@@ -83,8 +102,7 @@ public class Helper {
         try {
             Double.parseDouble(str);
             return true;
-        }
-        catch (NumberFormatException e) {
+        } catch (NumberFormatException e) {
             return false;
         }
     }

@@ -19,6 +19,7 @@ import se.myhappyplants.javalin.plant.Plant;
 import se.myhappyplants.javalin.plant.TreflePlant;
 import se.myhappyplants.javalin.user.NewDeleteRequest;
 import se.myhappyplants.javalin.user.NewUserRequest;
+import se.myhappyplants.javalin.user.NewUpdateUserRequest;
 import se.myhappyplants.javalin.user.User;
 import se.myhappyplants.javalin.utils.ErrorResponse;
 
@@ -28,7 +29,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.sql.*;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -70,6 +70,7 @@ public class Javalin {
                     });
                     path("users", () -> {
                         path("{id}", () -> {
+                            patch(Javalin::updateUser);
                             delete(Javalin::deleteUser);
                             path("plants", () -> {
                                 // get(Javalin::getPlantByNickname);
@@ -108,7 +109,7 @@ public class Javalin {
     public static void getFact(Context ctx) {
         int factId = ctx.pathParamAsClass("factId", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
         Connection database = getConnection();
-        String fact = "";
+        String fact;
         String query = "SELECT fact FROM fun_facts WHERE id = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
@@ -666,52 +667,50 @@ public class Javalin {
         }
     }
 
-    // // Requirement:
-    // @OpenApi(
-    //         summary = "Get plant based on user ID and plant nickname",
-    //         operationId = "getPlant",
-    //         path = "/v1/users/{id}/plants?nickname=",
-    //         methods = HttpMethod.GET,
-    //         tags = {"User"},
-    //         pathParams = {
-    //                 @OpenApiParam(name = "id", type = Integer.class, description = "The user ID"),
-    //         },
-    //         queryParams = {
-    //                 @OpenApiParam(name = "nickname", description = "The plant name"),
-    //         },
-    //         responses = {
-    //                 @OpenApiResponse(status = "200", content = {@OpenApiContent(from = Plant.class)}),
-    //                 @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
-    //         }
-    // )
-    // public static void getPlantByNickname(Context ctx) {
-    //     int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
-    //     String nickname = ctx.queryParamAsClass("nickname", String.class).check(Objects::nonNull, "You must choose a name").get();
+    // Requirement:
+    @OpenApi(
+            summary = "Update user information based on ID and password",
+            operationId = "updateUserById",
+            path = "/v1/users/{id}",
+            methods = HttpMethod.PATCH,
+            pathParams = {
+                    @OpenApiParam(name = "id", type = Integer.class, description = "The user ID"),
+            },
+            tags = {"User"},
+            requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = NewUpdateUserRequest.class)}),
+            responses = {
+                    @OpenApiResponse(status = "200"),
+                    @OpenApiResponse(status = "400", content = {@OpenApiContent(from = ErrorResponse.class)}),
+                    @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
+            }
+    )
+    public static void updateUser(Context ctx) {
+        int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+        NewUpdateUserRequest user = ctx.bodyAsClass(NewUpdateUserRequest.class);
 
-    //     Connection database = getConnection();
-    //     String sqlSafeNickname = nickname.replace("'", "''");
-    //     String query = "SELECT nickname, plant_id, last_watered, image_url FROM plant WHERE user_id = ? AND nickname = ?;";
+        Connection database = getConnection();
+        if (checkPassword(userId, user.password)) {
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode jsonNode;
+            try {
+                jsonNode = objectMapper.readTree(ctx.body());
+                if (jsonNode.get("funFactsActivated") != null) {
+                    boolean funFactsActivated = jsonNode.get("funFactsActivated").asBoolean();
+                    String query = "UPDATE user SET fun_facts_activated = ? WHERE id = ?;";
+                    try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+                        preparedStatement.setBoolean(1, funFactsActivated);
+                        preparedStatement.setInt(2, userId);
+                        preparedStatement.executeUpdate();
+                    } catch (SQLException sqlException) {
+                        sqlException.printStackTrace();
+                    }
+                }
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
 
-    //     try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
-    //         preparedStatement.setInt(1, userId);
-    //         preparedStatement.setString(2, sqlSafeNickname);
-    //         ResultSet resultSet = preparedStatement.executeQuery();
+        }
 
-    //         if (resultSet.next()) {
-    //             String plantId = resultSet.getString("plant_id");
-    //             Date lastWatered = resultSet.getDate("last_watered");
-    //             String imageURL = resultSet.getString("image_url");
-    //             long waterFrequency = getWaterFrequency(plantId);
-    //             Plant plant = new Plant(nickname, plantId, lastWatered, waterFrequency, imageURL);
+    }
 
-    //             String json = objecToJson(plant);
-    //             ctx.result(json);
-    //             ctx.status(200);
-    //         } else {
-    //             throw new NotFoundResponse("Plant not found");
-    //         }
-    //     } catch (SQLException sqlException) {
-    //         sqlException.printStackTrace();
-    //     }
-    // }
 }
