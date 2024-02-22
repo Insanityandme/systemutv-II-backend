@@ -3,7 +3,7 @@ package se.myhappyplants.client.model;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.image.ImageView;
-import se.myhappyplants.javalin.plants.Plant;
+import se.myhappyplants.javalin.plant.Plant;
 
 import java.util.ArrayList;
 

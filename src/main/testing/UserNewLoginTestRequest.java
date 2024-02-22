@@ -1,16 +1,13 @@
-import se.myhappyplants.javalin.Main;
+import se.myhappyplants.javalin.Javalin;
 import se.myhappyplants.server.services.UserRepository;
 
 import io.javalin.http.Context;
 
 import org.junit.jupiter.api.*;
 
-import java.sql.SQLException;
-
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class UserLoginTest {
+public class UserNewLoginTestRequest {
     //Föreslår att när vi byter till Javalin som backend att vi har en UserController klass som
     //hanterar alla requests som berör användare (register, login osv.).
 
@@ -21,7 +18,7 @@ public class UserLoginTest {
     @BeforeEach
     public void setUp() {
         ctx = mock(Context.class);
-        Main.createUser(ctx);
+        Javalin.createUser(ctx);
         // userRepository = mock(UserRepository.class);
         //userController = new UserController(userRepository);
     }
@@ -46,7 +43,7 @@ public class UserLoginTest {
         when(userRepository.checkLogin("plantlovergmail.com", "wrong")).thenReturn(false);
 
         //userController.loginUser(ctx);
-        Main.login(ctx);
+        Javalin.login(ctx);
 
         verify(userRepository).checkLogin("plantlovergmail.com", "wrong");
     }
