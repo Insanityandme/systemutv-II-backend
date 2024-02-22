@@ -52,9 +52,6 @@ public class UserChangeFunFacts {
         if(!userRepositorySpy.checkLogin("test@gmail.com","123")){
             userRepositorySpy.saveUser(testUser);
         }
-
-
-
     }
 
     @Test
