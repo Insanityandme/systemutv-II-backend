@@ -273,7 +273,6 @@ public class Javalin {
                 }
             } else if (jsonNode.get("notificationsActivated") != null) {
                 boolean notificationActivated = jsonNode.get("notificationsActivated").asBoolean();
-                System.out.println("hi mom");
                 String query = "UPDATE user SET notification_activated = ? WHERE id = ?;";
                 try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
                     preparedStatement.setBoolean(1, notificationActivated);
