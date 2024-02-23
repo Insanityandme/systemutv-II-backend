@@ -16,7 +16,7 @@ import se.myhappyplants.javalin.login.NewLoginRequest;
 import se.myhappyplants.javalin.plant.Fact;
 import se.myhappyplants.javalin.plant.NewPlantRequest;
 import se.myhappyplants.javalin.plant.Plant;
-import se.myhappyplants.javalin.plant.TreflePlant;
+import se.myhappyplants.javalin.utils.TreflePlantSwaggerObject;
 import se.myhappyplants.javalin.user.NewDeleteRequest;
 import se.myhappyplants.javalin.user.NewUserRequest;
 import se.myhappyplants.javalin.user.NewUpdateUserRequest;
@@ -93,134 +93,6 @@ public class Javalin {
         }).start(7002);
     }
 
-    // Requirement:
-    @OpenApi(
-            summary = "Get fact based on ID",
-            operationId = "getFact",
-            path = "/v1/facts/{factId}",
-            pathParams = {@OpenApiParam(name = "factId", type = Integer.class, description = "The fact ID")},
-            methods = HttpMethod.GET,
-            tags = {"Fun Facts"},
-            responses = {
-                    @OpenApiResponse(status = "200", content = {@OpenApiContent(from = Fact[].class)}),
-                    @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
-            }
-    )
-    public static void getFact(Context ctx) {
-        int factId = ctx.pathParamAsClass("factId", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
-        Connection database = getConnection();
-        String fact;
-        String query = "SELECT fact FROM fun_facts WHERE id = ?;";
-
-        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
-            preparedStatement.setInt(1, factId);
-            ResultSet resultSet = preparedStatement.executeQuery();
-            if (resultSet.next()) {
-                fact = resultSet.getString("fact");
-
-                if (fact.isEmpty()) {
-                    throw new NotFoundResponse("Fact not found");
-                } else {
-                    String json = objecToJson(fact);
-                    ctx.result(json);
-                    ctx.status(200);
-                }
-            }
-        } catch (SQLException sqlException) {
-            sqlException.printStackTrace();
-        }
-    }
-
-    // Requirement: F.DP.4
-    @OpenApi(
-            summary = "Get all plants",
-            operationId = "getAllPlants",
-            path = "/v1/users/{id}/plants",
-            pathParams = {@OpenApiParam(name = "id", type = Integer.class, description = "The user ID")},
-            methods = HttpMethod.GET,
-            tags = {"User Plants"},
-            responses = {
-                    @OpenApiResponse(status = "200", content = {@OpenApiContent(from = Plant[].class)}),
-                    @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
-            }
-    )
-    public static void getAllPlants(Context context) {
-        int userId = context.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
-        ArrayList<NewPlantRequest> plants = new ArrayList<>();
-
-        Connection database = getConnection();
-        String queryUserPlant = "SELECT * FROM plant WHERE user_id = ?;";
-        String queryPlantDetails = "SELECT * FROM plantdetails WHERE plant_id = ?";
-
-        try (PreparedStatement preparedStatement = database.prepareStatement(queryUserPlant)) {
-            preparedStatement.setInt(1, userId);
-            ResultSet resultSet = preparedStatement.executeQuery();
-            NewPlantRequest plant = new NewPlantRequest();
-            while (resultSet.next()) {
-                plant.id = resultSet.getInt("plant_id");
-                plant.nickname = resultSet.getString("nickname");
-                plant.lastWatered = resultSet.getDate("last_watered").toString();
-                plant.imageURL = resultSet.getString("image_url");
-
-                try (PreparedStatement preparedStatement2 = database.prepareStatement(queryPlantDetails)) {
-                    preparedStatement2.setInt(1, plant.id);
-                    ResultSet resultSet2 = preparedStatement2.executeQuery();
-                    plant.commonName = resultSet2.getString("common_name");
-                    plant.scientificName = resultSet2.getString("scientific_name");
-                    plant.genus = resultSet2.getString("genus");
-                    plant.family = resultSet2.getString("family");
-                    plant.waterFrequency = getWaterFrequency(plant.id);
-                    plant.light = resultSet2.getInt("light");
-                }
-            }
-            plants.add(plant);
-        } catch (SQLException sqlException) {
-            sqlException.printStackTrace();
-        }
-
-        String json = objecToJson(plants);
-        context.result(json);
-        context.status(200);
-    }
-
-    // Requirement: F.DP.4
-    @OpenApi(
-            summary = "Create user",
-            operationId = "createUser",
-            path = "/v1/register",
-            methods = HttpMethod.POST,
-            tags = {"Authentication"},
-            requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = NewUserRequest.class)}),
-            responses = {
-                    @OpenApiResponse(status = "201"),
-                    @OpenApiResponse(status = "409", content = {@OpenApiContent(from = ErrorResponse.class)}),
-                    @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
-            }
-    )
-    public static void createUser(Context ctx) {
-        NewUserRequest user = ctx.bodyAsClass(NewUserRequest.class);
-        Connection database = getConnection();
-
-        String hashedPassword = BCrypt.hashpw(user.password, BCrypt.gensalt());
-        String sqlSafeUsername = user.username.replace("'", "''");
-        String query = "INSERT INTO user (username, email, password, notification_activated, fun_facts_activated) VALUES (?, ?, ?, 1, 1);";
-
-        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
-            preparedStatement.setString(1, sqlSafeUsername);
-            preparedStatement.setString(2, user.email);
-            preparedStatement.setString(3, hashedPassword);
-            try {
-                preparedStatement.executeUpdate();
-                ctx.status(201);
-            } catch (SQLiteException exception) {
-                ctx.status(409);
-                ctx.result("User already exists");
-            }
-        } catch (SQLException sqlException) {
-            sqlException.printStackTrace();
-        }
-    }
-
     // Requirement: F.DP.3
     @OpenApi(
             summary = "Login",
@@ -272,6 +144,145 @@ public class Javalin {
         } else {
             ctx.status(404);
             ctx.result("Login failed");
+        }
+    }
+
+    // Requirement: F.DP.4
+    @OpenApi(
+            summary = "Create user",
+            operationId = "createUser",
+            path = "/v1/register",
+            methods = HttpMethod.POST,
+            tags = {"Authentication"},
+            requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = NewUserRequest.class)}),
+            responses = {
+                    @OpenApiResponse(status = "201"),
+                    @OpenApiResponse(status = "409", content = {@OpenApiContent(from = ErrorResponse.class)}),
+                    @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
+            }
+    )
+    public static void createUser(Context ctx) {
+        NewUserRequest user = ctx.bodyAsClass(NewUserRequest.class);
+        Connection database = getConnection();
+
+        String hashedPassword = BCrypt.hashpw(user.password, BCrypt.gensalt());
+        String sqlSafeUsername = user.username.replace("'", "''");
+        String query = "INSERT INTO user (username, email, password, notification_activated, fun_facts_activated) VALUES (?, ?, ?, 1, 1);";
+
+        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+            preparedStatement.setString(1, sqlSafeUsername);
+            preparedStatement.setString(2, user.email);
+            preparedStatement.setString(3, hashedPassword);
+            try {
+                preparedStatement.executeUpdate();
+                ctx.status(201);
+            } catch (SQLiteException exception) {
+                ctx.status(409);
+                ctx.result("User already exists");
+            }
+        } catch (SQLException sqlException) {
+            sqlException.printStackTrace();
+        }
+    }
+
+    // Requirement: F.DP.13
+    @OpenApi(
+            summary = "Get fact based on ID",
+            operationId = "getFact",
+            path = "/v1/facts/{factId}",
+            pathParams = {@OpenApiParam(name = "factId", type = Integer.class, description = "The fact ID")},
+            methods = HttpMethod.GET,
+            tags = {"Fun Facts"},
+            responses = {
+                    @OpenApiResponse(status = "200", content = {@OpenApiContent(from = Fact[].class)}),
+                    @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
+            }
+    )
+    public static void getFact(Context ctx) {
+        int factId = ctx.pathParamAsClass("factId", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+        Connection database = getConnection();
+        String fact;
+        String query = "SELECT fact FROM fun_facts WHERE id = ?;";
+
+        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+            preparedStatement.setInt(1, factId);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                fact = resultSet.getString("fact");
+
+                if (fact.isEmpty()) {
+                    throw new NotFoundResponse("Fact not found");
+                } else {
+                    String json = objecToJson(fact);
+                    ctx.result(json);
+                    ctx.status(200);
+                }
+            }
+        } catch (SQLException sqlException) {
+            sqlException.printStackTrace();
+        }
+    }
+
+    // Requirement: F.DP.14
+    @OpenApi(
+            summary = "Update user information based on ID and password",
+            operationId = "updateUserById",
+            path = "/v1/users/{id}",
+            methods = HttpMethod.PATCH,
+            pathParams = {
+                    @OpenApiParam(name = "id", type = Integer.class, description = "The user ID"),
+            },
+            tags = {"User"},
+            requestBody = @OpenApiRequestBody(
+                    description = "You can use one field at a time to update the user, always include the password.",
+                    content = {
+                            @OpenApiContent(from = NewUpdateUserRequest.class),
+                    }),
+            responses = {
+                    @OpenApiResponse(status = "200"),
+                    @OpenApiResponse(status = "400", content = {@OpenApiContent(from = ErrorResponse.class)}),
+                    @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
+            }
+    )
+    public static void updateUser(Context ctx) {
+        int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+
+        Connection database = getConnection();
+        String password = "";
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonNode;
+        try {
+            jsonNode = objectMapper.readTree(ctx.body());
+            if (jsonNode.get("password") != null) {
+                password = jsonNode.get("password").asText();
+            }
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
+        if (checkPassword(userId, password)) {
+            if (jsonNode.get("funFactsActivated") != null) {
+                boolean funFactsActivated = jsonNode.get("funFactsActivated").asBoolean();
+                String query = "UPDATE user SET fun_facts_activated = ? WHERE id = ?;";
+                try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+                    preparedStatement.setBoolean(1, funFactsActivated);
+                    preparedStatement.setInt(2, userId);
+                    preparedStatement.executeUpdate();
+                } catch (SQLException sqlException) {
+                    sqlException.printStackTrace();
+                }
+            } else if (jsonNode.get("notificationsActivated") != null) {
+                boolean notificationActivated = jsonNode.get("notificationsActivated").asBoolean();
+                System.out.println("hi mom");
+                String query = "UPDATE user SET notification_activated = ? WHERE id = ?;";
+                try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+                    preparedStatement.setBoolean(1, notificationActivated);
+                    preparedStatement.setInt(2, userId);
+                    preparedStatement.executeUpdate();
+                } catch (SQLException sqlException) {
+                    sqlException.printStackTrace();
+                }
+            }
         }
     }
 
@@ -340,65 +351,80 @@ public class Javalin {
         }
     }
 
-    // Requirement: F.DP.1
+    // Requirement: F.DP.4
     @OpenApi(
-            summary = "Get plants based on search parameter",
-            operationId = "getPlants",
-            path = "/v1/plants?plant=",
+            summary = "Get all plants",
+            operationId = "getAllPlants",
+            path = "/v1/users/{id}/plants",
+            pathParams = {@OpenApiParam(name = "id", type = Integer.class, description = "The user ID")},
             methods = HttpMethod.GET,
-            tags = {"Plants"},
-            queryParams = {@OpenApiParam(name = "plant", description = "The plant name")},
+            tags = {"User Plants"},
             responses = {
-                    @OpenApiResponse(status = "200", content = {@OpenApiContent(from = TreflePlant[].class)}),
+                    @OpenApiResponse(status = "200", content = {@OpenApiContent(from = Plant[].class)}),
                     @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
             }
     )
-    public static void getPlants(Context ctx) {
-        String TrefleKey = System.getenv("TREFLE_API_KEY");
+    public static void getAllPlants(Context context) {
+        int userId = context.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+        ArrayList<NewPlantRequest> plants = new ArrayList<>();
 
-        // for example when you want to search for a plant called "rose"
-        // you type in the url: http://localhost:7002/v1/plants/search?plant=rose
-        String plant = ctx.queryParam("plant");
+        Connection database = getConnection();
+        String queryUserPlant = "SELECT * FROM plant WHERE user_id = ?;";
+        String queryPlantDetails = "SELECT * FROM plantdetails WHERE plant_id = ?";
 
-        HttpClient client = HttpClient.newHttpClient();
+        try (PreparedStatement preparedStatement = database.prepareStatement(queryUserPlant)) {
+            preparedStatement.setInt(1, userId);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            NewPlantRequest plant = new NewPlantRequest();
+            while (resultSet.next()) {
+                plant.id = resultSet.getInt("plant_id");
+                plant.nickname = resultSet.getString("nickname");
+                plant.lastWatered = resultSet.getDate("last_watered").toString();
+                plant.imageURL = resultSet.getString("image_url");
 
-        HttpRequest request = HttpRequest.newBuilder(
-                        URI.create("https://trefle.io/api/v1/plants/search?token=" + TrefleKey + "&q=" + plant))
-                .header("accept", "application/json")
-                .build();
-
-        CompletableFuture<HttpResponse<String>> response =
-                client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
-
-        HttpResponse<String> result;
-        try {
-            result = response.get();
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException(e);
+                try (PreparedStatement preparedStatement2 = database.prepareStatement(queryPlantDetails)) {
+                    preparedStatement2.setInt(1, plant.id);
+                    ResultSet resultSet2 = preparedStatement2.executeQuery();
+                    plant.commonName = resultSet2.getString("common_name");
+                    plant.scientificName = resultSet2.getString("scientific_name");
+                    plant.genus = resultSet2.getString("genus");
+                    plant.family = resultSet2.getString("family");
+                    plant.waterFrequency = getWaterFrequency(plant.id);
+                    plant.light = resultSet2.getInt("light");
+                }
+            }
+            plants.add(plant);
+        } catch (SQLException sqlException) {
+            sqlException.printStackTrace();
         }
 
-        ctx.result(result.body());
+        String json = objecToJson(plants);
+        context.result(json);
+        context.status(200);
     }
 
-    // Requirement: F.DP.2
+    // Requirement: F.DP.9
     @OpenApi(
-            summary = "Add plant to user",
-            operationId = "savePlant",
+            summary = "Update all plants by user ID",
+            operationId = "updateAllPlants",
             path = "/v1/users/{id}/plants",
-            methods = HttpMethod.POST,
-            tags = {"User Plant"},
-            pathParams = {@OpenApiParam(name = "id", type = Integer.class, description = "The user ID")},
-            requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = NewPlantRequest.class)}),
+            methods = HttpMethod.PATCH,
+            pathParams = {
+                    @OpenApiParam(name = "id", type = Integer.class, description = "The user ID"),
+            },
+            tags = {"User Plants"},
+            requestBody = @OpenApiRequestBody(
+                    description = "You can use one field at a time to update the plants",
+                    content = {@OpenApiContent(from = NewPlantRequest.class)}),
             responses = {
-                    @OpenApiResponse(status = "201"),
-                    @OpenApiResponse(status = "400", content = {@OpenApiContent(from = ErrorResponse.class)})
+                    @OpenApiResponse(status = "200"),
+                    @OpenApiResponse(status = "400", content = {@OpenApiContent(from = ErrorResponse.class)}),
+                    @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
             }
     )
-    public static void savePlant(Context ctx) {
+    public static void updateAllPlants(Context ctx) {
         int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
         NewPlantRequest plant = ctx.bodyAsClass(NewPlantRequest.class);
-        boolean isCreated = false;
-        Connection database = getConnection();
 
         // check if date is the correct format
         try {
@@ -410,60 +436,73 @@ public class Javalin {
             return;
         }
 
-        String sqlSafeNickname = plant.nickname.replace("'", "''");
-        String plantQuery = "INSERT INTO plant (user_id, nickname, plant_id, last_watered, image_url) VALUES (?, ?, ?, ?, ?);";
-        String detailsQuery = "INSERT INTO plantdetails (scientific_name, genus, family, common_name, image_url, light, url_wikipedia_en, water_frequency, plant_id)" +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);";
+        Connection database = getConnection();
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode jsonNode = objectMapper.readTree(ctx.body());
 
-        try (PreparedStatement plantStatement = database.prepareStatement(plantQuery)) {
-            plantStatement.setInt(1, userId);
-            plantStatement.setString(2, sqlSafeNickname);
-            plantStatement.setInt(3, plant.id);
-            plantStatement.setDate(4, Date.valueOf(plant.lastWatered));
-            plantStatement.setString(5, plant.imageURL);
-            plantStatement.executeUpdate();
+            if (jsonNode.get("lastWatered") != null) {
+                String query = "UPDATE plant SET last_watered = ? WHERE user_id = ?;";
+                try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+                    preparedStatement.setDate(1, Date.valueOf(plant.lastWatered));
+                    preparedStatement.setInt(2, userId);
+                    preparedStatement.executeUpdate();
 
-            // Checks if plant details already exist in the database
-            // We might want to have several of the same plants in our dashboard
-            // But no duplicate details about them!
-            String query = "SELECT COUNT(*) FROM plantdetails WHERE plant_id = ?";
-            boolean doesPlantDetailExist = false;
-            try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
-                preparedStatement.setInt(1, plant.id);
-                ResultSet resultSet = preparedStatement.executeQuery();
-                if (resultSet.next()) {
-                    int count = resultSet.getInt(1);
-                    doesPlantDetailExist = count > 0;
+                    String json = String.format("{\"lastWatered\": \"%s\"}", plant.lastWatered);
+                    ctx.result(json);
+                    ctx.status(200);
+                } catch (SQLException sqlException) {
+                    sqlException.printStackTrace();
                 }
             }
-
-            if (!doesPlantDetailExist) {
-                try (PreparedStatement detailsStatement = database.prepareStatement(detailsQuery)) {
-                    detailsStatement.setString(1, plant.scientificName);
-                    detailsStatement.setString(2, plant.genus);
-                    detailsStatement.setString(3, plant.family);
-                    detailsStatement.setString(4, plant.commonName);
-                    detailsStatement.setString(5, plant.imageURL);
-                    detailsStatement.setString(6, "0");
-                    detailsStatement.setString(7, "0");
-                    detailsStatement.setString(8, "0");
-                    detailsStatement.setInt(9, plant.id);
-                    detailsStatement.executeUpdate();
-                }
-            }
-
-            isCreated = true;
-        } catch (SQLException exception) {
-            exception.printStackTrace();
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
         }
+    }
 
-        if (isCreated) {
-            String json = objecToJson(plant);
-            ctx.result(json);
-            ctx.status(200);
-        } else {
-            ctx.status(409);
-            ctx.result("You already have a plant with that nickname");
+    // Requirement: F.DP.10
+    @OpenApi(
+            summary = "Get plant based on user ID and plant ID",
+            operationId = "getPlant",
+            path = "/v1/users/{id}/plants/{plantId}",
+            methods = HttpMethod.GET,
+            tags = {"User Plant"},
+            pathParams = {
+                    @OpenApiParam(name = "id", type = Integer.class, description = "The user ID"),
+                    @OpenApiParam(name = "plantId", description = "The plant ID")},
+            responses = {
+                    @OpenApiResponse(status = "200", content = {@OpenApiContent(from = Plant.class)}),
+                    @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
+            }
+    )
+    public static void getPlant(Context ctx) {
+        int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+        int plantId = ctx.pathParamAsClass("plantId", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+
+        Connection database = getConnection();
+        String query = "SELECT * FROM plant WHERE user_id = ? AND id = ?;";
+
+        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+            preparedStatement.setInt(1, userId);
+            preparedStatement.setInt(2, plantId);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                String nickname = resultSet.getString("nickname");
+                int plantIdDb = resultSet.getInt("plant_id");
+                Date lastWatered = resultSet.getDate("last_watered");
+                String imageURL = resultSet.getString("image_url");
+
+                long waterFrequency = getWaterFrequency(plantIdDb);
+                Plant plant = new Plant(nickname, plantIdDb, lastWatered.toString(), waterFrequency, imageURL);
+
+                String json = objecToJson(plant);
+                ctx.result(json);
+                ctx.status(200);
+            } else {
+                throw new NotFoundResponse("Plant not found");
+            }
+        } catch (SQLException sqlException) {
+            sqlException.printStackTrace();
         }
     }
 
@@ -559,63 +598,6 @@ public class Javalin {
         }
     }
 
-    // Requirement: F.DP.9
-    @OpenApi(
-            summary = "Update all plants by user ID",
-            operationId = "updateAllPlants",
-            path = "/v1/users/{id}/plants",
-            methods = HttpMethod.PATCH,
-            pathParams = {
-                    @OpenApiParam(name = "id", type = Integer.class, description = "The user ID"),
-            },
-            tags = {"User Plants"},
-            requestBody = @OpenApiRequestBody(
-                    description = "You can use one field at a time to update the plants",
-                    content = {@OpenApiContent(from = NewPlantRequest.class)}),
-            responses = {
-                    @OpenApiResponse(status = "200"),
-                    @OpenApiResponse(status = "400", content = {@OpenApiContent(from = ErrorResponse.class)}),
-                    @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
-            }
-    )
-    public static void updateAllPlants(Context ctx) {
-        int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
-        NewPlantRequest plant = ctx.bodyAsClass(NewPlantRequest.class);
-
-        // check if date is the correct format
-        try {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-            sdf.parse(plant.lastWatered);
-        } catch (Exception e) {
-            ctx.status(400);
-            ctx.result("Date is not in the correct format, are you sure you are using yyyy-MM-dd?");
-            return;
-        }
-
-        Connection database = getConnection();
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode jsonNode = objectMapper.readTree(ctx.body());
-
-            if (jsonNode.get("lastWatered") != null) {
-                String query = "UPDATE plant SET last_watered = ? WHERE user_id = ?;";
-                try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
-                    preparedStatement.setDate(1, Date.valueOf(plant.lastWatered));
-                    preparedStatement.setInt(2, userId);
-                    preparedStatement.executeUpdate();
-
-                    String json = String.format("{\"lastWatered\": \"%s\"}", plant.lastWatered);
-                    ctx.result(json);
-                    ctx.status(200);
-                } catch (SQLException sqlException) {
-                    sqlException.printStackTrace();
-                }
-            }
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     // Requirement: F.DP.8
     @OpenApi(
             summary = "Delete plant by ID",
@@ -654,112 +636,130 @@ public class Javalin {
         }
     }
 
-    // Requirement: F.DP.10
+    // Requirement: F.DP.1
     @OpenApi(
-            summary = "Get plant based on user ID and plant ID",
-            operationId = "getPlant",
-            path = "/v1/users/{id}/plants/{plantId}",
-            methods = HttpMethod.GET,
+            summary = "Add plant to user",
+            operationId = "savePlant",
+            path = "/v1/users/{id}/plants",
+            methods = HttpMethod.POST,
             tags = {"User Plant"},
-            pathParams = {
-                    @OpenApiParam(name = "id", type = Integer.class, description = "The user ID"),
-                    @OpenApiParam(name = "plantId", description = "The plant ID")},
+            pathParams = {@OpenApiParam(name = "id", type = Integer.class, description = "The user ID")},
+            requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = NewPlantRequest.class)}),
             responses = {
-                    @OpenApiResponse(status = "200", content = {@OpenApiContent(from = Plant.class)}),
-                    @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
+                    @OpenApiResponse(status = "201"),
+                    @OpenApiResponse(status = "400", content = {@OpenApiContent(from = ErrorResponse.class)})
             }
     )
-    public static void getPlant(Context ctx) {
+    public static void savePlant(Context ctx) {
         int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
-        int plantId = ctx.pathParamAsClass("plantId", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
-
+        NewPlantRequest plant = ctx.bodyAsClass(NewPlantRequest.class);
+        boolean isCreated = false;
         Connection database = getConnection();
-        String query = "SELECT * FROM plant WHERE user_id = ? AND id = ?;";
 
-        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
-            preparedStatement.setInt(1, userId);
-            preparedStatement.setInt(2, plantId);
-            ResultSet resultSet = preparedStatement.executeQuery();
-            if (resultSet.next()) {
-                String nickname = resultSet.getString("nickname");
-                int plantIdDb = resultSet.getInt("plant_id");
-                Date lastWatered = resultSet.getDate("last_watered");
-                String imageURL = resultSet.getString("image_url");
+        // check if date is the correct format
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            sdf.parse(plant.lastWatered);
+        } catch (Exception e) {
+            ctx.status(400);
+            ctx.result("Date is not in the correct format, are you sure you are using yyyy-MM-dd?");
+            return;
+        }
 
-                long waterFrequency = getWaterFrequency(plantIdDb);
-                Plant plant = new Plant(nickname, plantIdDb, lastWatered.toString(), waterFrequency, imageURL);
+        String sqlSafeNickname = plant.nickname.replace("'", "''");
+        String plantQuery = "INSERT INTO plant (user_id, nickname, plant_id, last_watered, image_url) VALUES (?, ?, ?, ?, ?);";
+        String detailsQuery = "INSERT INTO plantdetails (scientific_name, genus, family, common_name, image_url, light, url_wikipedia_en, water_frequency, plant_id)" +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
-                String json = objecToJson(plant);
-                ctx.result(json);
-                ctx.status(200);
-            } else {
-                throw new NotFoundResponse("Plant not found");
+        try (PreparedStatement plantStatement = database.prepareStatement(plantQuery)) {
+            plantStatement.setInt(1, userId);
+            plantStatement.setString(2, sqlSafeNickname);
+            plantStatement.setInt(3, plant.id);
+            plantStatement.setDate(4, Date.valueOf(plant.lastWatered));
+            plantStatement.setString(5, plant.imageURL);
+            plantStatement.executeUpdate();
+
+            // Checks if plant details already exist in the database
+            // We might want to have several of the same plants in our dashboard
+            // But no duplicate details about them!
+            String query = "SELECT COUNT(*) FROM plantdetails WHERE plant_id = ?";
+            boolean doesPlantDetailExist = false;
+            try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+                preparedStatement.setInt(1, plant.id);
+                ResultSet resultSet = preparedStatement.executeQuery();
+                if (resultSet.next()) {
+                    int count = resultSet.getInt(1);
+                    doesPlantDetailExist = count > 0;
+                }
             }
-        } catch (SQLException sqlException) {
-            sqlException.printStackTrace();
+
+            if (!doesPlantDetailExist) {
+                try (PreparedStatement detailsStatement = database.prepareStatement(detailsQuery)) {
+                    detailsStatement.setString(1, plant.scientificName);
+                    detailsStatement.setString(2, plant.genus);
+                    detailsStatement.setString(3, plant.family);
+                    detailsStatement.setString(4, plant.commonName);
+                    detailsStatement.setString(5, plant.imageURL);
+                    detailsStatement.setString(6, "0");
+                    detailsStatement.setString(7, "0");
+                    detailsStatement.setString(8, "0");
+                    detailsStatement.setInt(9, plant.id);
+                    detailsStatement.executeUpdate();
+                }
+            }
+
+            isCreated = true;
+        } catch (SQLException exception) {
+            exception.printStackTrace();
+        }
+
+        if (isCreated) {
+            String json = objecToJson(plant);
+            ctx.result(json);
+            ctx.status(200);
+        } else {
+            ctx.status(409);
+            ctx.result("You already have a plant with that nickname");
         }
     }
 
-    // Requirement:
+    // Requirement: F.DP.1
     @OpenApi(
-            summary = "Update user information based on ID and password",
-            operationId = "updateUserById",
-            path = "/v1/users/{id}",
-            methods = HttpMethod.PATCH,
-            pathParams = {
-                    @OpenApiParam(name = "id", type = Integer.class, description = "The user ID"),
-            },
-            tags = {"User"},
-            requestBody = @OpenApiRequestBody(
-                    description = "You can use one field at a time to update the user, always include the password.",
-                    content = {
-                    @OpenApiContent(from = NewUpdateUserRequest.class),
-            }),
+            summary = "Get plants based on search parameter",
+            operationId = "getPlants",
+            path = "/v1/plants?plant=",
+            methods = HttpMethod.GET,
+            tags = {"Plants"},
+            queryParams = {@OpenApiParam(name = "plant", description = "The plant name")},
             responses = {
-                    @OpenApiResponse(status = "200"),
-                    @OpenApiResponse(status = "400", content = {@OpenApiContent(from = ErrorResponse.class)}),
+                    @OpenApiResponse(status = "200", content = {@OpenApiContent(from = TreflePlantSwaggerObject[].class)}),
                     @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
             }
     )
-    public static void updateUser(Context ctx) {
-        int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+    public static void getPlants(Context ctx) {
+        String TrefleKey = System.getenv("TREFLE_API_KEY");
 
-        Connection database = getConnection();
-        String password = "";
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode jsonNode;
+        // for example when you want to search for a plant called "rose"
+        // you type in the url: http://localhost:7002/v1/plants/search?plant=rose
+        String plant = ctx.queryParam("plant");
+
+        HttpClient client = HttpClient.newHttpClient();
+
+        HttpRequest request = HttpRequest.newBuilder(
+                        URI.create("https://trefle.io/api/v1/plants/search?token=" + TrefleKey + "&q=" + plant))
+                .header("accept", "application/json")
+                .build();
+
+        CompletableFuture<HttpResponse<String>> response =
+                client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
+
+        HttpResponse<String> result;
         try {
-            jsonNode = objectMapper.readTree(ctx.body());
-            if (jsonNode.get("password") != null) {
-                password = jsonNode.get("password").asText();
-            }
-        } catch (JsonProcessingException e) {
+            result = response.get();
+        } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
 
-        if (checkPassword(userId, password)) {
-            if (jsonNode.get("funFactsActivated") != null) {
-                boolean funFactsActivated = jsonNode.get("funFactsActivated").asBoolean();
-                String query = "UPDATE user SET fun_facts_activated = ? WHERE id = ?;";
-                try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
-                    preparedStatement.setBoolean(1, funFactsActivated);
-                    preparedStatement.setInt(2, userId);
-                    preparedStatement.executeUpdate();
-                } catch (SQLException sqlException) {
-                    sqlException.printStackTrace();
-                }
-            } else if (jsonNode.get("notificationsActivated") != null) {
-                boolean notificationActivated = jsonNode.get("notificationsActivated").asBoolean();
-                System.out.println("hi mom");
-                String query = "UPDATE user SET notification_activated = ? WHERE id = ?;";
-                try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
-                    preparedStatement.setBoolean(1, notificationActivated);
-                    preparedStatement.setInt(2, userId);
-                    preparedStatement.executeUpdate();
-                } catch (SQLException sqlException) {
-                    sqlException.printStackTrace();
-                }
-            }
-        }
+        ctx.result(result.body());
     }
 }
