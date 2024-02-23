@@ -10,7 +10,7 @@ public class NewPlantRequest {
     public String imageURL;
     public String nickname;
     @JsonFormat(pattern = "yyyy-MM-dd")
-    public String lastWatered;
+    public String lastWatered = "1970-01-01";
     public long waterFrequency;
     public String genus;
     public int light;

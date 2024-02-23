@@ -529,13 +529,15 @@ public class Javalin {
         NewPlantRequest plant = ctx.bodyAsClass(NewPlantRequest.class);
 
         // check if date is the correct format
-        try {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-            sdf.parse(plant.lastWatered);
-        } catch (Exception e) {
-            ctx.status(400);
-            ctx.result("Date is not in the correct format, are you sure you are using yyyy-MM-dd?");
-            return;
+        if (plant.lastWatered != null) {
+            try {
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+                sdf.parse(plant.lastWatered);
+            } catch (Exception e) {
+                ctx.status(400);
+                ctx.result("Date is not in the correct format, are you sure you are using yyyy-MM-dd?");
+                return;
+            }
         }
 
         Connection database = getConnection();
@@ -616,10 +618,10 @@ public class Javalin {
     )
     public static void deletePlant(Context ctx) {
         int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
-        int plantId = ctx.pathParamAsClass("plantId", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+        int plantId = ctx.pathParamAsClass("plantId", Integer.class).check(id -> id > -1, "ID must be greater than 0").get();
 
         Connection database = getConnection();
-        String query = "DELETE FROM plant WHERE user_id = ? AND id = ?;";
+        String query = "DELETE FROM plant WHERE user_id = ? AND plant_id = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
             preparedStatement.setInt(1, userId);
