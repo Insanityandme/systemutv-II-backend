@@ -369,14 +369,14 @@ public class Javalin {
 
         Connection database = getConnection();
         String queryUserPlant = "SELECT * FROM plant WHERE user_id = ?;";
-        String queryPlantDetails = "SELECT * FROM plantdetails WHERE plant_id = ?";
+        String queryPlantDetails = "SELECT * FROM plantdetails WHERE id = ?";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(queryUserPlant)) {
             preparedStatement.setInt(1, userId);
             ResultSet resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
                 NewPlantRequest plant = new NewPlantRequest();
-                plant.id = resultSet.getInt("plant_id");
+                plant.id = resultSet.getInt("id");
                 plant.nickname = resultSet.getString("nickname");
                 plant.lastWatered = resultSet.getDate("last_watered").toString();
                 plant.imageURL = resultSet.getString("image_url");
@@ -490,7 +490,7 @@ public class Javalin {
             ResultSet resultSet = preparedStatement.executeQuery();
             if (resultSet.next()) {
                 String nickname = resultSet.getString("nickname");
-                int plantIdDb = resultSet.getInt("plant_id");
+                int plantIdDb = resultSet.getInt("id");
                 Date lastWatered = resultSet.getDate("last_watered");
                 String imageURL = resultSet.getString("image_url");
 

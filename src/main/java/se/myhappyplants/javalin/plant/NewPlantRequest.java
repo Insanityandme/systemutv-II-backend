@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 
 public class NewPlantRequest {
     public int id;
+    public int plantId;
     public String commonName;
     public String scientificName;
     public String family;
