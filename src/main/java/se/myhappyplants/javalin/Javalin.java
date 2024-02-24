@@ -717,6 +717,19 @@ public class Javalin {
             exception.printStackTrace();
         }
 
+        String queryGetID = "SELECT id FROM plant WHERE user_id = ? AND nickname = ?;";
+
+        try (PreparedStatement preparedStatement = database.prepareStatement(queryGetID)) {
+            preparedStatement.setInt(1, userId);
+            preparedStatement.setString(2, sqlSafeNickname);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                plant.id = resultSet.getInt("id");
+            }
+        } catch (SQLException sqlException) {
+            sqlException.printStackTrace();
+        }
+
         if (isCreated) {
             String json = objecToJson(plant);
             ctx.result(json);
