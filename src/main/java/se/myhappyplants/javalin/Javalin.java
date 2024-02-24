@@ -391,8 +391,10 @@ public class Javalin {
                     plant.waterFrequency = getWaterFrequency(plant.id);
                     plant.light = resultSet2.getInt("light");
                 }
+
+                plants.add(plant);
             }
-            plants.add(plant);
+
         } catch (SQLException sqlException) {
             sqlException.printStackTrace();
         }
@@ -621,7 +623,7 @@ public class Javalin {
         int plantId = ctx.pathParamAsClass("plantId", Integer.class).check(id -> id > -1, "ID must be greater than 0").get();
 
         Connection database = getConnection();
-        String query = "DELETE FROM plant WHERE user_id = ? AND plant_id = ?;";
+        String query = "DELETE FROM plant WHERE user_id = ? AND id = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
             preparedStatement.setInt(1, userId);
