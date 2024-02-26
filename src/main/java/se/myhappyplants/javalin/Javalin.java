@@ -759,9 +759,9 @@ public class Javalin {
         if (isCreated) {
             String json = objecToJson(plant);
             ctx.result(json);
-            ctx.status(200);
+            ctx.status(201);
         } else {
-            ctx.status(409);
+            ctx.status(400);
             ctx.result("You already have a plant with that nickname");
         }
     }
@@ -799,7 +799,9 @@ public class Javalin {
         HttpResponse<String> result;
         try {
             result = response.get();
+            ctx.status(200);
         } catch (InterruptedException | ExecutionException e) {
+            ctx.status(404);
             throw new RuntimeException(e);
         }
 
