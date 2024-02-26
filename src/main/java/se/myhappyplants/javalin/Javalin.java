@@ -407,7 +407,6 @@ public class Javalin {
                 plant.nickname = resultSet.getString("nickname");
                 plant.lastWatered = resultSet.getDate("last_watered").toString();
                 plant.imageURL = resultSet.getString("image_url");
-                System.out.println(plant.lastWatered);
 
                 try (PreparedStatement preparedStatement2 = database.prepareStatement(queryPlantDetails)) {
                     preparedStatement2.setInt(1, plant.id);
