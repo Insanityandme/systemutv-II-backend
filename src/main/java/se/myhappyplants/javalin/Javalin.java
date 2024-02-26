@@ -241,7 +241,6 @@ public class Javalin {
             responses = {
                     @OpenApiResponse(status = "200"),
                     @OpenApiResponse(status = "400", content = {@OpenApiContent(from = ErrorResponse.class)}),
-                    @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
             }
     )
     public static void updateUser(Context ctx) {
