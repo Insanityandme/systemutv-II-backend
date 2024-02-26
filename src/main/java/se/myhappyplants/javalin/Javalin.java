@@ -241,7 +241,6 @@ public class Javalin {
             responses = {
                     @OpenApiResponse(status = "200"),
                     @OpenApiResponse(status = "400", content = {@OpenApiContent(from = ErrorResponse.class)}),
-                    @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
             }
     )
     public static void updateUser(Context ctx) {
@@ -255,6 +254,26 @@ public class Javalin {
             jsonNode = objectMapper.readTree(ctx.body());
             if (jsonNode.get("password") != null) {
                 password = jsonNode.get("password").asText();
+
+                if (checkPassword(userId, password)) {
+                    // add code to update user that requires a password here
+                    // change password
+                    String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
+                    String query = "UPDATE user SET password = ? WHERE id = ?;";
+                    try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+                        preparedStatement.setString(1, hashedPassword);
+                        preparedStatement.setInt(2, userId);
+                        preparedStatement.executeUpdate();
+                    } catch (SQLException sqlException) {
+                        sqlException.printStackTrace();
+                    }
+
+                    ctx.status(200);
+                    ctx.result("Password updated");
+                } else {
+                    ctx.status(400);
+                    ctx.result("Password incorrect");
+                }
             }
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
@@ -267,6 +286,9 @@ public class Javalin {
                 preparedStatement.setBoolean(1, funFactsActivated);
                 preparedStatement.setInt(2, userId);
                 preparedStatement.executeUpdate();
+
+                ctx.status(200);
+                ctx.result("Fun facts activated updated");
             } catch (SQLException sqlException) {
                 sqlException.printStackTrace();
             }
@@ -277,13 +299,15 @@ public class Javalin {
                 preparedStatement.setBoolean(1, notificationActivated);
                 preparedStatement.setInt(2, userId);
                 preparedStatement.executeUpdate();
+
+                ctx.status(200);
+                ctx.result("Notification activated updated");
             } catch (SQLException sqlException) {
                 sqlException.printStackTrace();
             }
-        }
-
-        if (checkPassword(userId, password)) {
-            // add code to update user that requires a password here
+        } else {
+            ctx.status(400);
+            ctx.result("No valid field to update");
         }
     }
 
@@ -383,7 +407,6 @@ public class Javalin {
                 plant.nickname = resultSet.getString("nickname");
                 plant.lastWatered = resultSet.getDate("last_watered").toString();
                 plant.imageURL = resultSet.getString("image_url");
-                System.out.println(plant.lastWatered);
 
                 try (PreparedStatement preparedStatement2 = database.prepareStatement(queryPlantDetails)) {
                     preparedStatement2.setInt(1, plant.id);
