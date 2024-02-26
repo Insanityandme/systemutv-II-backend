@@ -21,6 +21,7 @@ public class UserDeleteAccTest {
         Connection mockConnection = mock(Connection.class);
         DbConnection dbConnection = mock(DbConnection.class);
         when(dbConnection.getConnection()).thenReturn(mockConnection);
+        dbConnection.setPath("");
 
     }
 
