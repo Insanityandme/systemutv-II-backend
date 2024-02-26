@@ -301,7 +301,7 @@ public class Javalin {
             }
     )
     public static void deleteUser(Context ctx) {
-        int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+        int userId = Integer.parseInt(ctx.pathParam("id"));
 
         NewDeleteRequest deleteRequest = ctx.bodyAsClass(NewDeleteRequest.class);
 

@@ -1,6 +1,8 @@
 
 import io.javalin.http.Context;
 
+import io.javalin.validation.Params;
+import io.javalin.validation.Validator;
 import org.junit.jupiter.api.*;
 import se.myhappyplants.javalin.Javalin;
 import se.myhappyplants.javalin.user.NewDeleteRequest;
@@ -9,7 +11,12 @@ import se.myhappyplants.javalin.user.NewUserRequest;
 import static org.mockito.Mockito.*;
 
 public class UserRegisterTest {
-    private final Context ctx = mock(Context.class);
+    private Context ctx;
+
+    @BeforeEach
+    public void init() {
+        ctx = mock(Context.class);
+    }
 
     @Test
     public void postRegisterUserWithValidUsername() {
@@ -30,21 +37,13 @@ public class UserRegisterTest {
         NewDeleteRequest delete = new NewDeleteRequest();
         delete.password = "test";
 
-
         when(ctx.bodyAsClass(NewDeleteRequest.class)).thenReturn(delete);
-
-        when(ctx.pathParamAsClass("id", Integer.class)
-                .check(id -> id > 0, "ID must be greater than 0")
-                .get())
-                .thenReturn(15);
-
-        when(ctx.bodyAsClass(NewDeleteRequest.class)).thenReturn(delete);
+        doReturn("16").when(ctx).pathParam("id");
 
         Javalin.deleteUser(ctx);
 
         verify(ctx).status(204);
     }
-
 
     @Test
     public void testSearchForPlants() {
