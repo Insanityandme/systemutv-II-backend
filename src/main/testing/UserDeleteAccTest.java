@@ -18,8 +18,12 @@ public class UserDeleteAccTest {
 
     @BeforeEach
     public void setUp() {
-        DbConnection mockDB = mock(DbConnection.class);
-        when(DB)
+        Connection mockConnection = mock(Connection.class);
+        DbConnection dbConnection = mock(DbConnection.class);
+        spy(dbConnection);
+        when(dbConnection.getConnection()).thenReturn(mockConnection);
+
+
 
 
 
