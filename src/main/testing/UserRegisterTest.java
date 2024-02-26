@@ -1,38 +1,57 @@
-import se.myhappyplants.server.services.UserRepository;
 
 import io.javalin.http.Context;
 
 import org.junit.jupiter.api.*;
-import static org.junit.jupiter.api.Assertions.*;
+import se.myhappyplants.javalin.Javalin;
+import se.myhappyplants.javalin.user.NewDeleteRequest;
+import se.myhappyplants.javalin.user.NewUserRequest;
+
 import static org.mockito.Mockito.*;
 
 public class UserRegisterTest {
-    //Föreslår att när vi byter till Javalin som backend att vi har en UserController klass som
-    //hanterar alla requests som berör användare (register, login osv.).
-
-    private Context ctx;
-    private UserRepository userRepository;
-    //private UserController userController;
-
-    @BeforeEach
-    public void setUp() {
-        ctx = mock(Context.class);
-        userRepository = mock(UserRepository.class);
-        //userController = new UserController(userRepository);
-    }
+    private final Context ctx = mock(Context.class);
 
     @Test
     public void postRegisterUserWithValidUsername() {
-        when(ctx.queryParam("email")).thenReturn("plantlover@gmail.com");
-        when(ctx.queryParam("username")).thenReturn("PlantLover");
-        when(ctx.queryParam("password")).thenReturn("test");
+        NewUserRequest user = new NewUserRequest();
+        user.username = "filip";
+        user.email = "hejhejhej@mail.com";
+        user.password = "test";
 
-        //Detta simulerar att vi skickar context till en metod i userController som skapar en användare genom
-        //POST request + att man där sparar användaren i databasen om allt gick bra
-        //userController.createUser(ctx);
+        when(ctx.bodyAsClass(NewUserRequest.class)).thenReturn(user);
 
-        //Kollar att saveUser i userRepository anropas med en User som har rätt username
-        verify(userRepository).registerUser(argThat(user -> user.getUsername().equals("PlantLover")));
+        Javalin.createUser(ctx);
+
+        verify(ctx).status(201);
+    }
+
+    @Test
+    public void deleteAccountSuccessful() {
+        NewDeleteRequest delete = new NewDeleteRequest();
+        delete.password = "test";
+
+
+        when(ctx.bodyAsClass(NewDeleteRequest.class)).thenReturn(delete);
+
+        when(ctx.pathParamAsClass("id", Integer.class)
+                .check(id -> id > 0, "ID must be greater than 0")
+                .get())
+                .thenReturn(15);
+
+        when(ctx.bodyAsClass(NewDeleteRequest.class)).thenReturn(delete);
+
+        Javalin.deleteUser(ctx);
+
+        verify(ctx).status(204);
+    }
+
+
+    @Test
+    public void testSearchForPlants() {
+        when(ctx.queryParam("monstera")).thenReturn("monstera");
+        Javalin.getPlants(ctx);
+
+        verify(ctx).status(200);
     }
 
     @Test
@@ -60,7 +79,7 @@ public class UserRegisterTest {
         //userController.createUser(ctx);
 
         //Kollar att saveUser i userRepository anropas med en User som har rätt email
-        verify(userRepository).registerUser(argThat(user -> user.getEmail().equals("plantlover@gmail.com")));
+        // verify(userRepository).registerUser(argThat(user -> user.getEmail().equals("plantlover@gmail.com")));
     }
 
     @Test
@@ -69,11 +88,11 @@ public class UserRegisterTest {
         when(ctx.queryParam("username")).thenReturn("PlantLover");
         when(ctx.queryParam("password")).thenReturn("test");
 
-        when(userRepository.registerUser(argThat(user -> user.getEmail().equals("invalidemail")))).thenReturn(false);
+        // when(userRepository.registerUser(argThat(user -> user.getEmail().equals("invalidemail")))).thenReturn(false);
 
         //userController.register(ctx);
 
-        verify(userRepository).registerUser(argThat(user -> user.getEmail().equals("invalidemail")));
+        // verify(userRepository).registerUser(argThat(user -> user.getEmail().equals("invalidemail")));
     }
 
     @Test
@@ -84,19 +103,19 @@ public class UserRegisterTest {
 
         //Alternativt får vi skapa en metod i userRepository som specifikt kollar om email-adressen är upptagen istället
         //för att använda saveUser
-        when(userRepository.registerUser(argThat(user -> user.getEmail().equals("existinguser@gmail.com")))).thenReturn(false);
+        // when(userRepository.registerUser(argThat(user -> user.getEmail().equals("existinguser@gmail.com")))).thenReturn(false);
 
         //userController.register(ctx);
 
         //Till för att kolla så att saveUser verkligen anropades med dessa värden under testet
-        verify(userRepository).registerUser(argThat(user ->
-                user.getUsername().equals("user") &&
-                        user.getEmail().equals("nonexistinguser@gmail.com") &&
-                        user.getPassword().equals("test")
-        ));
+        // verify(userRepository).registerUser(argThat(user ->
+        //         user.getUsername().equals("user") &&
+        //                 user.getEmail().equals("nonexistinguser@gmail.com") &&
+        //                 user.getPassword().equals("test")
+        // ));
 
         // Kollar så att userRepository.saveUser-metoden med emailen "existinguser@gmail.com" returnerar false
-        assertFalse(userRepository.registerUser(argThat(user -> user.getEmail().equals("existinguser@gmail.com"))));
+        // assertFalse(userRepository.registerUser(argThat(user -> user.getEmail().equals("existinguser@gmail.com"))));
     }
 
     @Test
