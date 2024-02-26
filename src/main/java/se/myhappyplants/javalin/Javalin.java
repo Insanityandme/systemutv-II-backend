@@ -199,7 +199,7 @@ public class Javalin {
             }
     )
     public static void getFact(Context ctx) {
-        int factId = ctx.pathParamAsClass("factId", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+        int factId = Integer.parseInt(ctx.pathParam("factId"));
         Connection database = getConnection();
         String fact;
         String query = "SELECT fact FROM fun_facts WHERE id = ?;";
@@ -245,7 +245,7 @@ public class Javalin {
             }
     )
     public static void updateUser(Context ctx) {
-        int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+        int userId = Integer.parseInt(ctx.pathParam("id"));
 
         Connection database = getConnection();
         String password = "";
@@ -364,8 +364,8 @@ public class Javalin {
                     @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
             }
     )
-    public static void getAllPlants(Context context) {
-        int userId = context.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+    public static void getAllPlants(Context ctx) {
+        int userId = Integer.parseInt(ctx.pathParam("id"));
         ArrayList<NewPlantRequest> plants = new ArrayList<>();
 
         Connection database = getConnection();
@@ -402,8 +402,8 @@ public class Javalin {
         }
 
         String json = objecToJson(plants);
-        context.result(json);
-        context.status(200);
+        ctx.result(json);
+        ctx.status(200);
     }
 
     // Requirement: F.DP.9
@@ -426,7 +426,7 @@ public class Javalin {
             }
     )
     public static void updateAllPlants(Context ctx) {
-        int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+        int userId = Integer.parseInt(ctx.pathParam("id"));
         NewPlantRequest plant = ctx.bodyAsClass(NewPlantRequest.class);
 
         // check if date is the correct format
@@ -479,8 +479,8 @@ public class Javalin {
             }
     )
     public static void getPlant(Context ctx) {
-        int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
-        int plantId = ctx.pathParamAsClass("plantId", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+        int userId = Integer.parseInt(ctx.pathParam("id"));
+        int plantId = Integer.parseInt(ctx.pathParam("plantId"));
 
         Connection database = getConnection();
         String query = "SELECT * FROM plant WHERE user_id = ? AND id = ?;";
@@ -528,8 +528,8 @@ public class Javalin {
             }
     )
     public static void updatePlant(Context ctx) {
-        int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
-        int plantId = ctx.pathParamAsClass("plantId", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+        int userId = Integer.parseInt(ctx.pathParam("id"));
+        int plantId = Integer.parseInt(ctx.pathParam("plantId"));
         NewPlantRequest plant = ctx.bodyAsClass(NewPlantRequest.class);
 
         // check if date is the correct format
@@ -621,8 +621,8 @@ public class Javalin {
             }
     )
     public static void deletePlant(Context ctx) {
-        int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
-        int plantId = ctx.pathParamAsClass("plantId", Integer.class).check(id -> id > -1, "ID must be greater than 0").get();
+        int userId = Integer.parseInt(ctx.pathParam("id"));
+        int plantId = Integer.parseInt(ctx.pathParam("plantId"));
 
         Connection database = getConnection();
         String query = "DELETE FROM plant WHERE user_id = ? AND id = ?;";
@@ -656,7 +656,7 @@ public class Javalin {
             }
     )
     public static void savePlant(Context ctx) {
-        int userId = ctx.pathParamAsClass("id", Integer.class).check(id -> id > 0, "ID must be greater than 0").get();
+        int userId = Integer.parseInt(ctx.pathParam("id"));
         NewPlantRequest plant = ctx.bodyAsClass(NewPlantRequest.class);
         boolean isCreated = false;
         Connection database = getConnection();
