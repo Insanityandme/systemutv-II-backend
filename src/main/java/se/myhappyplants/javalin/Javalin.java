@@ -235,7 +235,8 @@ public class Javalin {
             },
             tags = {"User"},
             requestBody = @OpenApiRequestBody(
-                    description = "You can use one field at a time to update the user, always include the password.",
+                    description = "You can use one field at a time to update the user, " +
+                                    "changing password requires the password field to be filled in as well.",
                     content = {
                             @OpenApiContent(from = NewUpdateUserRequest.class),
                     }),
