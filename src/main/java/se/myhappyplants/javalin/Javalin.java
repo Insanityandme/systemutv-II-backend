@@ -260,28 +260,30 @@ public class Javalin {
             throw new RuntimeException(e);
         }
 
-        if (checkPassword(userId, password)) {
-            if (jsonNode.get("funFactsActivated") != null) {
-                boolean funFactsActivated = jsonNode.get("funFactsActivated").asBoolean();
-                String query = "UPDATE user SET fun_facts_activated = ? WHERE id = ?;";
-                try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
-                    preparedStatement.setBoolean(1, funFactsActivated);
-                    preparedStatement.setInt(2, userId);
-                    preparedStatement.executeUpdate();
-                } catch (SQLException sqlException) {
-                    sqlException.printStackTrace();
-                }
-            } else if (jsonNode.get("notificationsActivated") != null) {
-                boolean notificationActivated = jsonNode.get("notificationsActivated").asBoolean();
-                String query = "UPDATE user SET notification_activated = ? WHERE id = ?;";
-                try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
-                    preparedStatement.setBoolean(1, notificationActivated);
-                    preparedStatement.setInt(2, userId);
-                    preparedStatement.executeUpdate();
-                } catch (SQLException sqlException) {
-                    sqlException.printStackTrace();
-                }
+        if (jsonNode.get("funFactsActivated") != null) {
+            boolean funFactsActivated = jsonNode.get("funFactsActivated").asBoolean();
+            String query = "UPDATE user SET fun_facts_activated = ? WHERE id = ?;";
+            try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+                preparedStatement.setBoolean(1, funFactsActivated);
+                preparedStatement.setInt(2, userId);
+                preparedStatement.executeUpdate();
+            } catch (SQLException sqlException) {
+                sqlException.printStackTrace();
             }
+        } else if (jsonNode.get("notificationsActivated") != null) {
+            boolean notificationActivated = jsonNode.get("notificationsActivated").asBoolean();
+            String query = "UPDATE user SET notification_activated = ? WHERE id = ?;";
+            try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+                preparedStatement.setBoolean(1, notificationActivated);
+                preparedStatement.setInt(2, userId);
+                preparedStatement.executeUpdate();
+            } catch (SQLException sqlException) {
+                sqlException.printStackTrace();
+            }
+        }
+
+        if (checkPassword(userId, password)) {
+            // add code to update user that requires a password here
         }
     }
 
