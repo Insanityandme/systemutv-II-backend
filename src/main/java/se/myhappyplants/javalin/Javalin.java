@@ -73,6 +73,7 @@ public class Javalin {
                         path("{id}", () -> {
                             patch(Javalin::updateUser);
                             delete(Javalin::deleteUser);
+                            get(Javalin::getUserById);
                             path("plants", () -> {
                                 get(Javalin::getAllPlants);
                                 patch(Javalin::updateAllPlants);
@@ -371,6 +372,45 @@ public class Javalin {
                     ctx.status(400);
                     ctx.result("Password incorrect");
                 }
+            }
+        } catch (SQLException sqlException) {
+            sqlException.printStackTrace();
+        }
+    }
+
+    @OpenApi(
+            summary = "Get user by ID",
+            operationId = "getUserById",
+            path = "/v1/users/{id}",
+            methods = HttpMethod.GET,
+            pathParams = {@OpenApiParam(name = "id", type = Integer.class, description = "The user ID")},
+            tags = {"User"},
+            responses = {
+                    @OpenApiResponse(status = "200", content = {@OpenApiContent(from = User.class)}),
+                    @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
+            }
+
+    )
+    public static void getUserById(Context ctx) {
+        int userId = Integer.parseInt(ctx.pathParam("id"));
+        Connection database = getConnection();
+        String query = "SELECT * FROM user WHERE id = ?;";
+
+        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+            preparedStatement.setInt(1, userId);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                String email = resultSet.getString("email");
+                String username = resultSet.getString("username");
+                boolean notificationActivated = resultSet.getBoolean("notification_activated");
+                boolean funFactsActivated = resultSet.getBoolean("fun_facts_activated");
+
+                User user = new User( email, username, notificationActivated, funFactsActivated);
+                String json = objecToJson(user);
+                ctx.result(json);
+                ctx.status(200);
+            } else {
+                throw new NotFoundResponse("User not found");
             }
         } catch (SQLException sqlException) {
             sqlException.printStackTrace();
