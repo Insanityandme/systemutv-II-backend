@@ -20,23 +20,19 @@ public class UserDeleteAccTest {
     public void setUp() {
         Connection mockConnection = mock(Connection.class);
         DbConnection dbConnection = mock(DbConnection.class);
-        spy(dbConnection);
         when(dbConnection.getConnection()).thenReturn(mockConnection);
-
-
-
-
 
     }
 
 
     @Test
     public void DELETE_userDeleteAcc_204_Success(){
+
         NewDeleteRequest del = new NewDeleteRequest();
-        del.password="test";
+        del.password="123";
 
         when(ctx.bodyAsClass(NewDeleteRequest.class)).thenReturn(del);
-        doReturn("13").when(ctx).pathParam("id");
+        doReturn("16").when(ctx).pathParam("id");
 
         Javalin.deleteUser(ctx);
 
@@ -50,7 +46,7 @@ public class UserDeleteAccTest {
         del.password="wrong_password";
 
         when(ctx.bodyAsClass(NewDeleteRequest.class)).thenReturn(del);
-        doReturn("11").when(ctx).pathParam("id");
+        doReturn("1").when(ctx).pathParam("id");
 
         Javalin.deleteUser(ctx);
 
