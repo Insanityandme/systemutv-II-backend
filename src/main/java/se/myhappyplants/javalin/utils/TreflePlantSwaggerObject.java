@@ -1,4 +1,4 @@
-package se.myhappyplants.javalin.plant;
+package se.myhappyplants.javalin.utils;
 
 import java.util.HashMap;
 
@@ -30,7 +30,7 @@ import java.util.HashMap;
  *   }
  * }
  */
-public class TreflePlant {
+public class TreflePlantSwaggerObject {
     public int id;
     public String common_name;
     public String slug;
@@ -48,10 +48,10 @@ public class TreflePlant {
     public String family;
     public HashMap<String, String> links = new HashMap<>();
 
-    public TreflePlant() {
+    public TreflePlantSwaggerObject() {
     }
 
-    public TreflePlant(int id, String common_name, String slug, String scientific_name, int year, String bibliography, String author, String status, String rank, String family_common_name, int genus_id, String image_url, String[] synonyms, String genus, String family, HashMap<String, String> links) {
+    public TreflePlantSwaggerObject(int id, String common_name, String slug, String scientific_name, int year, String bibliography, String author, String status, String rank, String family_common_name, int genus_id, String image_url, String[] synonyms, String genus, String family, HashMap<String, String> links) {
         this.id = id;
         this.common_name = common_name;
         this.slug = slug;
