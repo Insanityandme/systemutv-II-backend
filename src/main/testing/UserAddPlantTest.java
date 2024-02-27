@@ -9,12 +9,14 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import se.myhappyplants.javalin.Javalin;
 import se.myhappyplants.javalin.plant.NewPlantRequest;
+import se.myhappyplants.javalin.user.NewUserRequest;
 import se.myhappyplants.javalin.utils.DbConnection;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Random;
 import java.util.UUID;
 
 import static org.mockito.Mockito.*;
@@ -32,11 +34,28 @@ public class UserAddPlantTest {
     private int light;
     private String genus;
     private String family;
+    private String email;
+    private String username;
+    private String password;
+
+    private Long getUserId;
 
     @BeforeEach
-    public void setUp() throws SQLException {
-        // DbConnection dbConnection = DbConnection.getInstance();
-        // dbConnection.setPath("myHappyPlantsDBTEST.db");
+    public void setUp() throws SQLException, IllegalAccessException, NoSuchFieldException {
+        email = generateRandomString(8) + "@example.com";
+        username = generateRandomString(10);
+        password = generateRandomString(12);
+        NewUserRequest testUser = new NewUserRequest(email,username,password);
+
+        when(ctx.bodyAsClass(NewUserRequest.class)).thenReturn(testUser);
+
+        Javalin.createUser(ctx);
+
+        verify(ctx).status(201);
+
+        java.lang.reflect.Field field = Javalin.class.getDeclaredField("generatedUserId");
+        field.setAccessible(true);
+        getUserId = (long) field.get(null);
 
         when(ctx.queryParam("plant")).thenReturn("sunflower");
         Javalin.getPlants(ctx);
@@ -69,12 +88,25 @@ public class UserAddPlantTest {
         }));
     }
 
+    private String generateRandomString(int length) {
+        String characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        StringBuilder randomString = new StringBuilder();
+
+        Random random = new Random();
+        for (int i = 0; i < length; i++) {
+            int index = random.nextInt(characters.length());
+            randomString.append(characters.charAt(index));
+        }
+
+        return randomString.toString();
+    }
+
     @Test
     public void POST_userAddPlant_201()  {
         nickname = UUID.randomUUID().toString();
         NewPlantRequest plant = new NewPlantRequest(id, commonName, scientificName, imageURL,nickname,lastWatered, waterFrequency, light, genus, family);
         when(ctx.bodyAsClass(NewPlantRequest.class)).thenReturn(plant);
-        doReturn("22").when(ctx).pathParam("id");
+        doReturn(getUserId.toString()).when(ctx).pathParam("id");
         Javalin.savePlant(ctx);
         verify(ctx).status(201);
     }
@@ -87,7 +119,7 @@ public class UserAddPlantTest {
 
         when(ctx.bodyAsClass(NewPlantRequest.class)).thenReturn(plant);
 
-        doReturn("22").when(ctx).pathParam("id");
+        doReturn(getUserId.toString()).when(ctx).pathParam("id");
 
         Javalin.savePlant(ctx);
 
