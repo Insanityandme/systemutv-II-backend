@@ -226,7 +226,7 @@ public class Javalin {
 
     // Requirement: F.DP.14
     @OpenApi(
-            summary = "Update user information based on ID and sometimes wiht password",
+            summary = "Update user information based on ID and sometimes with password",
             operationId = "updateUserById",
             path = "/v1/users/{id}",
             methods = HttpMethod.PATCH,
