@@ -18,12 +18,25 @@ public class UserDeleteAccTest {
     private String username;
     private String password;
 
+    private Long getUserId;
+
     @BeforeEach
-    public void setUp() throws SQLException {
+    public void setUp() throws SQLException, NoSuchFieldException, IllegalAccessException {
         email = generateRandomString(8) + "@example.com";
         username = generateRandomString(10);
         password = generateRandomString(12);
-        NewUserRequest testUser = new NewUserRequest();
+        NewUserRequest testUser = new NewUserRequest(email,username,password);
+
+        when(ctx.bodyAsClass(NewUserRequest.class)).thenReturn(testUser);
+
+        Javalin.createUser(ctx);
+
+        verify(ctx).status(201);
+
+        java.lang.reflect.Field field = Javalin.class.getDeclaredField("generatedUserId");
+        field.setAccessible(true);
+        getUserId = (long) field.get(null);
+
 
     }
 
@@ -44,10 +57,10 @@ public class UserDeleteAccTest {
     public void DELETE_userDeleteAcc_204_Success() {
 
         NewDeleteRequest del = new NewDeleteRequest();
-        del.password = "123"; //Might have to be changed depending on the actual user id you wanna test
+        del.password = password;
 
         when(ctx.bodyAsClass(NewDeleteRequest.class)).thenReturn(del);
-        doReturn("1").when(ctx).pathParam("id"); //Might have to be changed depending on the actual user id you wanna test
+        doReturn(getUserId.toString()).when(ctx).pathParam("id");
 
         Javalin.deleteUser(ctx);
 
@@ -60,7 +73,7 @@ public class UserDeleteAccTest {
         del.password = "wrong_password";
 
         when(ctx.bodyAsClass(NewDeleteRequest.class)).thenReturn(del);
-        doReturn("2").when(ctx).pathParam("id"); //Might have to be changed depending on the actual user id you wanna test
+        doReturn(getUserId.toString()).when(ctx).pathParam("id");
 
         Javalin.deleteUser(ctx);
 

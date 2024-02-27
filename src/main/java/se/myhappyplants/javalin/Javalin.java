@@ -38,6 +38,7 @@ import static io.javalin.apibuilder.ApiBuilder.*;
 import static se.myhappyplants.javalin.utils.Helper.*;
 
 public class Javalin {
+    private static long generatedUserId = -1;
     public static void main(String[] args) {
         io.javalin.Javalin.create(config -> {
             // Plugin for documentation and testing our api
@@ -175,8 +176,17 @@ public class Javalin {
             preparedStatement.setString(2, user.email);
             preparedStatement.setString(3, hashedPassword);
             try {
-                preparedStatement.executeUpdate();
-                ctx.status(201);
+                int affectedRows = preparedStatement.executeUpdate();
+                if(affectedRows > 0){
+                    ResultSet generatedKeys = preparedStatement.getGeneratedKeys();
+                    if(generatedKeys.next()){
+                        generatedUserId =generatedKeys.getLong(1);
+                        ctx.status(201);
+
+                    }
+
+                }
+
             } catch (SQLiteException exception) {
                 ctx.status(409);
                 ctx.result("User already exists");
