@@ -67,9 +67,6 @@ public class UserAddPlantTest {
 
         Javalin.login(ctxSetUp);
 
-        verify(ctxSetUp).status(201);
-        verify(ctxSetUp).status(200);
-
         ObjectMapper objectMapper = new ObjectMapper();
         String capturedResultString = capturedResult.toString();
         JsonNode jsonNode = objectMapper.readTree(capturedResultString);
@@ -78,6 +75,8 @@ public class UserAddPlantTest {
         when(ctxSetUp1.queryParam("plant")).thenReturn("sunflower");
         Javalin.getPlants(ctxSetUp1);
 
+        verify(ctxSetUp).status(201);
+        verify(ctxSetUp).status(200);
         verify(ctxSetUp1).status(200);
         verify(ctxSetUp1).result(argThat(this::verifyResult));
     }
