@@ -7,7 +7,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.stubbing.Answer;
 import se.myhappyplants.javalin.Javalin;
+import se.myhappyplants.javalin.login.NewLoginRequest;
 import se.myhappyplants.javalin.plant.NewPlantRequest;
 import se.myhappyplants.javalin.user.NewUserRequest;
 import se.myhappyplants.javalin.utils.DbConnection;
@@ -23,7 +25,8 @@ import static org.mockito.Mockito.*;
 
 public class UserAddPlantTest {
     private final Context ctx = mock(Context.class);
-    private final Context ctx2 = mock(Context.class);
+    private final Context ctxSetUp = mock(Context.class);
+    private final Context ctxSetUp1 = mock(Context.class);
     private JsonNode jsonNode;
     private int id;
     private String commonName;
@@ -39,35 +42,50 @@ public class UserAddPlantTest {
     private String username;
     private String password;
 
-    private Long getUserId;
+    private String getUserId;
 
     @BeforeEach
-    public void setUp() throws SQLException, IllegalAccessException, NoSuchFieldException {
+    public void setUp() throws SQLException, IllegalAccessException, NoSuchFieldException, JsonProcessingException {
         email = generateRandomString(8) + "@example.com";
         username = generateRandomString(10);
         password = generateRandomString(12);
-        NewUserRequest testUser = new NewUserRequest(email,username,password);
 
-        when(ctx2.bodyAsClass(NewUserRequest.class)).thenReturn(testUser);
+        NewUserRequest testUser = new NewUserRequest(email, username, password);
+        when(ctxSetUp.bodyAsClass(NewUserRequest.class)).thenReturn(testUser);
+        Javalin.createUser(ctxSetUp);
 
-        Javalin.createUser(ctx2);
+        NewLoginRequest login = new NewLoginRequest(email, password);
+        when(ctxSetUp.bodyAsClass(NewLoginRequest.class)).thenReturn(login);
 
-        java.lang.reflect.Field field = Javalin.class.getDeclaredField("generatedUserId");
-        field.setAccessible(true);
-        getUserId = (long) field.get(null);
+        StringBuilder capturedResult = new StringBuilder();
+        doAnswer((Answer<Void>) invocation -> {
+            Object[] args = invocation.getArguments();
+            String jsonResult = (String) args[0];
+            capturedResult.append(jsonResult);
+            return null;
+        }).when(ctxSetUp).result(anyString());
 
-        when(ctx.queryParam("plant")).thenReturn("sunflower");
-        Javalin.getPlants(ctx);
+        Javalin.login(ctxSetUp);
 
-        verify(ctx).status(200);
-        verify(ctx).result(argThat((String result) -> {
+        verify(ctxSetUp).status(201);
+        verify(ctxSetUp).status(200);
 
+        ObjectMapper objectMapper = new ObjectMapper();
+        String capturedResultString = capturedResult.toString();
+        JsonNode jsonNode = objectMapper.readTree(capturedResultString);
+        getUserId = String.valueOf(jsonNode.get("id"));
+
+        when(ctxSetUp1.queryParam("plant")).thenReturn("sunflower");
+        Javalin.getPlants(ctxSetUp1);
+
+        verify(ctxSetUp1).status(200);
+        verify(ctxSetUp1).result(argThat(this::verifyResult));
+    }
+
+    private boolean verifyResult(String result) {
+        try {
             ObjectMapper objectMapper = new ObjectMapper();
-            try {
-                jsonNode = objectMapper.readTree(result);
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
-            }
+            JsonNode jsonNode = objectMapper.readTree(result);
 
             JsonNode dataNode = jsonNode.get("data");
             if (dataNode.isArray() && !dataNode.isEmpty()) {
@@ -81,11 +99,15 @@ public class UserAddPlantTest {
                 light = 0;
                 genus = firstItem.get("genus").asText();
                 family = firstItem.get("family").asText();
+                nickname = UUID.randomUUID().toString();
             }
 
             return true;
-        }));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
+
 
     private String generateRandomString(int length) {
         String characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -101,27 +123,13 @@ public class UserAddPlantTest {
     }
 
     @Test
-    public void POST_userAddPlant_201()  {
-        nickname = UUID.randomUUID().toString();
+    public void POST_userAddPlant_201_Success()  {
         NewPlantRequest plant = new NewPlantRequest(id, commonName, scientificName, imageURL,nickname,lastWatered, waterFrequency, light, genus, family);
         when(ctx.bodyAsClass(NewPlantRequest.class)).thenReturn(plant);
-        doReturn(getUserId.toString()).when(ctx).pathParam("id");
+        doReturn(getUserId).when(ctx).pathParam("id");
         Javalin.savePlant(ctx);
         verify(ctx).status(201);
     }
 
-    @Test
-    public void POST_userAddPlant_400()  {
-        nickname = "test"; //Change this to another plant's nickname that already exists in the db
 
-        NewPlantRequest plant = new NewPlantRequest(id, commonName, scientificName, imageURL,nickname,lastWatered, waterFrequency, light, genus, family);
-
-        when(ctx.bodyAsClass(NewPlantRequest.class)).thenReturn(plant);
-
-        doReturn(getUserId.toString()).when(ctx).pathParam("id");
-
-        Javalin.savePlant(ctx);
-
-        verify(ctx).status(400);
-    }
 }

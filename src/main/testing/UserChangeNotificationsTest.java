@@ -1,9 +1,12 @@
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.http.Context;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.stubbing.Answer;
 import se.myhappyplants.javalin.Javalin;
+import se.myhappyplants.javalin.login.NewLoginRequest;
 import se.myhappyplants.javalin.user.NewUpdateUserRequest;
 import se.myhappyplants.javalin.user.NewUserRequest;
 
@@ -14,27 +17,43 @@ import static org.mockito.Mockito.*;
 
 public class UserChangeNotificationsTest {
     private final Context ctx = mock(Context.class);
+    private final Context ctxSetUp = mock(Context.class);
     private String email;
     private String username;
     private String password;
 
-    private Long getUserId;
+    private String getUserId;
+
     @BeforeEach
-    public void setUp() throws SQLException, IllegalAccessException, NoSuchFieldException {
+    public void setUp() throws SQLException, NoSuchFieldException, IllegalAccessException, JsonProcessingException {
         email = generateRandomString(8) + "@example.com";
         username = generateRandomString(10);
         password = generateRandomString(12);
-        NewUserRequest testUser = new NewUserRequest(email,username,password);
 
-        when(ctx.bodyAsClass(NewUserRequest.class)).thenReturn(testUser);
+        NewUserRequest testUser = new NewUserRequest(email, username, password);
+        when(ctxSetUp.bodyAsClass(NewUserRequest.class)).thenReturn(testUser);
+        Javalin.createUser(ctxSetUp);
 
-        Javalin.createUser(ctx);
+        NewLoginRequest login = new NewLoginRequest(email, password);
+        when(ctxSetUp.bodyAsClass(NewLoginRequest.class)).thenReturn(login);
 
-        verify(ctx).status(201);
+        StringBuilder capturedResult = new StringBuilder();
+        doAnswer((Answer<Void>) invocation -> {
+            Object[] args = invocation.getArguments();
+            String jsonResult = (String) args[0];
+            capturedResult.append(jsonResult);
+            return null;
+        }).when(ctxSetUp).result(anyString());
 
-        java.lang.reflect.Field field = Javalin.class.getDeclaredField("generatedUserId");
-        field.setAccessible(true);
-        getUserId = (long) field.get(null);
+        Javalin.login(ctxSetUp);
+
+        verify(ctxSetUp).status(201);
+        verify(ctxSetUp).status(200);
+
+        String capturedResultString = capturedResult.toString();
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonNode = objectMapper.readTree(capturedResultString);
+        getUserId = String.valueOf(jsonNode.get("id"));
     }
 
     private String generateRandomString(int length) {
@@ -56,7 +75,7 @@ public class UserChangeNotificationsTest {
         ObjectMapper objectMapper = new ObjectMapper();
         String jsonUserRequest = objectMapper.writeValueAsString(userRequest);
 
-        doReturn(getUserId.toString()).when(ctx).pathParam("id");
+        doReturn(getUserId).when(ctx).pathParam("id");
         when(ctx.body()).thenReturn(jsonUserRequest);
 
         Javalin.updateUser(ctx);
@@ -70,7 +89,7 @@ public class UserChangeNotificationsTest {
         ObjectMapper objectMapper = new ObjectMapper();
         String jsonUserRequest = objectMapper.writeValueAsString(userRequest);
 
-        doReturn(getUserId.toString()).when(ctx).pathParam("id");
+        doReturn(getUserId).when(ctx).pathParam("id");
         when(ctx.body()).thenReturn(jsonUserRequest);
 
         Javalin.updateUser(ctx);
