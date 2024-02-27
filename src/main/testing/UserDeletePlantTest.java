@@ -4,30 +4,34 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.http.Context;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.ArgumentCaptor;
 import org.mockito.stubbing.Answer;
 import se.myhappyplants.javalin.Javalin;
 import se.myhappyplants.javalin.login.NewLoginRequest;
 import se.myhappyplants.javalin.plant.NewPlantRequest;
 import se.myhappyplants.javalin.user.NewUserRequest;
-import se.myhappyplants.javalin.utils.DbConnection;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Random;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
 
-public class UserAddPlantTest {
+public class UserDeletePlantTest {
     private final Context ctx = mock(Context.class);
     private final Context ctxSetUp = mock(Context.class);
     private final Context ctxSetUp1 = mock(Context.class);
-    private int plantId;
+
+    private int id;
+
+    private int getPlantId;
+
     private String commonName;
     private String scientificName;
     private String imageURL;
@@ -78,6 +82,51 @@ public class UserAddPlantTest {
         verify(ctxSetUp).status(200);
         verify(ctxSetUp1).status(200);
         verify(ctxSetUp1).result(argThat(this::verifyResult));
+
+        getPlantId = savePlantAndRetrieveId (id,commonName,scientificName,imageURL,nickname,lastWatered,waterFrequency,light,genus,family);
+
+
+    }
+
+    private int savePlantAndRetrieveId(int id, String commonName, String scientificName, String imageURL,
+                                       String nickname, String lastWatered, long waterFrequency, int light,
+                                       String genus, String family) {
+        NewPlantRequest plant = new NewPlantRequest(id, commonName, scientificName, imageURL, nickname, lastWatered,
+                waterFrequency, light, genus, family);
+
+        ArgumentCaptor<String> jsonCaptor = ArgumentCaptor.forClass(String.class);
+
+        when(ctxSetUp1.bodyAsClass(NewPlantRequest.class)).thenReturn(plant);
+        doReturn(getUserId).when(ctxSetUp1).pathParam("id");
+
+        doAnswer((Answer<Void>) invocation -> {
+            Object[] args = invocation.getArguments();
+            String jsonResult = (String) args[0];
+            jsonCaptor.capture();
+            return null;
+        }).when(ctxSetUp1).result(jsonCaptor.capture());
+
+        Javalin.savePlant(ctxSetUp1);
+
+        verify(ctxSetUp1).status(201);
+
+        String capturedJson = jsonCaptor.getValue();
+        assertNotNull(capturedJson);
+
+        return retrievePlantId(capturedJson);
+    }
+
+    private int retrievePlantId(String capturedJson) {
+        assertNotNull(capturedJson);
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            JsonNode jsonNode = objectMapper.readTree(capturedJson);
+            return jsonNode.get("id").asInt();
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return -1;
     }
 
     private boolean verifyResult(String result) {
@@ -88,7 +137,7 @@ public class UserAddPlantTest {
             JsonNode dataNode = jsonNode.get("data");
             if (dataNode.isArray() && !dataNode.isEmpty()) {
                 JsonNode firstItem = dataNode.get(0);
-                plantId = firstItem.get("id").asInt();
+                id = firstItem.get("id").asInt();
                 commonName = firstItem.get("common_name").asText();
                 scientificName = firstItem.get("scientific_name").asText();
                 imageURL = firstItem.get("image_url").asText();
@@ -121,13 +170,11 @@ public class UserAddPlantTest {
     }
 
     @Test
-    public void POST_userAddPlant_201_Success()  {
-        NewPlantRequest plant = new NewPlantRequest(plantId, commonName, scientificName, imageURL,nickname,lastWatered, waterFrequency, light, genus, family);
-        when(ctx.bodyAsClass(NewPlantRequest.class)).thenReturn(plant);
+    public void DELETE_userDeletePlantTest(){
         doReturn(getUserId).when(ctx).pathParam("id");
-        Javalin.savePlant(ctx);
-        verify(ctx).status(201);
+        doReturn(String.valueOf(getPlantId)).when(ctx).pathParam("plantId");
+        Javalin.deletePlant(ctx);
+
+        verify(ctx).status(204);
     }
-
-
 }
