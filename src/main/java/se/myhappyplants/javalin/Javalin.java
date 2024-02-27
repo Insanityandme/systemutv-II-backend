@@ -434,6 +434,7 @@ public class Javalin {
     public static void getAllPlants(Context ctx) {
         int userId = Integer.parseInt(ctx.pathParam("id"));
         ArrayList<NewPlantRequest> plants = new ArrayList<>();
+        boolean isCreated = false;
 
         Connection database = getConnection();
         String queryUserPlant = "SELECT * FROM plant WHERE user_id = ?;";
@@ -462,14 +463,19 @@ public class Javalin {
 
                 plants.add(plant);
             }
+            isCreated = true;
 
         } catch (SQLException sqlException) {
             sqlException.printStackTrace();
         }
 
-        String json = objecToJson(plants);
-        ctx.result(json);
-        ctx.status(200);
+        if (isCreated) {
+            String json = objecToJson(plants);
+            ctx.result(json);
+            ctx.status(200);
+        } else {
+            throw new NotFoundResponse("Plants not found");
+        }
     }
 
     // Requirement: F.DP.9
