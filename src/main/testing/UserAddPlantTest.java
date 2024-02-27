@@ -13,15 +13,16 @@ import se.myhappyplants.javalin.utils.DbConnection;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.UUID;
 
 import static org.mockito.Mockito.*;
 
-public class UserAddPlant {
+public class UserAddPlantTest {
 
-    private final Context ctx1 = mock(Context.class);
-    private final Context ctx2 = mock(Context.class);
+    private final Context ctx = mock(Context.class);
+
 
 
     private JsonNode jsonNode;
@@ -37,26 +38,22 @@ public class UserAddPlant {
     private String genus;
     private String family;
 
-    @Mock
-    private Connection mockConnection;
 
-    @InjectMocks
-    private DbConnection dbConnection;
+
+
 
 
     @BeforeEach
     public void setUp() throws SQLException {
-        MockitoAnnotations.openMocks(this);
-        DbConnection spyDbConnection = spy(dbConnection);
-        when(spyDbConnection.getConnection()).thenReturn(mockConnection);
-        spyDbConnection.setPath("myHappyPlantsDBTEST.db");
-        when(ctx1.queryParam("plant")).thenReturn("sunflower");
-        Javalin.getPlants(ctx1);
+        //DbConnection dbConnection = DbConnection.getInstance();
+        //dbConnection.setPath("myHappyPlantsDBTEST.db");
+        when(ctx.queryParam("plant")).thenReturn("sunflower");
+        Javalin.getPlants(ctx);
 
-        verify(ctx1).status(200);
+        verify(ctx).status(200);
 
 
-        verify(ctx1).result(argThat((String result) -> {
+        verify(ctx).result(argThat((String result) -> {
 
             ObjectMapper objectMapper = new ObjectMapper();
             try {
@@ -72,9 +69,8 @@ public class UserAddPlant {
                 commonName = firstItem.get("common_name").asText();
                 scientificName = firstItem.get("scientific_name").asText();
                 imageURL = firstItem.get("image_url").asText();
-                nickname = "";
-                lastWatered = "1970-01-01";
                 waterFrequency = 0L;
+                lastWatered = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
                 light = 0;
                 genus = firstItem.get("genus").asText();
                 family = firstItem.get("family").asText();
@@ -90,10 +86,23 @@ public class UserAddPlant {
 
     @Test
     public void POST_userAddPlant_201()  {
+        nickname = UUID.randomUUID().toString();
         NewPlantRequest plant = new NewPlantRequest(id, commonName, scientificName, imageURL,nickname,lastWatered, waterFrequency, light, genus, family);
-        when(ctx2.bodyAsClass(NewPlantRequest.class)).thenReturn(plant);
-        doReturn("23").when(ctx2).pathParam("id");
-        Javalin.savePlant(ctx2);
-        verify(ctx2).status(201);
+        when(ctx.bodyAsClass(NewPlantRequest.class)).thenReturn(plant);
+        doReturn("23").when(ctx).pathParam("id");
+        Javalin.savePlant(ctx);
+        verify(ctx).status(201);
+
+    }
+
+    @Test
+    public void POST_userAddPlant_400()  {
+        nickname = "test"; //Change this to another plant's nickname that already exists in the db
+        NewPlantRequest plant = new NewPlantRequest(id, commonName, scientificName, imageURL,nickname,lastWatered, waterFrequency, light, genus, family);
+        when(ctx.bodyAsClass(NewPlantRequest.class)).thenReturn(plant);
+        doReturn("23").when(ctx).pathParam("id");
+        Javalin.savePlant(ctx);
+        verify(ctx).status(400);
+
     }
 }

@@ -7,7 +7,7 @@ import java.sql.SQLException;
 public class DbConnection {
     private static DbConnection instance = null;
     private Connection conn = null;
-    private String path = "myHappyPlantsDBTEST.db";
+    private String path = "myHappyPlantsDB.db";
 
     // Tar hand om kraven F.U.1
     private DbConnection() {

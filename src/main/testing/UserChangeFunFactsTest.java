@@ -22,18 +22,11 @@ public class UserChangeFunFactsTest {
 
     private final Context ctx = mock(Context.class);
 
-    @Mock
-    private Connection mockConnection;
 
-    @InjectMocks
-    private DbConnection dbConnection;
 
     @BeforeEach
     public void setUp() throws SQLException {
-        MockitoAnnotations.openMocks(this);
-        DbConnection spyDbConnection = spy(dbConnection);
-        when(spyDbConnection.getConnection()).thenReturn(mockConnection);
-        spyDbConnection.setPath("myHappyPlantsDBTEST.db");
+
 
 
 
