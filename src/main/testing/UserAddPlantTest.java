@@ -23,6 +23,7 @@ import static org.mockito.Mockito.*;
 
 public class UserAddPlantTest {
     private final Context ctx = mock(Context.class);
+    private final Context ctx2 = mock(Context.class);
     private JsonNode jsonNode;
     private int id;
     private String commonName;
@@ -47,9 +48,9 @@ public class UserAddPlantTest {
         password = generateRandomString(12);
         NewUserRequest testUser = new NewUserRequest(email,username,password);
 
-        when(ctx.bodyAsClass(NewUserRequest.class)).thenReturn(testUser);
+        when(ctx2.bodyAsClass(NewUserRequest.class)).thenReturn(testUser);
 
-        Javalin.createUser(ctx);
+        Javalin.createUser(ctx2);
 
         java.lang.reflect.Field field = Javalin.class.getDeclaredField("generatedUserId");
         field.setAccessible(true);

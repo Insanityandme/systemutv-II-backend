@@ -180,7 +180,7 @@ public class Javalin {
                 if(affectedRows > 0){
                     ResultSet generatedKeys = preparedStatement.getGeneratedKeys();
                     if(generatedKeys.next()){
-                        generatedUserId =generatedKeys.getLong(1);
+                        generatedUserId = generatedKeys.getLong(1);
                         ctx.status(201);
 
                     }
