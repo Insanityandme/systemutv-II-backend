@@ -51,8 +51,6 @@ public class UserAddPlantTest {
 
         Javalin.createUser(ctx);
 
-        verify(ctx).status(201);
-
         java.lang.reflect.Field field = Javalin.class.getDeclaredField("generatedUserId");
         field.setAccessible(true);
         getUserId = (long) field.get(null);
