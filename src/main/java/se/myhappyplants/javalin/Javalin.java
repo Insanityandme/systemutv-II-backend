@@ -226,7 +226,7 @@ public class Javalin {
 
     // Requirement: F.DP.14
     @OpenApi(
-            summary = "Update user information based on ID and password",
+            summary = "Update user information based on ID and sometimes wiht password",
             operationId = "updateUserById",
             path = "/v1/users/{id}",
             methods = HttpMethod.PATCH,
@@ -294,7 +294,8 @@ public class Javalin {
             } catch (SQLException sqlException) {
                 sqlException.printStackTrace();
             }
-        } else if (jsonNode.get("notificationsActivated") != null) {
+        }
+        else if (jsonNode.get("notificationsActivated") != null) {
             boolean notificationActivated = jsonNode.get("notificationsActivated").asBoolean();
             String query = "UPDATE user SET notification_activated = ? WHERE id = ?;";
             try (PreparedStatement preparedStatement = database.prepareStatement(query)) {

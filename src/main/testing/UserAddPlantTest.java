@@ -20,13 +20,8 @@ import java.util.UUID;
 import static org.mockito.Mockito.*;
 
 public class UserAddPlantTest {
-
     private final Context ctx = mock(Context.class);
-
-
-
     private JsonNode jsonNode;
-
     private int id;
     private String commonName;
     private String scientificName;
@@ -38,21 +33,15 @@ public class UserAddPlantTest {
     private String genus;
     private String family;
 
-
-
-
-
-
     @BeforeEach
     public void setUp() throws SQLException {
-        //DbConnection dbConnection = DbConnection.getInstance();
-        //dbConnection.setPath("myHappyPlantsDBTEST.db");
+        // DbConnection dbConnection = DbConnection.getInstance();
+        // dbConnection.setPath("myHappyPlantsDBTEST.db");
+
         when(ctx.queryParam("plant")).thenReturn("sunflower");
         Javalin.getPlants(ctx);
 
         verify(ctx).status(200);
-
-
         verify(ctx).result(argThat((String result) -> {
 
             ObjectMapper objectMapper = new ObjectMapper();
@@ -74,14 +63,10 @@ public class UserAddPlantTest {
                 light = 0;
                 genus = firstItem.get("genus").asText();
                 family = firstItem.get("family").asText();
-
             }
 
             return true;
         }));
-
-
-
     }
 
     @Test
@@ -92,17 +77,20 @@ public class UserAddPlantTest {
         doReturn("22").when(ctx).pathParam("id");
         Javalin.savePlant(ctx);
         verify(ctx).status(201);
-
     }
 
     @Test
     public void POST_userAddPlant_400()  {
         nickname = "test"; //Change this to another plant's nickname that already exists in the db
-        NewPlantRequest plant = new NewPlantRequest(id, commonName, scientificName, imageURL,nickname,lastWatered, waterFrequency, light, genus, family);
-        when(ctx.bodyAsClass(NewPlantRequest.class)).thenReturn(plant);
-        doReturn("22").when(ctx).pathParam("id");
-        Javalin.savePlant(ctx);
-        verify(ctx).status(400);
 
+        NewPlantRequest plant = new NewPlantRequest(id, commonName, scientificName, imageURL,nickname,lastWatered, waterFrequency, light, genus, family);
+
+        when(ctx.bodyAsClass(NewPlantRequest.class)).thenReturn(plant);
+
+        doReturn("22").when(ctx).pathParam("id");
+
+        Javalin.savePlant(ctx);
+
+        verify(ctx).status(400);
     }
 }
