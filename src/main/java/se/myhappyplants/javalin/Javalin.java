@@ -226,7 +226,7 @@ public class Javalin {
 
     // Requirement: F.DP.14
     @OpenApi(
-            summary = "Update user information based on ID and password",
+            summary = "Update user information based on ID and sometimes with password",
             operationId = "updateUserById",
             path = "/v1/users/{id}",
             methods = HttpMethod.PATCH,
@@ -294,7 +294,8 @@ public class Javalin {
             } catch (SQLException sqlException) {
                 sqlException.printStackTrace();
             }
-        } else if (jsonNode.get("notificationsActivated") != null) {
+        }
+        else if (jsonNode.get("notificationsActivated") != null) {
             boolean notificationActivated = jsonNode.get("notificationsActivated").asBoolean();
             String query = "UPDATE user SET notification_activated = ? WHERE id = ?;";
             try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
@@ -806,9 +807,9 @@ public class Javalin {
         if (isCreated) {
             String json = objecToJson(plant);
             ctx.result(json);
-            ctx.status(200);
+            ctx.status(201);
         } else {
-            ctx.status(409);
+            ctx.status(400);
             ctx.result("You already have a plant with that nickname");
         }
     }
@@ -846,7 +847,9 @@ public class Javalin {
         HttpResponse<String> result;
         try {
             result = response.get();
+            ctx.status(200);
         } catch (InterruptedException | ExecutionException e) {
+            ctx.status(404);
             throw new RuntimeException(e);
         }
 

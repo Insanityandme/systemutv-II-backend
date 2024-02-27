@@ -1,8 +1,6 @@
 
 import io.javalin.http.Context;
 
-import io.javalin.validation.Params;
-import io.javalin.validation.Validator;
 import org.junit.jupiter.api.*;
 import se.myhappyplants.javalin.Javalin;
 import se.myhappyplants.javalin.user.NewDeleteRequest;
@@ -59,7 +57,7 @@ public class UserRegisterTest {
         when(ctx.queryParam("username")).thenReturn("");
         when(ctx.queryParam("password")).thenReturn("test");
 
-        //userController.register(ctx);
+        Javalin.createUser(ctx);
 
         //Beroende på hur vi vill kolla om användaren är tom så kan vi antingen kolla så att saveUser anropas med tomt
         //användarnamn och returnar false eller så kan vi kolla så att status sätts till 400
