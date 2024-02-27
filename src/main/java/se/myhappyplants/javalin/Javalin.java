@@ -144,7 +144,7 @@ public class Javalin {
             ctx.status(200);
         } else {
             ctx.status(404);
-            ctx.result("Login failed");
+            ctx.result("Login failed: Invalid email or password");
         }
     }
 
