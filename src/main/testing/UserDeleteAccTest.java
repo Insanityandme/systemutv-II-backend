@@ -37,7 +37,7 @@ public class UserDeleteAccTest {
         del.password="123"; //Might have to be changed depending on the actual user id you wanna test
 
         when(ctx.bodyAsClass(NewDeleteRequest.class)).thenReturn(del);
-        doReturn("21").when(ctx).pathParam("id"); //Might have to be changed depending on the actual user id you wanna test
+        doReturn("22").when(ctx).pathParam("id"); //Might have to be changed depending on the actual user id you wanna test
 
 
 
@@ -53,7 +53,7 @@ public class UserDeleteAccTest {
         del.password="wrong_password";
 
         when(ctx.bodyAsClass(NewDeleteRequest.class)).thenReturn(del);
-        doReturn("21").when(ctx).pathParam("id"); //Might have to be changed depending on the actual user id you wanna test
+        doReturn("22").when(ctx).pathParam("id"); //Might have to be changed depending on the actual user id you wanna test
 
         Javalin.deleteUser(ctx);
 

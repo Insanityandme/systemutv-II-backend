@@ -89,7 +89,7 @@ public class UserAddPlantTest {
         nickname = UUID.randomUUID().toString();
         NewPlantRequest plant = new NewPlantRequest(id, commonName, scientificName, imageURL,nickname,lastWatered, waterFrequency, light, genus, family);
         when(ctx.bodyAsClass(NewPlantRequest.class)).thenReturn(plant);
-        doReturn("23").when(ctx).pathParam("id");
+        doReturn("22").when(ctx).pathParam("id");
         Javalin.savePlant(ctx);
         verify(ctx).status(201);
 
@@ -100,7 +100,7 @@ public class UserAddPlantTest {
         nickname = "test"; //Change this to another plant's nickname that already exists in the db
         NewPlantRequest plant = new NewPlantRequest(id, commonName, scientificName, imageURL,nickname,lastWatered, waterFrequency, light, genus, family);
         when(ctx.bodyAsClass(NewPlantRequest.class)).thenReturn(plant);
-        doReturn("23").when(ctx).pathParam("id");
+        doReturn("22").when(ctx).pathParam("id");
         Javalin.savePlant(ctx);
         verify(ctx).status(400);
 
