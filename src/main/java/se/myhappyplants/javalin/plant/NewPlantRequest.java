@@ -1,28 +1,25 @@
 package se.myhappyplants.javalin.plant;
 
-import se.myhappyplants.client.model.PictureRandomizer;
-
-import java.sql.Date;
-
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 public class NewPlantRequest {
-    public String id;
+    public int id;
     public String commonName;
-
     public String scientificName;
+    public String family;
     public String imageURL;
     public String nickname;
-    public Date lastWatered;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    public String lastWatered = "1970-01-01";
     public long waterFrequency;
     public String genus;
     public int light;
-    public String family;
 
     public NewPlantRequest() {
     }
 
-    public NewPlantRequest(String id, String commonName, String scientificName, String imageURL,
-                           String nickname, Date lastWatered, long waterFrequency, int light, String genus, String family) {
+    public NewPlantRequest(int id, String commonName, String scientificName, String imageURL,
+                           String nickname, String lastWatered, long waterFrequency, int light, String genus, String family) {
         this.id = id;
         this.commonName = commonName;
         this.scientificName = scientificName;
@@ -35,11 +32,11 @@ public class NewPlantRequest {
         this.family = family;
     }
 
-    public void setId(String id) {
+    public void setId(int id) {
         this.id = id;
     }
 
-    public String getId() {
+    public int getId() {
         return id;
     }
 
@@ -103,11 +100,11 @@ public class NewPlantRequest {
         this.scientificName = scientificName;
     }
 
-    public Date getLastWatered() {
+    public String getLastWatered() {
         return lastWatered;
     }
 
-    public void setLastWatered(Date date) {
+    public void setLastWatered(String date) {
         this.lastWatered = date;
     }
 
@@ -131,10 +128,6 @@ public class NewPlantRequest {
 
     //Tar hand om krav F.SI.1
     public String getImageURL() {
-        if (imageURL == null) {
-            imageURL = PictureRandomizer.getRandomPictureURL();
-        }
-
         return imageURL;
     }
 

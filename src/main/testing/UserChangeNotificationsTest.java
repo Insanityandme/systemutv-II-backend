@@ -1,15 +1,13 @@
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.javalin.http.Context;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
 import se.myhappyplants.javalin.Javalin;
 import se.myhappyplants.javalin.login.NewLoginRequest;
-import se.myhappyplants.javalin.user.NewDeleteRequest;
-
-import io.javalin.http.Context;
-
-import org.junit.jupiter.api.*;
+import se.myhappyplants.javalin.user.NewUpdateUserRequest;
 import se.myhappyplants.javalin.user.NewUserRequest;
 
 import java.sql.SQLException;
@@ -18,9 +16,10 @@ import java.util.Random;
 import static org.mockito.Mockito.*;
 
 /**
- * REQUIREMENT: F.A.5
+ * Requirement: F.UE.3
  */
-public class UserDeleteAccTest {
+
+public class UserChangeNotificationsTest {
     private final Context ctx = mock(Context.class);
     private final Context ctxSetUp = mock(Context.class);
     private String email;
@@ -73,30 +72,33 @@ public class UserDeleteAccTest {
 
         return randomString.toString();
     }
-
+    // Requirement: F.UE.3
     @Test
-    public void DELETE_userDeleteAcc_204_Success() {
-        NewDeleteRequest del = new NewDeleteRequest();
-        del.password = password;
+    public void PATCH_userChangeNotificationsOn_200_Success() throws JsonProcessingException {
+        NewUpdateUserRequest userRequest = new NewUpdateUserRequest();
+        userRequest.notificationsActivated = true;
+        ObjectMapper objectMapper = new ObjectMapper();
+        String jsonUserRequest = objectMapper.writeValueAsString(userRequest);
 
-        when(ctx.bodyAsClass(NewDeleteRequest.class)).thenReturn(del);
         doReturn(getUserId).when(ctx).pathParam("id");
+        when(ctx.body()).thenReturn(jsonUserRequest);
 
-        Javalin.deleteUser(ctx);
-
-        verify(ctx).status(204);
+        Javalin.updateUser(ctx);
+        verify(ctx).status(200);
     }
 
+    // Requirement: F.UE.3
     @Test
-    public void DELETE_userDeleteAcc_400_Fail() {
-        NewDeleteRequest del = new NewDeleteRequest();
-        del.password = "wrong_password";
+    public void PATCH_userChangeNotificationsOff_200_Success() throws JsonProcessingException {
+        NewUpdateUserRequest userRequest = new NewUpdateUserRequest();
+        userRequest.notificationsActivated = false;
+        ObjectMapper objectMapper = new ObjectMapper();
+        String jsonUserRequest = objectMapper.writeValueAsString(userRequest);
 
-        when(ctx.bodyAsClass(NewDeleteRequest.class)).thenReturn(del);
         doReturn(getUserId).when(ctx).pathParam("id");
+        when(ctx.body()).thenReturn(jsonUserRequest);
 
-        Javalin.deleteUser(ctx);
-
-        verify(ctx).status(400);
+        Javalin.updateUser(ctx);
+        verify(ctx).status(200);
     }
 }

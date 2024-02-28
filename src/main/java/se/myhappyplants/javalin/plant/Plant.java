@@ -1,9 +1,5 @@
 package se.myhappyplants.javalin.plant;
 
-import se.myhappyplants.client.model.PictureRandomizer;
-
-import java.sql.Date;
-import java.time.LocalDate;
 
 /**
  * Class defining a plant
@@ -11,17 +7,17 @@ import java.time.LocalDate;
  * Updated by: Linn Borgström, Eric Simonson, Susanne Vikström
  */
 public class Plant {
-   private  String id;
-   private  String commonName;
-   private  String scientificName;
-   private  String familyName;
-   private  String imageURL;
-   private  String nickname;
-   private  Date lastWatered;
-   private  long waterFrequency;
-   private  String genus;
-   private  int light;
-   private  String family;
+   private int id;
+   private String commonName;
+   private String scientificName;
+   private String familyName;
+   private String imageURL;
+   private String nickname;
+   private String lastWatered;
+   private long waterFrequency;
+   private String genus;
+   private int light;
+   private String family;
 
     public Plant() {}
     /**
@@ -34,7 +30,7 @@ public class Plant {
      * @param familyName     Family name
      * @param imageURL       Image location
      */
-    public Plant(String id, String commonName, String scientificName, String familyName, String imageURL) {
+    public Plant(int id, String commonName, String scientificName, String familyName, String imageURL) {
         this.id = id;
         this.commonName = commonName;
         this.scientificName = scientificName;
@@ -42,16 +38,16 @@ public class Plant {
         this.imageURL = imageURL;
     }
 
-    public Plant(String nickname, String id, Date lastWatered, long waterFrequency) {
+    public Plant(String nickname, int id, String lastWatered, long waterFrequency) {
         this.nickname = nickname;
         this.id = id;
         this.lastWatered = lastWatered;
         this.waterFrequency = waterFrequency;
     }
 
-    public Plant(String nickname, String plantID, Date lastWatered) {
+    public Plant(String nickname, int id, String lastWatered) {
         this.nickname = nickname;
-        this.id = plantID;
+        this.id = id;
         this.lastWatered = lastWatered;
     }
 
@@ -61,11 +57,11 @@ public class Plant {
      *
      * @param nickname
      * @param id             Unique plant id in Species database
-     * @param lastWatered    Date the plant was last watered
+     * @param lastWatered    String the plant was last watered
      * @param waterFrequency How often the plant needs water in milliseconds
      * @param imageURL       Image location
      */
-    public Plant(String nickname, String id, Date lastWatered, long waterFrequency, String imageURL) {
+    public Plant(String nickname, int id, String lastWatered, long waterFrequency, String imageURL) {
         this.nickname = nickname;
         this.id = id;
         this.lastWatered = lastWatered;
@@ -79,10 +75,10 @@ public class Plant {
      *
      * @param nickname
      * @param id          Unique plant id in Species database
-     * @param lastWatered Date the plant was last watered
+     * @param lastWatered String the plant was last watered
      * @param imageURL    Image location
      */
-    public Plant(String nickname, String id, Date lastWatered, String imageURL) {
+    public Plant(String nickname, int id, String lastWatered, String imageURL) {
         this.nickname = nickname;
         this.id = id;
         this.lastWatered = lastWatered;
@@ -110,7 +106,7 @@ public class Plant {
         return scientificName;
     }
 
-    public String getId() {
+    public int getId() {
         return id;
     }
 
@@ -150,39 +146,16 @@ public class Plant {
 
     //Tar hand om krav F.SI.1
     public String getImageURL() {
-        if (imageURL == null) {
-            imageURL = PictureRandomizer.getRandomPictureURL();
-        }
         String httpImageURL = imageURL;
         return httpImageURL;
     }
 
-    public Date getLastWatered() {
+    public String getLastWatered() {
         return lastWatered;
     }
 
-    public void setLastWatered(LocalDate localDate) {
-        Date date = java.sql.Date.valueOf(localDate);
-        this.lastWatered = date;
-    }
-
-    /**
-     * Compares the length of time since the plant was watered
-     * with recommended frequency of watering. Returns a decimal value
-     * that can be used in a progress bar or indicator
-     *
-     * @return Double between 0.02 (max time elapsed) and 1.0 (min time elapsed)
-     */
-    public double getProgress() {
-        long difference = System.currentTimeMillis() - lastWatered.getTime();
-        difference -= 43000000l;
-        double progress = 1.0 - ((double) difference / (double) waterFrequency);
-        if (progress <= 0.02) {
-            progress = 0.02;
-        } else if (progress >= 0.95) {
-            progress = 1.0;
-        }
-        return progress;
+    public void setLastWatered(String lastWatered) {
+        this.lastWatered = lastWatered;
     }
 
     /**
@@ -193,7 +166,7 @@ public class Plant {
      * @return Days since last water
      */
     public String getDaysUntilWater() {
-        long millisSinceLastWatered = System.currentTimeMillis() - lastWatered.getTime();
+        long millisSinceLastWatered = System.currentTimeMillis();
         long millisUntilNextWatering = waterFrequency - millisSinceLastWatered;
         long millisInADay = 86400000;
 
