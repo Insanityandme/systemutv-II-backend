@@ -1,3 +1,5 @@
+package main.testing;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,13 +17,15 @@ public class UserLoginTest {
     private final Context ctxSetUp = mock(Context.class);
     private String email;
     private String password;
+    private String username;
 
     @BeforeEach
     public void setUp(){
         email = "test@example.com";
+        username = "test12";
         password = "password";
 
-        NewUserRequest testUser = new NewUserRequest(email, password);
+        NewUserRequest testUser = new NewUserRequest(email, username, password);
         when(ctxSetUp.bodyAsClass(NewUserRequest.class)).thenReturn(testUser);
         Javalin.createUser(ctxSetUp);
 

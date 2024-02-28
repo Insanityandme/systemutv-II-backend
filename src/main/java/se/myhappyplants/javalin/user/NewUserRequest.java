@@ -4,7 +4,7 @@ public class NewUserRequest {
     public String email;
     public String username;
     public String password;
-    public NewUserRequest() {}
+    public NewUserRequest(String email, String password) {}
 
     public NewUserRequest(String email, String username, String password) {
         this.email = email;

@@ -5,23 +5,21 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.http.Context;
 import io.javalin.http.NotFoundResponse;
-import io.javalin.openapi.*;
 import io.javalin.openapi.plugin.OpenApiPlugin;
 import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
 import io.javalin.plugin.bundled.CorsPluginConfig;
-
 import org.mindrot.jbcrypt.BCrypt;
 import org.sqlite.SQLiteException;
 import se.myhappyplants.javalin.login.NewLoginRequest;
 import se.myhappyplants.javalin.plant.Fact;
 import se.myhappyplants.javalin.plant.NewPlantRequest;
 import se.myhappyplants.javalin.plant.Plant;
-import se.myhappyplants.javalin.utils.TreflePlantSwaggerObject;
 import se.myhappyplants.javalin.user.NewDeleteRequest;
-import se.myhappyplants.javalin.user.NewUserRequest;
 import se.myhappyplants.javalin.user.NewUpdateUserRequest;
+import se.myhappyplants.javalin.user.NewUserRequest;
 import se.myhappyplants.javalin.user.User;
 import se.myhappyplants.javalin.utils.ErrorResponse;
+import se.myhappyplants.javalin.utils.TreflePlantSwaggerObject;
 
 import java.net.URI;
 import java.net.http.HttpClient;
