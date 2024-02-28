@@ -1,36 +1,50 @@
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import se.myhappyplants.javalin.Javalin;
+import se.myhappyplants.javalin.login.NewLoginRequest;
+import se.myhappyplants.javalin.user.NewDeleteRequest;
+import se.myhappyplants.javalin.user.NewUserRequest;
 import io.javalin.http.Context;
 import static org.mockito.Mockito.*;
 
 public class UserLoginTest {
 
-    private Context ctx;
+    private final Context ctx = mock(Context.class);
+    private final Context ctxSetUp = mock(Context.class);
+    private String email;
+    private String password;
 
     @BeforeEach
     public void setUp(){
-        ctx = mock(Context.class);
+        email = "test@example.com";
+        password = "password";
+
+        NewUserRequest testUser = new NewUserRequest(email, password);
+        when(ctxSetUp.bodyAsClass(NewUserRequest.class)).thenReturn(testUser);
+        Javalin.createUser(ctxSetUp);
+
+        NewLoginRequest login = new NewLoginRequest(email, password);
+        when(ctxSetUp.bodyAsClass(NewLoginRequest.class)).thenReturn(login);
     }
 
     @Test
     public void login_Successful(){
-        when(ctx.queryParam("email")).thenReturn("test@gmail.com");
-        when(ctx.queryParam("password")).thenReturn("test");
+        Javalin.login(ctxSetUp);
 
-        Javalin.login(ctx);
-
-        verify(ctx).status(200);
-        verify(ctx).result("Success");
+        verify(ctxSetUp).status(200);
+        verify(ctxSetUp, never()).status(401);
     }
 
     @Test
     public void login_Faliure(){
-        when(ctx.queryParam("email")).thenReturn("test@gmail.com");
-        when(ctx.queryParam("password")).thenReturn("wrong");
+        NewLoginRequest login = new NewLoginRequest(email, "wrong_password");
+        when(ctxSetUp.bodyAsClass(NewLoginRequest.class)).thenReturn(login);
 
-        Javalin.login(ctx);
+        Javalin.login(ctxSetUp);
 
-        verify(ctx).status(404);
-        verify(ctx).result("Login failed");
+        verify(ctxSetUp).status(401);
+        verify(ctxSetUp, never()).status(200);
     }
 }
