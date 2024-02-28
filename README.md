@@ -8,6 +8,7 @@ SQLite Installation Guide
 Steg-för-steg:
 Se till att du har klonat och pullat den senaste versionen av https://github.com/Insanityandme/systemutv-II-project
 Ladda ner SQLite:
+
 För Windows: https://youtu.be/XA3w8tQnYCA?si=uTCPwxvkKf7wh8xU
 För Mac os: https://youtu.be/PC4phLbiZgk?si=GhjSS8eOmXZs1Wbn
 
