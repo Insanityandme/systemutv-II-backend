@@ -10,7 +10,9 @@ Se till att du har klonat och pullat den senaste versionen av https://github.com
 Ladda ner SQLite:
 För Windows: https://youtu.be/XA3w8tQnYCA?si=uTCPwxvkKf7wh8xU
 För Mac os: https://youtu.be/PC4phLbiZgk?si=GhjSS8eOmXZs1Wbn
+
 Ladda ner de nödvändiga filerna, .jar-filer, för att projektet ska fungera som avsett. Du hittar de krävda filerna på Discord-servern under kanalen 'länkar’. Säkerställ att de finns på en säker plats på din dator för att undvika att du råkar radera dem i framtiden.
+
 Databasfilen finns i sökvägen 'src\main\resources' och heter 'myHappyPlantsDB.db. Om den inte finns där kan ni ladda ner databasfilen på Discord-servern under kanalen ‘länkar’
 Öppna projektet och lägg till jar-filerna i ‘Dependencies’:
 
