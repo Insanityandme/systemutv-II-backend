@@ -23,6 +23,9 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.verify;
 
+/**
+ * REQUIREMENT: F.DP.8
+ */
 public class UserDeletePlantTest {
     private final Context ctx = mock(Context.class);
     private final Context ctxSetUp = mock(Context.class);

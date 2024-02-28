@@ -18,6 +18,9 @@ import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
+/**
+ * REQUIREMENT: F.UE.4
+ */
 public class UserChangeFunFactsTest {
     private final Context ctx = mock(Context.class);
     private final Context ctxSetUp = mock(Context.class);
@@ -72,6 +75,7 @@ public class UserChangeFunFactsTest {
         return randomString.toString();
     }
 
+    // Requirement: F.UE.4
     @Test
     public void PATCH_UserChangeFunFactsOn_200_Success() throws JsonProcessingException {
         NewUpdateUserRequest userRequest = new NewUpdateUserRequest();
@@ -86,6 +90,7 @@ public class UserChangeFunFactsTest {
         verify(ctx).status(200);
     }
 
+    // Requirement: F.UE.4
     @Test
     public void PATCH_UserChangeFunFactsOff_200_Success() throws JsonProcessingException {
         NewUpdateUserRequest userRequest = new NewUpdateUserRequest();

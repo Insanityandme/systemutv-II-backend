@@ -4,17 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.http.Context;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.stubbing.Answer;
 import se.myhappyplants.javalin.Javalin;
 import se.myhappyplants.javalin.login.NewLoginRequest;
 import se.myhappyplants.javalin.plant.NewPlantRequest;
 import se.myhappyplants.javalin.user.NewUserRequest;
-import se.myhappyplants.javalin.utils.DbConnection;
-
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -23,6 +17,9 @@ import java.util.UUID;
 
 import static org.mockito.Mockito.*;
 
+/**
+ * REQUIREMENT: F.A.5
+ */
 public class UserAddPlantTest {
     private final Context ctx = mock(Context.class);
     private final Context ctxSetUp = mock(Context.class);
@@ -42,43 +39,6 @@ public class UserAddPlantTest {
     private String password;
 
     private String getUserId;
-
-    @BeforeEach
-    public void setUp() throws SQLException, IllegalAccessException, NoSuchFieldException, JsonProcessingException {
-        email = generateRandomString(8) + "@example.com";
-        username = generateRandomString(10);
-        password = generateRandomString(12);
-
-        NewUserRequest testUser = new NewUserRequest(email, username, password);
-        when(ctxSetUp.bodyAsClass(NewUserRequest.class)).thenReturn(testUser);
-        Javalin.createUser(ctxSetUp);
-
-        NewLoginRequest login = new NewLoginRequest(email, password);
-        when(ctxSetUp.bodyAsClass(NewLoginRequest.class)).thenReturn(login);
-
-        StringBuilder capturedResult = new StringBuilder();
-        doAnswer((Answer<Void>) invocation -> {
-            Object[] args = invocation.getArguments();
-            String jsonResult = (String) args[0];
-            capturedResult.append(jsonResult);
-            return null;
-        }).when(ctxSetUp).result(anyString());
-
-        Javalin.login(ctxSetUp);
-
-        ObjectMapper objectMapper = new ObjectMapper();
-        String capturedResultString = capturedResult.toString();
-        JsonNode jsonNode = objectMapper.readTree(capturedResultString);
-        getUserId = String.valueOf(jsonNode.get("id"));
-
-        when(ctxSetUp1.queryParam("plant")).thenReturn("sunflower");
-        Javalin.getPlants(ctxSetUp1);
-
-        verify(ctxSetUp).status(201);
-        verify(ctxSetUp).status(200);
-        verify(ctxSetUp1).status(200);
-        verify(ctxSetUp1).result(argThat(this::verifyResult));
-    }
 
     private boolean verifyResult(String result) {
         try {
@@ -120,6 +80,44 @@ public class UserAddPlantTest {
         return randomString.toString();
     }
 
+    @BeforeEach
+    public void setUp() throws SQLException, IllegalAccessException, NoSuchFieldException, JsonProcessingException {
+        email = generateRandomString(8) + "@example.com";
+        username = generateRandomString(10);
+        password = generateRandomString(12);
+
+        NewUserRequest testUser = new NewUserRequest(email, username, password);
+        when(ctxSetUp.bodyAsClass(NewUserRequest.class)).thenReturn(testUser);
+        Javalin.createUser(ctxSetUp);
+
+        NewLoginRequest login = new NewLoginRequest(email, password);
+        when(ctxSetUp.bodyAsClass(NewLoginRequest.class)).thenReturn(login);
+
+        StringBuilder capturedResult = new StringBuilder();
+        doAnswer((Answer<Void>) invocation -> {
+            Object[] args = invocation.getArguments();
+            String jsonResult = (String) args[0];
+            capturedResult.append(jsonResult);
+            return null;
+        }).when(ctxSetUp).result(anyString());
+
+        Javalin.login(ctxSetUp);
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        String capturedResultString = capturedResult.toString();
+        JsonNode jsonNode = objectMapper.readTree(capturedResultString);
+        getUserId = String.valueOf(jsonNode.get("id"));
+
+        when(ctxSetUp1.queryParam("plant")).thenReturn("sunflower");
+        Javalin.getPlants(ctxSetUp1);
+
+        verify(ctxSetUp).status(201);
+        verify(ctxSetUp).status(200);
+        verify(ctxSetUp1).status(200);
+        verify(ctxSetUp1).result(argThat(this::verifyResult));
+    }
+
+    // Requirement: F.A.5
     @Test
     public void POST_userAddPlant_201_Success()  {
         NewPlantRequest plant = new NewPlantRequest(plantId, commonName, scientificName, imageURL,nickname,lastWatered, waterFrequency, light, genus, family);
@@ -128,6 +126,4 @@ public class UserAddPlantTest {
         Javalin.savePlant(ctx);
         verify(ctx).status(201);
     }
-
-
 }
