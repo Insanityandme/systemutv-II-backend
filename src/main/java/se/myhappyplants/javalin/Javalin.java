@@ -39,7 +39,7 @@ import static se.myhappyplants.javalin.utils.Helper.*;
 
 public class Javalin {
     public static void main(String[] args) {
-        io.javalin.Javalin.create(config -> {
+        var app = io.javalin.Javalin.create(config -> {
             // Plugin for documentation and testing our api
             config.registerPlugin(new OpenApiPlugin(pluginConfig -> {
                 pluginConfig.withDefinitionConfiguration((version, definition) -> {
@@ -92,6 +92,7 @@ public class Javalin {
                 });
             });
         }).start(7002);
+
     }
 
     // Requirement: F.DP.3
@@ -195,7 +196,7 @@ public class Javalin {
             methods = HttpMethod.GET,
             tags = {"Fun Facts"},
             responses = {
-                    @OpenApiResponse(status = "200", content = {@OpenApiContent(from = Fact[].class)}),
+                    @OpenApiResponse(status = "200", content = {@OpenApiContent(from = Fact.class)}),
                     @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
             }
     )
@@ -208,16 +209,16 @@ public class Javalin {
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
             preparedStatement.setInt(1, factId);
             ResultSet resultSet = preparedStatement.executeQuery();
-            if (resultSet.next()) {
-                fact = resultSet.getString("fact");
 
-                if (fact.isEmpty()) {
-                    throw new NotFoundResponse("Fact not found");
-                } else {
-                    String json = objecToJson(fact);
-                    ctx.result(json);
-                    ctx.status(200);
-                }
+            if (!resultSet.next()) {
+                ctx.status(404);
+                ctx.result("Fact not found");
+            } else if (resultSet.next()) {
+                fact = resultSet.getString("fact");
+                String json = objecToJson(fact);
+                ctx.result(json);
+                ctx.status(200);
+
             }
         } catch (SQLException sqlException) {
             sqlException.printStackTrace();
@@ -236,7 +237,7 @@ public class Javalin {
             tags = {"User"},
             requestBody = @OpenApiRequestBody(
                     description = "You can use one field at a time to update the user, " +
-                                    "changing password requires the password field to be filled in as well.",
+                            "changing password requires the password field to be filled in as well.",
                     content = {
                             @OpenApiContent(from = NewUpdateUserRequest.class),
                     }),
@@ -294,8 +295,7 @@ public class Javalin {
             } catch (SQLException sqlException) {
                 sqlException.printStackTrace();
             }
-        }
-        else if (jsonNode.get("notificationsActivated") != null) {
+        } else if (jsonNode.get("notificationsActivated") != null) {
             boolean notificationActivated = jsonNode.get("notificationsActivated").asBoolean();
             String query = "UPDATE user SET notification_activated = ? WHERE id = ?;";
             try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
@@ -407,7 +407,7 @@ public class Javalin {
                 boolean notificationActivated = resultSet.getBoolean("notification_activated");
                 boolean funFactsActivated = resultSet.getBoolean("fun_facts_activated");
 
-                User user = new User( email, username, notificationActivated, funFactsActivated);
+                User user = new User(email, username, notificationActivated, funFactsActivated);
                 String json = objecToJson(user);
                 ctx.result(json);
                 ctx.status(200);
