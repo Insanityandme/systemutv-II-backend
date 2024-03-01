@@ -833,6 +833,8 @@ public class Javalin {
         // for example when you want to search for a plant called "rose"
         // you type in the url: http://localhost:7002/v1/plants/search?plant=rose
         String plant = ctx.queryParam("plant");
+        assert plant != null;
+        plant = plant.replaceAll("\\s+", "");
 
         HttpClient client = HttpClient.newHttpClient();
 
