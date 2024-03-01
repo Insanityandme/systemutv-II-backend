@@ -1,10 +1,10 @@
 package se.myhappyplants.javalin.user;
 
-public class NewDeleteRequest {
+public class NewDeleteUserRequest {
     public String password;
 
-    public NewDeleteRequest() {}
-    public NewDeleteRequest(String password) {
+    public NewDeleteUserRequest() {}
+    public NewDeleteUserRequest(String password) {
         this.password = password;
     }
 

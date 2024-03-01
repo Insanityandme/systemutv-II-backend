@@ -6,28 +6,20 @@ import se.myhappyplants.javalin.plant.Fact;
 import se.myhappyplants.javalin.user.NewUserRequest;
 import se.myhappyplants.javalin.utils.DbConnection;
 
-import java.sql.SQLException;
-
 import static org.mockito.Mockito.*;
 
 public class JavalinTests {
+
     @BeforeEach
     public void setup() {
-        try {
-            DbConnection.getInstance().setPath("myHappyPlantsDBTEST.db");
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        DbConnection.path = "myHappyPlantsDBTEST.db";
     }
-
     // Requirement: F.DP.13
     @Test
     public void getFactSuccess() {
         Context ctx = mock(Context.class);
-        Fact fact = new Fact();
 
         when(ctx.pathParam("factId")).thenReturn("1");
-        when(ctx.bodyAsClass(Fact.class)).thenReturn(fact);
 
         Javalin.getFact(ctx);
 
@@ -53,16 +45,45 @@ public class JavalinTests {
     @Test
     public void createUserSuccess() {
         Context ctx = mock(Context.class);
-        NewUserRequest user = new NewUserRequest();
+        NewUserRequest user = new NewUserRequest("test@mail.com", "test", "test");
 
         when(ctx.bodyAsClass(NewUserRequest.class)).thenReturn(user);
 
+        Javalin.createUser(ctx);
+
+        verify(ctx).status(201);
+
+        // TODO: PLS DELETE USER AFTER CREATION
     }
 
 
     // Requirement: F.DP.4
     @Test
-    public void createUserFailed() {
+    public void createUserNoUser() {
+        Context ctx = mock(Context.class);
 
+        // Empty object to show how it handles sending insufficient data
+        NewUserRequest user = new NewUserRequest();
+
+        when(ctx.bodyAsClass(NewUserRequest.class)).thenReturn(user);
+
+        Javalin.createUser(ctx);
+
+        verify(ctx).status(404);
+    }
+
+    // Requirement: F.DP.4
+    @Test
+    public void createUserAlreadyExist() {
+        Context ctx = mock(Context.class);
+
+        // Empty object to show how it handles sending insufficient data
+        NewUserRequest user = new NewUserRequest();
+
+        when(ctx.bodyAsClass(NewUserRequest.class)).thenReturn(user);
+
+        Javalin.createUser(ctx);
+
+        verify(ctx).status(404);
     }
 }

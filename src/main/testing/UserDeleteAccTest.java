@@ -5,14 +5,13 @@ import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
 import se.myhappyplants.javalin.Javalin;
 import se.myhappyplants.javalin.login.NewLoginRequest;
-import se.myhappyplants.javalin.user.NewDeleteRequest;
+import se.myhappyplants.javalin.user.NewDeleteUserRequest;
 
 import io.javalin.http.Context;
 
 import org.junit.jupiter.api.*;
 import se.myhappyplants.javalin.user.NewUserRequest;
 
-import java.sql.SQLException;
 import java.util.Random;
 
 import static org.mockito.Mockito.*;
@@ -76,10 +75,10 @@ public class UserDeleteAccTest {
 
     @Test
     public void DELETE_userDeleteAcc_204_Success() {
-        NewDeleteRequest del = new NewDeleteRequest();
+        NewDeleteUserRequest del = new NewDeleteUserRequest();
         del.password = password;
 
-        when(ctx.bodyAsClass(NewDeleteRequest.class)).thenReturn(del);
+        when(ctx.bodyAsClass(NewDeleteUserRequest.class)).thenReturn(del);
         doReturn(getUserId).when(ctx).pathParam("id");
 
         Javalin.deleteUser(ctx);
@@ -89,10 +88,10 @@ public class UserDeleteAccTest {
 
     @Test
     public void DELETE_userDeleteAcc_400_Fail() {
-        NewDeleteRequest del = new NewDeleteRequest();
+        NewDeleteUserRequest del = new NewDeleteUserRequest();
         del.password = "wrong_password";
 
-        when(ctx.bodyAsClass(NewDeleteRequest.class)).thenReturn(del);
+        when(ctx.bodyAsClass(NewDeleteUserRequest.class)).thenReturn(del);
         doReturn(getUserId).when(ctx).pathParam("id");
 
         Javalin.deleteUser(ctx);

@@ -16,8 +16,9 @@ import se.myhappyplants.javalin.login.NewLoginRequest;
 import se.myhappyplants.javalin.plant.Fact;
 import se.myhappyplants.javalin.plant.NewPlantRequest;
 import se.myhappyplants.javalin.plant.Plant;
+import se.myhappyplants.javalin.utils.DbConnection;
 import se.myhappyplants.javalin.utils.TreflePlantSwaggerObject;
-import se.myhappyplants.javalin.user.NewDeleteRequest;
+import se.myhappyplants.javalin.user.NewDeleteUserRequest;
 import se.myhappyplants.javalin.user.NewUserRequest;
 import se.myhappyplants.javalin.user.NewUpdateUserRequest;
 import se.myhappyplants.javalin.user.User;
@@ -36,6 +37,7 @@ import java.util.concurrent.ExecutionException;
 
 import static io.javalin.apibuilder.ApiBuilder.*;
 import static se.myhappyplants.javalin.utils.Helper.*;
+
 
 public class Javalin {
     public static void main(String[] args) {
@@ -110,7 +112,7 @@ public class Javalin {
     )
     public static void login(Context ctx) {
         NewLoginRequest newLoginRequest = ctx.bodyAsClass(NewLoginRequest.class);
-        Connection database = getConnection();
+        Connection database = DbConnection.getConnection();
 
         boolean isVerified = false;
         User user = null;
@@ -165,7 +167,13 @@ public class Javalin {
     )
     public static void createUser(Context ctx) {
         NewUserRequest user = ctx.bodyAsClass(NewUserRequest.class);
-        Connection database = getConnection();
+        Connection database = DbConnection.getConnection();
+
+        if (user.username == null || user.password == null || user.email == null) {
+            ctx.status(404);
+            ctx.result("Insufficient data to create a user.");
+            return;
+        }
 
         String hashedPassword = BCrypt.hashpw(user.password, BCrypt.gensalt());
         String sqlSafeUsername = user.username.replace("'", "''");
@@ -202,7 +210,7 @@ public class Javalin {
     )
     public static void getFact(Context ctx) {
         int factId = Integer.parseInt(ctx.pathParam("factId"));
-        Connection database = getConnection();
+        Connection database = DbConnection.getConnection();
         String fact;
         String query = "SELECT fact FROM fun_facts WHERE id = ?;";
 
@@ -213,13 +221,14 @@ public class Javalin {
             if (!resultSet.next()) {
                 ctx.status(404);
                 ctx.result("Fact not found");
-            } else if (resultSet.next()) {
+            } else {
                 fact = resultSet.getString("fact");
                 String json = objecToJson(fact);
                 ctx.result(json);
                 ctx.status(200);
-
             }
+
+
         } catch (SQLException sqlException) {
             sqlException.printStackTrace();
         }
@@ -249,7 +258,7 @@ public class Javalin {
     public static void updateUser(Context ctx) {
         int userId = Integer.parseInt(ctx.pathParam("id"));
 
-        Connection database = getConnection();
+        Connection database = DbConnection.getConnection();
         String password = "";
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode jsonNode;
@@ -322,7 +331,7 @@ public class Javalin {
             methods = HttpMethod.DELETE,
             pathParams = {@OpenApiParam(name = "id", type = Integer.class, description = "The user ID")},
             tags = {"User"},
-            requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = NewDeleteRequest.class)}),
+            requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = NewDeleteUserRequest.class)}),
             responses = {
                     @OpenApiResponse(status = "204"),
                     @OpenApiResponse(status = "400", content = {@OpenApiContent(from = ErrorResponse.class)}),
@@ -332,9 +341,9 @@ public class Javalin {
     public static void deleteUser(Context ctx) {
         int userId = Integer.parseInt(ctx.pathParam("id"));
 
-        NewDeleteRequest deleteRequest = ctx.bodyAsClass(NewDeleteRequest.class);
+        NewDeleteUserRequest deleteRequest = ctx.bodyAsClass(NewDeleteUserRequest.class);
 
-        Connection database = getConnection();
+        Connection database = DbConnection.getConnection();
         String query = "SELECT password FROM user WHERE id = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
@@ -395,7 +404,7 @@ public class Javalin {
     )
     public static void getUserById(Context ctx) {
         int userId = Integer.parseInt(ctx.pathParam("id"));
-        Connection database = getConnection();
+        Connection database = DbConnection.getConnection();
         String query = "SELECT * FROM user WHERE id = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
@@ -437,7 +446,7 @@ public class Javalin {
         ArrayList<NewPlantRequest> plants = new ArrayList<>();
         boolean isCreated = false;
 
-        Connection database = getConnection();
+        Connection database = DbConnection.getConnection();
         String queryUserPlant = "SELECT * FROM plant WHERE user_id = ?;";
         String queryPlantDetails = "SELECT * FROM plantdetails WHERE id = ?";
 
@@ -512,7 +521,7 @@ public class Javalin {
             return;
         }
 
-        Connection database = getConnection();
+        Connection database = DbConnection.getConnection();
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode jsonNode = objectMapper.readTree(ctx.body());
@@ -555,7 +564,7 @@ public class Javalin {
         int userId = Integer.parseInt(ctx.pathParam("id"));
         int plantId = Integer.parseInt(ctx.pathParam("plantId"));
 
-        Connection database = getConnection();
+        Connection database = DbConnection.getConnection();
         String query = "SELECT * FROM plant WHERE user_id = ? AND id = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
@@ -617,7 +626,7 @@ public class Javalin {
             }
         }
 
-        Connection database = getConnection();
+        Connection database = DbConnection.getConnection();
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode jsonNode = objectMapper.readTree(ctx.body());
@@ -697,7 +706,7 @@ public class Javalin {
         int userId = Integer.parseInt(ctx.pathParam("id"));
         int plantId = Integer.parseInt(ctx.pathParam("plantId"));
 
-        Connection database = getConnection();
+        Connection database = DbConnection.getConnection();
         String query = "DELETE FROM plant WHERE user_id = ? AND id = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
@@ -732,7 +741,7 @@ public class Javalin {
         int userId = Integer.parseInt(ctx.pathParam("id"));
         NewPlantRequest plant = ctx.bodyAsClass(NewPlantRequest.class);
         boolean isCreated = false;
-        Connection database = getConnection();
+        Connection database = DbConnection.getConnection();
 
         // check if date is the correct format
         try {
