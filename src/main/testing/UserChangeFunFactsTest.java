@@ -10,7 +10,6 @@ import se.myhappyplants.javalin.login.NewLoginRequest;
 import se.myhappyplants.javalin.user.NewUpdateUserRequest;
 import se.myhappyplants.javalin.user.NewUserRequest;
 
-import java.sql.SQLException;
 import java.util.Random;
 
 import static org.mockito.Mockito.*;
@@ -31,7 +30,7 @@ public class UserChangeFunFactsTest {
     private String getUserId;
 
     @BeforeEach
-    public void setUp() throws SQLException, NoSuchFieldException, IllegalAccessException, JsonProcessingException {
+    public void setUp() throws JsonProcessingException {
         email = generateRandomString(8) + "@example.com";
         username = generateRandomString(10);
         password = generateRandomString(12);

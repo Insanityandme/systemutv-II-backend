@@ -30,7 +30,7 @@ public class UserDeleteAccTest {
     private String getUserId;
 
     @BeforeEach
-    public void setUp() throws SQLException, NoSuchFieldException, IllegalAccessException, JsonProcessingException {
+    public void setUp() throws JsonProcessingException {
         email = generateRandomString(8) + "@example.com";
         username = generateRandomString(10);
         password = generateRandomString(12);
