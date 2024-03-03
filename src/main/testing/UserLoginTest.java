@@ -7,7 +7,7 @@ import io.javalin.http.Context;
 import static org.mockito.Mockito.*;
 
 /**
- * Requirement:
+ * REQUIREMENT:
  */
  public class UserLoginTest {
     private final Context ctx = mock(Context.class);

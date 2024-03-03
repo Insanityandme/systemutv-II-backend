@@ -2,11 +2,13 @@ package se.myhappyplants.javalin.user;
 
 public class User {
     public int id;
-    public final String email;
+    public String email = "";
     public String username;
     public String password;
     public boolean isNotificationsActivated;
     public boolean funFactsActivated;
+
+    public User() {}
 
     public User(int id, String email, String username, boolean isNotificationsActivated, boolean funFactsActivated) {
         this.id = id;
