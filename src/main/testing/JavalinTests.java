@@ -170,6 +170,47 @@ public class JavalinTests {
         verify(ctx).status(204);
     }
 
+
+    // Requirement: F.DP.16
+    @Test
+    public void getUserByIdSuccess() {
+        Context ctx = mock(Context.class);
+
+        // Create user to be used in the test
+        NewUserRequest user = new NewUserRequest("test@mail.com", "test", "test");
+        when(ctx.bodyAsClass(NewUserRequest.class)).thenReturn(user);
+        Javalin.createUser(ctx);
+        verify(ctx).status(201);
+
+        // Get ID by logging in
+        String id = Helper.getUserIdForTest(ctx);
+
+        when(ctx.pathParam("id")).thenReturn(id);
+        Javalin.getUserById(ctx);
+        verify(ctx, times(2)).status(200);
+
+        // Delete user for repeatable tests
+        NewDeleteUserRequest del = new NewDeleteUserRequest();
+        del.password = "test";
+        when(ctx.bodyAsClass(NewDeleteUserRequest.class)).thenReturn(del);
+        when(ctx.pathParam("id")).thenReturn(id);
+        Javalin.deleteUser(ctx);
+        verify(ctx).status(204);
+    }
+
+    // Requirement: F.DP.16
+    @Test
+    public void getUserByIdFail() {
+        Context ctx = mock(Context.class);
+
+        // Incorrect ID
+        String id = "-9999";
+
+        when(ctx.pathParam("id")).thenReturn(id);
+        Javalin.getUserById(ctx);
+        verify(ctx).status(404);
+    }
+
     // Requirement: F.DP.4
     @Test
     public void getAllPlantsSuccesful() {
@@ -186,8 +227,8 @@ public class JavalinTests {
 
         // Add plant to a user
         NewPlantRequest plant = new NewPlantRequest(0, "test", "test",
-                                            "test", "test", "1970-01-01",
-                                        1, 1, "test", "test");
+                "test", "test", "1970-01-01",
+                1, 1, "test", "test");
         when(ctx.bodyAsClass(NewPlantRequest.class)).thenReturn(plant);
         when(ctx.pathParam("id")).thenReturn(id);
         Javalin.savePlant(ctx);
@@ -235,9 +276,9 @@ public class JavalinTests {
         verify(ctx).status(204);
     }
 
-    // Requirement: F.DP.16
+    // Requirement: F.DP.9
     @Test
-    public void getUserByIdSuccess() {
+    public void updateAllPlantsWateredSucces() {
         Context ctx = mock(Context.class);
 
         // Create user to be used in the test
@@ -249,11 +290,29 @@ public class JavalinTests {
         // Get ID by logging in
         String id = Helper.getUserIdForTest(ctx);
 
+        // Add plant to a user
+        NewPlantRequest plant = new NewPlantRequest(0, "test", "test",
+                "test", "test", "1970-01-01",
+                1, 1, "test", "test");
+        when(ctx.bodyAsClass(NewPlantRequest.class)).thenReturn(plant);
         when(ctx.pathParam("id")).thenReturn(id);
-        Javalin.getUserById(ctx);
+        Javalin.savePlant(ctx);
+        verify(ctx, times(2)).status(201);
+
+        // Update all plants based on user ID
+        // For some reason Mockito can't handle ctx.body and ctx.bodyAsClass as intended.
+        // I need to invoke both to make sure that the information is correctly transmitted to
+        // the Context object.
+        String request = "{\"lastWatered\":\"2024-03-04\"}";
+        NewPlantRequest lastWateredRequest = new NewPlantRequest();
+        lastWateredRequest.lastWatered = "2024-03-04";
+        when(ctx.bodyAsClass(NewPlantRequest.class)).thenReturn(lastWateredRequest);
+        when(ctx.body()).thenReturn(request);
+        when(ctx.pathParam("id")).thenReturn(id);
+        Javalin.updateAllPlants(ctx);
         verify(ctx, times(2)).status(200);
 
-        // Delete user for repeatable tests
+        // Delete user and plants for repeatable tests
         NewDeleteUserRequest del = new NewDeleteUserRequest();
         del.password = "test";
         when(ctx.bodyAsClass(NewDeleteUserRequest.class)).thenReturn(del);
@@ -262,16 +321,48 @@ public class JavalinTests {
         verify(ctx).status(204);
     }
 
-    // Requirement: F.DP.16
+    // Requirement: F.DP.9
     @Test
-    public void getUserByIdFail() {
+    public void updateAllPlantsWateredFail() {
         Context ctx = mock(Context.class);
 
-        // Incorrect ID
-        String id = "-9999";
+        // Create user to be used in the test
+        NewUserRequest user = new NewUserRequest("test@mail.com", "test", "test");
+        when(ctx.bodyAsClass(NewUserRequest.class)).thenReturn(user);
+        Javalin.createUser(ctx);
+        verify(ctx).status(201);
 
+        // Get ID by logging in
+        String id = Helper.getUserIdForTest(ctx);
+
+        // Add plant to a user
+        NewPlantRequest plant = new NewPlantRequest(0, "test", "test",
+                "test", "test", "1970-01-01",
+                1, 1, "test", "test");
+        when(ctx.bodyAsClass(NewPlantRequest.class)).thenReturn(plant);
         when(ctx.pathParam("id")).thenReturn(id);
-        Javalin.getUserById(ctx);
-        verify(ctx).status(404);
+        Javalin.savePlant(ctx);
+        verify(ctx, times(2)).status(201);
+
+        // Update all plants based on user ID
+        // For some reason Mockito can't handle ctx.body and ctx.bodyAsClass as intended.
+        // I need to invoke both to make sure that the information is correctly transmitted to
+        // the Context object even though Javalin handles it correctly in the actual code.
+        String request = "{\"lastWatered\":\"Not a date\"}";
+        NewPlantRequest lastWateredRequest = new NewPlantRequest();
+        lastWateredRequest.lastWatered = "Not a date";
+        when(ctx.bodyAsClass(NewPlantRequest.class)).thenReturn(lastWateredRequest);
+        when(ctx.body()).thenReturn(request);
+        when(ctx.pathParam("id")).thenReturn(id);
+        Javalin.updateAllPlants(ctx);
+        verify(ctx ).status(400);
+
+        // Delete user and plants for repeatable tests
+        NewDeleteUserRequest del = new NewDeleteUserRequest();
+        del.password = "test";
+        when(ctx.bodyAsClass(NewDeleteUserRequest.class)).thenReturn(del);
+        when(ctx.pathParam("id")).thenReturn(id);
+        Javalin.deleteUser(ctx);
+        verify(ctx).status(204);
     }
 }
