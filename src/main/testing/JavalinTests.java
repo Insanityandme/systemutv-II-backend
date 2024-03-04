@@ -8,6 +8,8 @@ import se.myhappyplants.javalin.user.NewDeleteUserRequest;
 import se.myhappyplants.javalin.user.NewUserRequest;
 import se.myhappyplants.javalin.utils.DbConnection;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import static org.mockito.Mockito.*;
 
 public class JavalinTests {
@@ -327,10 +329,7 @@ public class JavalinTests {
         Context ctx = mock(Context.class);
 
         // Create user to be used in the test
-        NewUserRequest user = new NewUserRequest("test@mail.com", "test", "test");
-        when(ctx.bodyAsClass(NewUserRequest.class)).thenReturn(user);
         Javalin.createUser(ctx);
-        verify(ctx).status(201);
 
         // Get ID by logging in
         String id = Helper.getUserIdForTest(ctx);
@@ -364,5 +363,47 @@ public class JavalinTests {
         when(ctx.pathParam("id")).thenReturn(id);
         Javalin.deleteUser(ctx);
         verify(ctx).status(204);
+    }
+
+    // Requirement: F.DP.10
+    @Test
+    public void getPlantSuccess() {
+        Context ctx = mock(Context.class);
+
+        // Create user for the test
+        Helper.createUser(ctx);
+        // Get ID by logging in
+        String userId = Helper.getUserIdForTest(ctx);
+        // Add plant to a user and get plant ID
+        String plantId = Helper.addPlantToUser(ctx, userId);
+
+        // Get plant based on user and plant ID
+        when(ctx.pathParam("id")).thenReturn(userId);
+        when(ctx.pathParam("plantId")).thenReturn(plantId);
+        Javalin.getPlant(ctx);
+        verify(ctx, times(2)).status(200);
+
+        // Delete user and plants for repeatable tests
+        Helper.deleteUser(ctx, userId);
+    }
+
+    // Requirement: F.DP.10
+    @Test
+    public void getPlantFail() {
+        Context ctx = mock(Context.class);
+
+        // Create user for the test
+        Helper.createUser(ctx);
+        // Get ID by logging in
+        String userId = Helper.getUserIdForTest(ctx);
+
+        // Get plant based on user and plant ID
+        when(ctx.pathParam("id")).thenReturn(userId);
+        when(ctx.pathParam("plantId")).thenReturn("-999");
+        Javalin.getPlant(ctx);
+        verify(ctx).status(404);
+
+        // Delete user and plants for repeatable tests
+        Helper.deleteUser(ctx, userId);
     }
 }

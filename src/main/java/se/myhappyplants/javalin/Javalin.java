@@ -586,7 +586,8 @@ public class Javalin {
                 ctx.result(json);
                 ctx.status(200);
             } else {
-                throw new NotFoundResponse("Plant not found");
+                ctx.result("Plant not found");
+                ctx.status(404);
             }
         } catch (SQLException sqlException) {
             sqlException.printStackTrace();

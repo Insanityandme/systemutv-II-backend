@@ -4,12 +4,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.http.Context;
 import se.myhappyplants.javalin.Javalin;
 import se.myhappyplants.javalin.login.NewLoginRequest;
+import se.myhappyplants.javalin.plant.NewPlantRequest;
+import se.myhappyplants.javalin.user.NewDeleteUserRequest;
+import se.myhappyplants.javalin.user.NewUserRequest;
 
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class Helper {
     public static String getUserIdForTest(Context ctx) {
@@ -39,9 +41,52 @@ public class Helper {
         return String.valueOf(jsonNode.get("id"));
     }
 
-    public static String getPlantIdForTest(Context ctx) {
+    public static void createUser(Context ctx) {
+        // Create user to be used in the test
+        NewUserRequest user = new NewUserRequest("test@mail.com", "test", "test");
+        when(ctx.bodyAsClass(NewUserRequest.class)).thenReturn(user);
+        Javalin.createUser(ctx);
+        verify(ctx).status(201);
+    }
 
+    public static String addPlantToUser(Context ctx, String userId) {
+        NewPlantRequest plant = new NewPlantRequest(0, "test", "test",
+                "test", "test", "1970-01-01",
+                1, 1, "test", "test");
+        when(ctx.bodyAsClass(NewPlantRequest.class)).thenReturn(plant);
+        when(ctx.pathParam("id")).thenReturn(userId);
 
-        return "";
+        // get plant ID from saved plant
+        AtomicReference<String> json = new AtomicReference<>("");
+        when(ctx.result(anyString())).thenAnswer(invocation -> {
+            String result = invocation.getArgument(0, String.class);
+            json.set(result);
+            return null;
+        });
+
+        Javalin.savePlant(ctx);
+        verify(ctx, times(2)).status(201);
+
+        // Get ID from plant json response
+        ObjectMapper objectMapper = new ObjectMapper();
+        String capturedResultString = json.toString();
+        JsonNode jsonNode;
+
+        try {
+            jsonNode = objectMapper.readTree(capturedResultString);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
+        return String.valueOf(jsonNode.get("id"));
+    }
+
+    public static void deleteUser(Context ctx, String userId) {
+        NewDeleteUserRequest del = new NewDeleteUserRequest();
+        del.password = "test";
+        when(ctx.bodyAsClass(NewDeleteUserRequest.class)).thenReturn(del);
+        when(ctx.pathParam("id")).thenReturn(userId);
+        Javalin.deleteUser(ctx);
+        verify(ctx).status(204);
     }
 }
