@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 import se.myhappyplants.javalin.Javalin;
 import se.myhappyplants.javalin.plant.Fact;
 import se.myhappyplants.javalin.user.NewDeleteUserRequest;
-import se.myhappyplants.javalin.user.NewUpdateUserRequest;
 import se.myhappyplants.javalin.user.NewUserRequest;
 import se.myhappyplants.javalin.utils.DbConnection;
 
@@ -58,7 +57,7 @@ public class JavalinTests {
 
     // Requirement: F.DP.4
     @Test
-    public void createUserAlreadyExist() throws JsonProcessingException {
+    public void createUserAlreadyExist() {
         Context ctx = mock(Context.class);
 
         // Create user to be used in the test
@@ -112,7 +111,7 @@ public class JavalinTests {
 
     // Requirement: F.DP.14
     @Test
-    public void updateUserByIdPasswordSuccess() {
+    public void updateUserByIdPassworSuccess() {
         Context ctx = mock(Context.class);
 
         // Create user to be used in the test
@@ -124,10 +123,43 @@ public class JavalinTests {
         // Get ID by logging in
         String id = Helper.getUserIdForTest(ctx);
 
-        NewUpdateUserRequest updatedRequest = new NewUpdateUserRequest();
-        updatedRequest.oldPassword = "test";
-        when(ctx.bodyAsClass(NewUpdateUserRequest.class)).thenReturn(updatedRequest);
+        // Request to update user password
+        String request = "{\"oldPassword\":\"test\",\"newPassword\":\"hi\"}";
+        when(ctx.body()).thenReturn(request);
         when(ctx.pathParam("id")).thenReturn(id);
+        Javalin.updateUser(ctx);
+        // We have to verify the status code twice for some reason
+        verify(ctx, times(2)).status(200);
+
+        // Delete user for repeatable tests
+        NewDeleteUserRequest del = new NewDeleteUserRequest();
+        del.password = "hi";
+        when(ctx.bodyAsClass(NewDeleteUserRequest.class)).thenReturn(del);
+        when(ctx.pathParam("id")).thenReturn(id);
+        Javalin.deleteUser(ctx);
+        verify(ctx).status(204);
+    }
+
+    // Requirement: F.DP.14
+    @Test
+    public void updateUserByIdPasswordFail() {
+        Context ctx = mock(Context.class);
+
+        // Create user to be used in the test
+        NewUserRequest user = new NewUserRequest("test@mail.com", "test", "test");
+        when(ctx.bodyAsClass(NewUserRequest.class)).thenReturn(user);
+        Javalin.createUser(ctx);
+        verify(ctx).status(201);
+
+        // Get ID by logging in
+        String id = Helper.getUserIdForTest(ctx);
+
+        // Request to update user password with the wrong password
+        String request = "{\"oldPassword\":\"hi\",\"newPassword\":\"test\"}";
+        when(ctx.body()).thenReturn(request);
+        when(ctx.pathParam("id")).thenReturn(id);
+        Javalin.updateUser(ctx);
+        verify(ctx ).status(400);
 
         // Delete user for repeatable tests
         NewDeleteUserRequest del = new NewDeleteUserRequest();
@@ -136,13 +168,6 @@ public class JavalinTests {
         when(ctx.pathParam("id")).thenReturn(id);
         Javalin.deleteUser(ctx);
         verify(ctx).status(204);
-    }
-
-
-    // Requirement: F.DP.14
-    @Test
-    public void updateUserByIdPasswordFail() {
-
     }
 
 

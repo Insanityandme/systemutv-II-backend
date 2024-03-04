@@ -265,8 +265,6 @@ public class Javalin {
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             jsonNode = objectMapper.readTree(ctx.body());
-            System.out.println(jsonNode.get("newPassword"));
-            System.out.println(jsonNode.get("oldPassword"));
 
             if (jsonNode.get("newPassword") != null) {
                 oldPassword = jsonNode.get("oldPassword").asText();
