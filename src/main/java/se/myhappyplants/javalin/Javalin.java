@@ -38,7 +38,6 @@ import java.util.concurrent.ExecutionException;
 import static io.javalin.apibuilder.ApiBuilder.*;
 import static se.myhappyplants.javalin.utils.Helper.*;
 
-
 public class Javalin {
     public static void main(String[] args) {
         var app = io.javalin.Javalin.create(config -> {
@@ -446,7 +445,6 @@ public class Javalin {
     public static void getAllPlants(Context ctx) {
         int userId = Integer.parseInt(ctx.pathParam("id"));
         ArrayList<NewPlantRequest> plants = new ArrayList<>();
-        boolean isCreated = false;
 
         Connection database = DbConnection.getConnection();
         String queryUserPlant = "SELECT * FROM plant WHERE user_id = ?;";
@@ -475,18 +473,18 @@ public class Javalin {
 
                 plants.add(plant);
             }
-            isCreated = true;
 
         } catch (SQLException sqlException) {
             sqlException.printStackTrace();
         }
 
-        if (isCreated) {
+        if (!plants.isEmpty()) {
             String json = objecToJson(plants);
             ctx.result(json);
             ctx.status(200);
         } else {
-            throw new NotFoundResponse("Plants not found");
+            ctx.status(404);
+            ctx.result("This user has no plants currently");
         }
     }
 

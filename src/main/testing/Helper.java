@@ -38,4 +38,10 @@ public class Helper {
 
         return String.valueOf(jsonNode.get("id"));
     }
+
+    public static String getPlantIdForTest(Context ctx) {
+
+
+        return "";
+    }
 }

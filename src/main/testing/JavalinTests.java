@@ -1,9 +1,9 @@
-import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import se.myhappyplants.javalin.Javalin;
 import se.myhappyplants.javalin.plant.Fact;
+import se.myhappyplants.javalin.plant.NewPlantRequest;
 import se.myhappyplants.javalin.user.NewDeleteUserRequest;
 import se.myhappyplants.javalin.user.NewUserRequest;
 import se.myhappyplants.javalin.utils.DbConnection;
@@ -19,7 +19,7 @@ public class JavalinTests {
 
     // Requirement: F.DP.4
     @Test
-    public void createUserSuccess() throws JsonProcessingException {
+    public void createUserSuccess() {
         Context ctx = mock(Context.class);
 
         // Create user to be used in the test
@@ -159,7 +159,7 @@ public class JavalinTests {
         when(ctx.body()).thenReturn(request);
         when(ctx.pathParam("id")).thenReturn(id);
         Javalin.updateUser(ctx);
-        verify(ctx ).status(400);
+        verify(ctx).status(400);
 
         // Delete user for repeatable tests
         NewDeleteUserRequest del = new NewDeleteUserRequest();
@@ -170,5 +170,69 @@ public class JavalinTests {
         verify(ctx).status(204);
     }
 
+    // Requirement: F.DP.4
+    @Test
+    public void getAllPlantsSuccesful() {
+        Context ctx = mock(Context.class);
+
+        // Create user to be used in the test
+        NewUserRequest user = new NewUserRequest("test@mail.com", "test", "test");
+        when(ctx.bodyAsClass(NewUserRequest.class)).thenReturn(user);
+        Javalin.createUser(ctx);
+        verify(ctx).status(201);
+
+        // Get ID by logging in
+        String id = Helper.getUserIdForTest(ctx);
+
+        // Add plant to a user
+        NewPlantRequest plant = new NewPlantRequest(0, "test", "test",
+                                            "test", "test", "1970-01-01",
+                                        1, 1, "test", "test");
+        when(ctx.bodyAsClass(NewPlantRequest.class)).thenReturn(plant);
+        when(ctx.pathParam("id")).thenReturn(id);
+        Javalin.savePlant(ctx);
+        verify(ctx, times(2)).status(201);
+
+        // Get all plants based on user ID
+        when(ctx.pathParam("id")).thenReturn(id);
+        Javalin.getAllPlants(ctx);
+        verify(ctx, times(2)).status(200);
+
+        // Delete user and plants for repeatable tests
+        NewDeleteUserRequest del = new NewDeleteUserRequest();
+        del.password = "test";
+        when(ctx.bodyAsClass(NewDeleteUserRequest.class)).thenReturn(del);
+        when(ctx.pathParam("id")).thenReturn(id);
+        Javalin.deleteUser(ctx);
+        verify(ctx).status(204);
+    }
+
+    // Requirement: F.DP.4
+    @Test
+    public void getAllPlantsNotFound() {
+        Context ctx = mock(Context.class);
+
+        // Create user to be used in the test
+        NewUserRequest user = new NewUserRequest("test@mail.com", "test", "test");
+        when(ctx.bodyAsClass(NewUserRequest.class)).thenReturn(user);
+        Javalin.createUser(ctx);
+        verify(ctx).status(201);
+
+        // Get ID by logging in
+        String id = Helper.getUserIdForTest(ctx);
+
+        // Get all plants based on user ID
+        when(ctx.pathParam("id")).thenReturn(id);
+        Javalin.getAllPlants(ctx);
+        verify(ctx).status(404);
+
+        // Delete user for repeatable tests
+        NewDeleteUserRequest del = new NewDeleteUserRequest();
+        del.password = "test";
+        when(ctx.bodyAsClass(NewDeleteUserRequest.class)).thenReturn(del);
+        when(ctx.pathParam("id")).thenReturn(id);
+        Javalin.deleteUser(ctx);
+        verify(ctx).status(204);
+    }
 
 }
