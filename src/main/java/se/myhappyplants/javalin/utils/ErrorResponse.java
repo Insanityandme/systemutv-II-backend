@@ -4,18 +4,10 @@ import java.util.Map;
 
 public class ErrorResponse {
     public String title;
-    public int status;
     public String type;
     public Map<String, String> details;
 
     public ErrorResponse() {
-    }
-    public int getStatus() {
-        return status;
-    }
-
-    public void setStatus(int status) {
-        this.status = status;
     }
 
     public String getTitle() {

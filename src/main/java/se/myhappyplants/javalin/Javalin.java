@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.http.Context;
+import io.javalin.http.InternalServerErrorResponse;
 import io.javalin.http.NotFoundResponse;
 import io.javalin.openapi.*;
 import io.javalin.openapi.plugin.OpenApiPlugin;
@@ -16,8 +17,9 @@ import se.myhappyplants.javalin.login.NewLoginRequest;
 import se.myhappyplants.javalin.plant.Fact;
 import se.myhappyplants.javalin.plant.NewPlantRequest;
 import se.myhappyplants.javalin.plant.Plant;
+import se.myhappyplants.javalin.utils.DbConnection;
 import se.myhappyplants.javalin.utils.TreflePlantSwaggerObject;
-import se.myhappyplants.javalin.user.NewDeleteRequest;
+import se.myhappyplants.javalin.user.NewDeleteUserRequest;
 import se.myhappyplants.javalin.user.NewUserRequest;
 import se.myhappyplants.javalin.user.NewUpdateUserRequest;
 import se.myhappyplants.javalin.user.User;
@@ -39,7 +41,7 @@ import static se.myhappyplants.javalin.utils.Helper.*;
 
 public class Javalin {
     public static void main(String[] args) {
-        io.javalin.Javalin.create(config -> {
+        var app = io.javalin.Javalin.create(config -> {
             // Plugin for documentation and testing our api
             config.registerPlugin(new OpenApiPlugin(pluginConfig -> {
                 pluginConfig.withDefinitionConfiguration((version, definition) -> {
@@ -92,6 +94,7 @@ public class Javalin {
                 });
             });
         }).start(7002);
+
     }
 
     // Requirement: F.DP.3
@@ -109,7 +112,7 @@ public class Javalin {
     )
     public static void login(Context ctx) {
         NewLoginRequest newLoginRequest = ctx.bodyAsClass(NewLoginRequest.class);
-        Connection database = getConnection();
+        Connection database = DbConnection.getConnection();
 
         boolean isVerified = false;
         User user = null;
@@ -164,7 +167,13 @@ public class Javalin {
     )
     public static void createUser(Context ctx) {
         NewUserRequest user = ctx.bodyAsClass(NewUserRequest.class);
-        Connection database = getConnection();
+        Connection database = DbConnection.getConnection();
+
+        if (user.username == null || user.password == null || user.email == null) {
+            ctx.status(404);
+            ctx.result("Insufficient data to create a user.");
+            return;
+        }
 
         String hashedPassword = BCrypt.hashpw(user.password, BCrypt.gensalt());
         String sqlSafeUsername = user.username.replace("'", "''");
@@ -195,30 +204,31 @@ public class Javalin {
             methods = HttpMethod.GET,
             tags = {"Fun Facts"},
             responses = {
-                    @OpenApiResponse(status = "200", content = {@OpenApiContent(from = Fact[].class)}),
+                    @OpenApiResponse(status = "200", content = {@OpenApiContent(from = Fact.class)}),
                     @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
             }
     )
     public static void getFact(Context ctx) {
         int factId = Integer.parseInt(ctx.pathParam("factId"));
-        Connection database = getConnection();
+        Connection database = DbConnection.getConnection();
         String fact;
         String query = "SELECT fact FROM fun_facts WHERE id = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
             preparedStatement.setInt(1, factId);
             ResultSet resultSet = preparedStatement.executeQuery();
-            if (resultSet.next()) {
-                fact = resultSet.getString("fact");
 
-                if (fact.isEmpty()) {
-                    throw new NotFoundResponse("Fact not found");
-                } else {
-                    String json = objecToJson(fact);
-                    ctx.result(json);
-                    ctx.status(200);
-                }
+            if (!resultSet.next()) {
+                ctx.status(404);
+                ctx.result("Fact not found");
+            } else {
+                fact = resultSet.getString("fact");
+                String json = objecToJson(fact);
+                ctx.result(json);
+                ctx.status(200);
             }
+
+
         } catch (SQLException sqlException) {
             sqlException.printStackTrace();
         }
@@ -236,7 +246,7 @@ public class Javalin {
             tags = {"User"},
             requestBody = @OpenApiRequestBody(
                     description = "You can use one field at a time to update the user, " +
-                                    "changing password requires the password field to be filled in as well.",
+                            "changing password requires the oldPassword and newPassword field to be filled in.",
                     content = {
                             @OpenApiContent(from = NewUpdateUserRequest.class),
                     }),
@@ -248,19 +258,23 @@ public class Javalin {
     public static void updateUser(Context ctx) {
         int userId = Integer.parseInt(ctx.pathParam("id"));
 
-        Connection database = getConnection();
-        String password = "";
-        ObjectMapper objectMapper = new ObjectMapper();
+        Connection database = DbConnection.getConnection();
+        String oldPassword, newPassword;
         JsonNode jsonNode;
-        try {
-            jsonNode = objectMapper.readTree(ctx.body());
-            if (jsonNode.get("password") != null) {
-                password = jsonNode.get("password").asText();
 
-                if (checkPassword(userId, password)) {
-                    // add code to update user that requires a password here
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            jsonNode = objectMapper.readTree(ctx.body());
+
+            if (jsonNode.get("newPassword") != null) {
+                oldPassword = jsonNode.get("oldPassword").asText();
+
+                if (checkPassword(userId, oldPassword)) {
+                    // add code to update user information that requires a password here
+
                     // change password
-                    String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
+                    newPassword = jsonNode.get("newPassword").asText();
+                    String hashedPassword = BCrypt.hashpw(newPassword, BCrypt.gensalt());
                     String query = "UPDATE user SET password = ? WHERE id = ?;";
                     try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
                         preparedStatement.setString(1, hashedPassword);
@@ -269,49 +283,46 @@ public class Javalin {
                     } catch (SQLException sqlException) {
                         sqlException.printStackTrace();
                     }
-
                     ctx.status(200);
                     ctx.result("Password updated");
                 } else {
                     ctx.status(400);
                     ctx.result("Password incorrect");
                 }
+            } else if (jsonNode.get("funFactsActivated") != null) {
+                boolean funFactsActivated = jsonNode.get("funFactsActivated").asBoolean();
+                String query = "UPDATE user SET fun_facts_activated = ? WHERE id = ?;";
+                try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+                    preparedStatement.setBoolean(1, funFactsActivated);
+                    preparedStatement.setInt(2, userId);
+                    preparedStatement.executeUpdate();
+
+                    ctx.status(200);
+                    ctx.result("Fun facts activated updated");
+                } catch (SQLException sqlException) {
+                    sqlException.printStackTrace();
+                }
+            } else if (jsonNode.get("notificationsActivated") != null) {
+                boolean notificationActivated = jsonNode.get("notificationsActivated").asBoolean();
+                String query = "UPDATE user SET notification_activated = ? WHERE id = ?;";
+                try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+                    preparedStatement.setBoolean(1, notificationActivated);
+                    preparedStatement.setInt(2, userId);
+                    preparedStatement.executeUpdate();
+
+                    ctx.status(200);
+                    ctx.result("Notification activated updated");
+                } catch (SQLException sqlException) {
+                    sqlException.printStackTrace();
+                }
+            } else {
+                ctx.status(400);
+                ctx.result("No valid field to update");
             }
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
 
-        if (jsonNode.get("funFactsActivated") != null) {
-            boolean funFactsActivated = jsonNode.get("funFactsActivated").asBoolean();
-            String query = "UPDATE user SET fun_facts_activated = ? WHERE id = ?;";
-            try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
-                preparedStatement.setBoolean(1, funFactsActivated);
-                preparedStatement.setInt(2, userId);
-                preparedStatement.executeUpdate();
-
-                ctx.status(200);
-                ctx.result("Fun facts activated updated");
-            } catch (SQLException sqlException) {
-                sqlException.printStackTrace();
-            }
-        }
-        else if (jsonNode.get("notificationsActivated") != null) {
-            boolean notificationActivated = jsonNode.get("notificationsActivated").asBoolean();
-            String query = "UPDATE user SET notification_activated = ? WHERE id = ?;";
-            try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
-                preparedStatement.setBoolean(1, notificationActivated);
-                preparedStatement.setInt(2, userId);
-                preparedStatement.executeUpdate();
-
-                ctx.status(200);
-                ctx.result("Notification activated updated");
-            } catch (SQLException sqlException) {
-                sqlException.printStackTrace();
-            }
-        } else {
-            ctx.status(400);
-            ctx.result("No valid field to update");
-        }
     }
 
     // Requirement: F.DP.6
@@ -322,7 +333,7 @@ public class Javalin {
             methods = HttpMethod.DELETE,
             pathParams = {@OpenApiParam(name = "id", type = Integer.class, description = "The user ID")},
             tags = {"User"},
-            requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = NewDeleteRequest.class)}),
+            requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = NewDeleteUserRequest.class)}),
             responses = {
                     @OpenApiResponse(status = "204"),
                     @OpenApiResponse(status = "400", content = {@OpenApiContent(from = ErrorResponse.class)}),
@@ -332,9 +343,9 @@ public class Javalin {
     public static void deleteUser(Context ctx) {
         int userId = Integer.parseInt(ctx.pathParam("id"));
 
-        NewDeleteRequest deleteRequest = ctx.bodyAsClass(NewDeleteRequest.class);
+        NewDeleteUserRequest deleteRequest = ctx.bodyAsClass(NewDeleteUserRequest.class);
 
-        Connection database = getConnection();
+        Connection database = DbConnection.getConnection();
         String query = "SELECT password FROM user WHERE id = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
@@ -380,6 +391,7 @@ public class Javalin {
         }
     }
 
+    // Requirement: F.DP.16
     @OpenApi(
             summary = "Get user by ID",
             operationId = "getUserById",
@@ -395,7 +407,7 @@ public class Javalin {
     )
     public static void getUserById(Context ctx) {
         int userId = Integer.parseInt(ctx.pathParam("id"));
-        Connection database = getConnection();
+        Connection database = DbConnection.getConnection();
         String query = "SELECT * FROM user WHERE id = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
@@ -407,12 +419,13 @@ public class Javalin {
                 boolean notificationActivated = resultSet.getBoolean("notification_activated");
                 boolean funFactsActivated = resultSet.getBoolean("fun_facts_activated");
 
-                User user = new User( email, username, notificationActivated, funFactsActivated);
+                User user = new User(email, username, notificationActivated, funFactsActivated);
                 String json = objecToJson(user);
                 ctx.result(json);
                 ctx.status(200);
             } else {
-                throw new NotFoundResponse("User not found");
+                ctx.result("User not found");
+                ctx.status(404);
             }
         } catch (SQLException sqlException) {
             sqlException.printStackTrace();
@@ -435,9 +448,8 @@ public class Javalin {
     public static void getAllPlants(Context ctx) {
         int userId = Integer.parseInt(ctx.pathParam("id"));
         ArrayList<NewPlantRequest> plants = new ArrayList<>();
-        boolean isCreated = false;
 
-        Connection database = getConnection();
+        Connection database = DbConnection.getConnection();
         String queryUserPlant = "SELECT * FROM plant WHERE user_id = ?;";
         String queryPlantDetails = "SELECT * FROM plantdetails WHERE id = ?";
 
@@ -464,18 +476,18 @@ public class Javalin {
 
                 plants.add(plant);
             }
-            isCreated = true;
 
         } catch (SQLException sqlException) {
             sqlException.printStackTrace();
         }
 
-        if (isCreated) {
+        if (!plants.isEmpty()) {
             String json = objecToJson(plants);
             ctx.result(json);
             ctx.status(200);
         } else {
-            throw new NotFoundResponse("Plants not found");
+            ctx.status(404);
+            ctx.result("This user has no plants currently");
         }
     }
 
@@ -512,7 +524,7 @@ public class Javalin {
             return;
         }
 
-        Connection database = getConnection();
+        Connection database = DbConnection.getConnection();
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode jsonNode = objectMapper.readTree(ctx.body());
@@ -555,7 +567,7 @@ public class Javalin {
         int userId = Integer.parseInt(ctx.pathParam("id"));
         int plantId = Integer.parseInt(ctx.pathParam("plantId"));
 
-        Connection database = getConnection();
+        Connection database = DbConnection.getConnection();
         String query = "SELECT * FROM plant WHERE user_id = ? AND id = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
@@ -575,7 +587,8 @@ public class Javalin {
                 ctx.result(json);
                 ctx.status(200);
             } else {
-                throw new NotFoundResponse("Plant not found");
+                ctx.result("Plant not found");
+                ctx.status(404);
             }
         } catch (SQLException sqlException) {
             sqlException.printStackTrace();
@@ -617,7 +630,7 @@ public class Javalin {
             }
         }
 
-        Connection database = getConnection();
+        Connection database = DbConnection.getConnection();
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode jsonNode = objectMapper.readTree(ctx.body());
@@ -697,7 +710,7 @@ public class Javalin {
         int userId = Integer.parseInt(ctx.pathParam("id"));
         int plantId = Integer.parseInt(ctx.pathParam("plantId"));
 
-        Connection database = getConnection();
+        Connection database = DbConnection.getConnection();
         String query = "DELETE FROM plant WHERE user_id = ? AND id = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
@@ -714,7 +727,7 @@ public class Javalin {
         }
     }
 
-    // Requirement: F.DP.1
+    // Requirement: F.DP.2
     @OpenApi(
             summary = "Add plant to user",
             operationId = "savePlant",
@@ -732,7 +745,7 @@ public class Javalin {
         int userId = Integer.parseInt(ctx.pathParam("id"));
         NewPlantRequest plant = ctx.bodyAsClass(NewPlantRequest.class);
         boolean isCreated = false;
-        Connection database = getConnection();
+        Connection database = DbConnection.getConnection();
 
         // check if date is the correct format
         try {
@@ -809,7 +822,7 @@ public class Javalin {
             ctx.result(json);
             ctx.status(201);
         } else {
-            ctx.status(400);
+            ctx.status(409);
             ctx.result("You already have a plant with that nickname");
         }
     }
@@ -850,11 +863,21 @@ public class Javalin {
         try {
             result = response.get();
             ctx.status(200);
-        } catch (InterruptedException | ExecutionException e) {
-            ctx.status(404);
-            throw new RuntimeException(e);
-        }
+            ctx.result(result.body());
+            ObjectMapper mapper = new ObjectMapper();
 
-        ctx.result(result.body());
+            try {
+                JsonNode tree = mapper.readTree(result.body());
+                if (tree.get("data").isEmpty()) {
+                    ctx.status(404);
+                    ctx.result("No plants found");
+                }
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+
+        } catch (InterruptedException | ExecutionException e) {
+            throw new InternalServerErrorResponse("Failed to get plants from Trefle");
+        }
     }
 }

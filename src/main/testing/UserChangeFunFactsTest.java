@@ -9,8 +9,8 @@ import se.myhappyplants.javalin.Javalin;
 import se.myhappyplants.javalin.login.NewLoginRequest;
 import se.myhappyplants.javalin.user.NewUpdateUserRequest;
 import se.myhappyplants.javalin.user.NewUserRequest;
+import se.myhappyplants.javalin.utils.DbConnection;
 
-import java.sql.SQLException;
 import java.util.Random;
 
 import static org.mockito.Mockito.*;
@@ -19,7 +19,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 /**
- * REQUIREMENT: F.UE.4
+ * REQUIREMENT: F.DP.14
  */
 public class UserChangeFunFactsTest {
     private final Context ctx = mock(Context.class);
@@ -31,7 +31,9 @@ public class UserChangeFunFactsTest {
     private String getUserId;
 
     @BeforeEach
-    public void setUp() throws SQLException, NoSuchFieldException, IllegalAccessException, JsonProcessingException {
+    public void setUp() throws JsonProcessingException {
+        DbConnection.path = "myHappyPlantsDBTEST.db";
+
         email = generateRandomString(8) + "@example.com";
         username = generateRandomString(10);
         password = generateRandomString(12);
@@ -75,13 +77,9 @@ public class UserChangeFunFactsTest {
         return randomString.toString();
     }
 
-    // Requirement: F.UE.4
     @Test
-    public void PATCH_UserChangeFunFactsOn_200_Success() throws JsonProcessingException {
-        NewUpdateUserRequest userRequest = new NewUpdateUserRequest();
-        userRequest.funFactsActivated = true;
-        ObjectMapper objectMapper = new ObjectMapper();
-        String jsonUserRequest = objectMapper.writeValueAsString(userRequest);
+    public void PATCH_UserChangeFunFactsOn_200_Success() {
+        String jsonUserRequest = "{\"funFactsActivated\":true}";
 
         doReturn(getUserId).when(ctx).pathParam("id");
         when(ctx.body()).thenReturn(jsonUserRequest);
@@ -90,13 +88,9 @@ public class UserChangeFunFactsTest {
         verify(ctx).status(200);
     }
 
-    // Requirement: F.UE.4
     @Test
-    public void PATCH_UserChangeFunFactsOff_200_Success() throws JsonProcessingException {
-        NewUpdateUserRequest userRequest = new NewUpdateUserRequest();
-        userRequest.funFactsActivated = false;
-        ObjectMapper objectMapper = new ObjectMapper();
-        String jsonUserRequest = objectMapper.writeValueAsString(userRequest);
+    public void PATCH_UserChangeFunFactsOff_200_Success() {
+        String jsonUserRequest = "{\"funFactsActivated\":false}";
 
         doReturn(getUserId).when(ctx).pathParam("id");
         when(ctx.body()).thenReturn(jsonUserRequest);

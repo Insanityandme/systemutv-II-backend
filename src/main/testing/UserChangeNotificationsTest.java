@@ -9,6 +9,7 @@ import se.myhappyplants.javalin.Javalin;
 import se.myhappyplants.javalin.login.NewLoginRequest;
 import se.myhappyplants.javalin.user.NewUpdateUserRequest;
 import se.myhappyplants.javalin.user.NewUserRequest;
+import se.myhappyplants.javalin.utils.DbConnection;
 
 import java.sql.SQLException;
 import java.util.Random;
@@ -16,7 +17,7 @@ import java.util.Random;
 import static org.mockito.Mockito.*;
 
 /**
- * Requirement: F.UE.3
+ * Requirement: F.DP.14
  */
 
 public class UserChangeNotificationsTest {
@@ -29,7 +30,9 @@ public class UserChangeNotificationsTest {
     private String getUserId;
 
     @BeforeEach
-    public void setUp() throws SQLException, NoSuchFieldException, IllegalAccessException, JsonProcessingException {
+    public void setUp() throws JsonProcessingException {
+        DbConnection.path = "myHappyPlantsDBTEST.db";
+
         email = generateRandomString(8) + "@example.com";
         username = generateRandomString(10);
         password = generateRandomString(12);
@@ -72,13 +75,10 @@ public class UserChangeNotificationsTest {
 
         return randomString.toString();
     }
-    // Requirement: F.UE.3
+
     @Test
-    public void PATCH_userChangeNotificationsOn_200_Success() throws JsonProcessingException {
-        NewUpdateUserRequest userRequest = new NewUpdateUserRequest();
-        userRequest.notificationsActivated = true;
-        ObjectMapper objectMapper = new ObjectMapper();
-        String jsonUserRequest = objectMapper.writeValueAsString(userRequest);
+    public void PATCH_userChangeNotificationsOn_200_Success() {
+        String jsonUserRequest = "{\"notificationsActivated\":true}";
 
         doReturn(getUserId).when(ctx).pathParam("id");
         when(ctx.body()).thenReturn(jsonUserRequest);
@@ -87,13 +87,9 @@ public class UserChangeNotificationsTest {
         verify(ctx).status(200);
     }
 
-    // Requirement: F.UE.3
     @Test
-    public void PATCH_userChangeNotificationsOff_200_Success() throws JsonProcessingException {
-        NewUpdateUserRequest userRequest = new NewUpdateUserRequest();
-        userRequest.notificationsActivated = false;
-        ObjectMapper objectMapper = new ObjectMapper();
-        String jsonUserRequest = objectMapper.writeValueAsString(userRequest);
+    public void PATCH_userChangeNotificationsOff_200_Success() {
+        String jsonUserRequest = "{\"notificationsActivated\":false}";
 
         doReturn(getUserId).when(ctx).pathParam("id");
         when(ctx.body()).thenReturn(jsonUserRequest);

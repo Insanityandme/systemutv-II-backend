@@ -9,6 +9,8 @@ import se.myhappyplants.javalin.Javalin;
 import se.myhappyplants.javalin.login.NewLoginRequest;
 import se.myhappyplants.javalin.plant.NewPlantRequest;
 import se.myhappyplants.javalin.user.NewUserRequest;
+import se.myhappyplants.javalin.utils.DbConnection;
+
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -18,7 +20,7 @@ import java.util.UUID;
 import static org.mockito.Mockito.*;
 
 /**
- * REQUIREMENT: F.A.5
+ * REQUIREMENT: F.DP.2
  */
 public class UserAddPlantTest {
     private final Context ctx = mock(Context.class);
@@ -81,7 +83,9 @@ public class UserAddPlantTest {
     }
 
     @BeforeEach
-    public void setUp() throws SQLException, IllegalAccessException, NoSuchFieldException, JsonProcessingException {
+    public void setUp() throws JsonProcessingException {
+        DbConnection.path = "myHappyPlantsDBTEST.db";
+
         email = generateRandomString(8) + "@example.com";
         username = generateRandomString(10);
         password = generateRandomString(12);
@@ -117,7 +121,6 @@ public class UserAddPlantTest {
         verify(ctxSetUp1).result(argThat(this::verifyResult));
     }
 
-    // Requirement: F.A.5
     @Test
     public void POST_userAddPlant_201_Success()  {
         NewPlantRequest plant = new NewPlantRequest(plantId, commonName, scientificName, imageURL,nickname,lastWatered, waterFrequency, light, genus, family);

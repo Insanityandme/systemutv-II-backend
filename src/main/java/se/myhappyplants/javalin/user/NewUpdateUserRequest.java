@@ -3,26 +3,36 @@ package se.myhappyplants.javalin.user;
 public class NewUpdateUserRequest {
     public String email;
     public String username;
-    public String password;
+    public String oldPassword;
+    public String newPassword;
     public String avatarURL;
     public boolean notificationsActivated = true;
     public boolean funFactsActivated = true;
     public NewUpdateUserRequest() {}
 
-    public NewUpdateUserRequest(String email, String username, String password, String avatarURL, boolean notificationsActivated, boolean funFactsActivated) {
+    public NewUpdateUserRequest(String email, String username, String oldPassword, String newPassword, String avatarURL, boolean notificationsActivated, boolean funFactsActivated) {
         this.email = email;
         this.username = username;
-        this.password = password;
+        this.oldPassword = oldPassword;
+        this.newPassword = newPassword;
         this.avatarURL = avatarURL;
         this.notificationsActivated = notificationsActivated;
         this.funFactsActivated = funFactsActivated;
     }
-    public void setPassword(String password) {
-        this.password = password;
+    public void setOldPassword(String oldPassword) {
+        this.oldPassword = oldPassword;
     }
 
-    public String getPassword() {
-        return password;
+    public String getOldPassword() {
+        return oldPassword;
+    }
+
+    public void setNewPassword(String newPassword) {
+        this.newPassword = newPassword;
+    }
+
+    public String getNewPassword() {
+        return newPassword;
     }
 
     public String getEmail() {

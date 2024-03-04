@@ -1,10 +1,8 @@
 package se.myhappyplants.javalin.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import io.javalin.http.InternalServerErrorResponse;
 import org.mindrot.jbcrypt.BCrypt;
 
 import java.sql.Connection;
@@ -13,19 +11,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class Helper {
-    public static Connection database = getConnection();
-
-    public static Connection getConnection() {
-        Connection database;
-
-        try {
-            database = DbConnection.getInstance().getConnection();
-        } catch (SQLException e) {
-            throw new InternalServerErrorResponse("Unable to establish connection to database");
-        }
-        return database;
-    }
-
     public static String objecToJson(Object object) {
         ObjectMapper mapper = new ObjectMapper();
         // This is necessary for LocalDate objects to work with Jackson...
@@ -41,6 +26,8 @@ public class Helper {
     }
 
     public static boolean checkPassword(int userId, String password) {
+        Connection database = DbConnection.getConnection();
+
         String query = "SELECT password FROM user WHERE id = ?;";
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
             preparedStatement.setInt(1, userId);
@@ -77,7 +64,7 @@ public class Helper {
     }
 
     public static long getWaterFrequency(int plantId) {
-        Connection database = getConnection();
+        Connection database = DbConnection.getConnection();
 
         long waterFrequency = -1;
         String query = "SELECT water_frequency FROM plantdetails WHERE id = ?;";
@@ -88,7 +75,13 @@ public class Helper {
             ResultSet resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
                 String waterText = resultSet.getString("water_frequency");
-                int water = (isNumeric(waterText)) ? Integer.parseInt(waterText) : -1;
+                int water;
+                try {
+                    water = Integer.parseInt(waterText);
+                } catch (NumberFormatException e) {
+                    water = -1;
+                }
+
                 waterFrequency = calculateWaterFrequencyForWatering(water);
             }
         } catch (SQLException sqlException) {
@@ -97,14 +90,4 @@ public class Helper {
 
         return waterFrequency;
     }
-
-    public static boolean isNumeric(String str) {
-        try {
-            Double.parseDouble(str);
-            return true;
-        } catch (NumberFormatException e) {
-            return false;
-        }
-    }
-
 }
