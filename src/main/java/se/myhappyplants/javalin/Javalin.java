@@ -821,7 +821,7 @@ public class Javalin {
             ctx.result(json);
             ctx.status(201);
         } else {
-            ctx.status(400);
+            ctx.status(409);
             ctx.result("You already have a plant with that nickname");
         }
     }
