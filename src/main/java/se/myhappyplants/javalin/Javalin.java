@@ -390,6 +390,7 @@ public class Javalin {
         }
     }
 
+    // Requirement: F.DP.16
     @OpenApi(
             summary = "Get user by ID",
             operationId = "getUserById",
@@ -422,7 +423,8 @@ public class Javalin {
                 ctx.result(json);
                 ctx.status(200);
             } else {
-                throw new NotFoundResponse("User not found");
+                ctx.result("User not found");
+                ctx.status(404);
             }
         } catch (SQLException sqlException) {
             sqlException.printStackTrace();

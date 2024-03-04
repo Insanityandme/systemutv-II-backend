@@ -235,4 +235,43 @@ public class JavalinTests {
         verify(ctx).status(204);
     }
 
+    // Requirement: F.DP.16
+    @Test
+    public void getUserByIdSuccess() {
+        Context ctx = mock(Context.class);
+
+        // Create user to be used in the test
+        NewUserRequest user = new NewUserRequest("test@mail.com", "test", "test");
+        when(ctx.bodyAsClass(NewUserRequest.class)).thenReturn(user);
+        Javalin.createUser(ctx);
+        verify(ctx).status(201);
+
+        // Get ID by logging in
+        String id = Helper.getUserIdForTest(ctx);
+
+        when(ctx.pathParam("id")).thenReturn(id);
+        Javalin.getUserById(ctx);
+        verify(ctx, times(2)).status(200);
+
+        // Delete user for repeatable tests
+        NewDeleteUserRequest del = new NewDeleteUserRequest();
+        del.password = "test";
+        when(ctx.bodyAsClass(NewDeleteUserRequest.class)).thenReturn(del);
+        when(ctx.pathParam("id")).thenReturn(id);
+        Javalin.deleteUser(ctx);
+        verify(ctx).status(204);
+    }
+
+    // Requirement: F.DP.16
+    @Test
+    public void getUserByIdFail() {
+        Context ctx = mock(Context.class);
+
+        // Incorrect ID
+        String id = "-9999";
+
+        when(ctx.pathParam("id")).thenReturn(id);
+        Javalin.getUserById(ctx);
+        verify(ctx).status(404);
+    }
 }
