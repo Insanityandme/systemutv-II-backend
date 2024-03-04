@@ -18,7 +18,7 @@ import java.util.UUID;
 import static org.mockito.Mockito.*;
 
 /**
- * REQUIREMENT: F.A.5
+ * REQUIREMENT: F.DP.2
  */
 public class UserAddPlantTest {
     private final Context ctx = mock(Context.class);
@@ -117,7 +117,6 @@ public class UserAddPlantTest {
         verify(ctxSetUp1).result(argThat(this::verifyResult));
     }
 
-    // Requirement: F.A.5
     @Test
     public void POST_userAddPlant_201_Success()  {
         NewPlantRequest plant = new NewPlantRequest(plantId, commonName, scientificName, imageURL,nickname,lastWatered, waterFrequency, light, genus, family);

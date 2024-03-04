@@ -9,6 +9,7 @@ import se.myhappyplants.javalin.Javalin;
 import se.myhappyplants.javalin.login.NewLoginRequest;
 import se.myhappyplants.javalin.plant.Fact;
 import se.myhappyplants.javalin.user.NewDeleteUserRequest;
+import se.myhappyplants.javalin.user.NewUpdateUserRequest;
 import se.myhappyplants.javalin.user.NewUserRequest;
 import se.myhappyplants.javalin.utils.DbConnection;
 
@@ -23,6 +24,72 @@ public class JavalinTests {
         DbConnection.path = "myHappyPlantsDBTEST.db";
     }
 
+    // Requirement: F.DP.4
+    @Test
+    public void createUserSuccess() throws JsonProcessingException {
+        Context ctx = mock(Context.class);
+
+        // Create user to be used in the test
+        NewUserRequest user = new NewUserRequest("test@mail.com", "test", "test");
+        when(ctx.bodyAsClass(NewUserRequest.class)).thenReturn(user);
+        Javalin.createUser(ctx);
+        verify(ctx).status(201);
+
+        // Login to get ID for deletion
+        String id = Helper.getUserIdForTest(ctx);
+
+        // Delete user
+        NewDeleteUserRequest del = new NewDeleteUserRequest();
+        del.password = "test";
+        when(ctx.bodyAsClass(NewDeleteUserRequest.class)).thenReturn(del);
+        when(ctx.pathParam("id")).thenReturn(id);
+        Javalin.deleteUser(ctx);
+        verify(ctx).status(204);
+    }
+
+    // Requirement: F.DP.4
+    @Test
+    public void createUserNoUser() {
+        Context ctx = mock(Context.class);
+
+        // Empty object to show how it handles sending insufficient data
+        NewUserRequest user = new NewUserRequest();
+
+        when(ctx.bodyAsClass(NewUserRequest.class)).thenReturn(user);
+
+        Javalin.createUser(ctx);
+
+        verify(ctx).status(404);
+    }
+
+    // Requirement: F.DP.4
+    @Test
+    public void createUserAlreadyExist() throws JsonProcessingException {
+        Context ctx = mock(Context.class);
+
+        // Create user to be used in the test
+        NewUserRequest user = new NewUserRequest("test@mail.com", "test", "test");
+        when(ctx.bodyAsClass(NewUserRequest.class)).thenReturn(user);
+        Javalin.createUser(ctx);
+        verify(ctx).status(201);
+
+        // Create another user to trigger status code 409
+        NewUserRequest user2 = new NewUserRequest("test@mail.com", "test", "test");
+        when(ctx.bodyAsClass(NewUserRequest.class)).thenReturn(user2);
+        Javalin.createUser(ctx);
+        verify(ctx).status(409);
+
+        // Delete user for repeatable tests
+        String id = Helper.getUserIdForTest(ctx);
+
+        // Delete user
+        NewDeleteUserRequest del = new NewDeleteUserRequest();
+        del.password = "test";
+        when(ctx.bodyAsClass(NewDeleteUserRequest.class)).thenReturn(del);
+        when(ctx.pathParam("id")).thenReturn(id);
+        Javalin.deleteUser(ctx);
+        verify(ctx).status(204);
+    }
     // Requirement: F.DP.13
     @Test
     public void getFactSuccess() {
@@ -49,73 +116,24 @@ public class JavalinTests {
         verify(ctx).status(404);
     }
 
-
-    // Requirement: F.DP.4
+    // Requirement: F.DP.14
     @Test
-    public void createUserSuccess() throws JsonProcessingException {
+    public void updateUserByIdPasswordSuccess() {
         Context ctx = mock(Context.class);
 
-        // Create user to be used in the test
-        NewUserRequest user = new NewUserRequest("test@mail.com", "test", "test");
-        when(ctx.bodyAsClass(NewUserRequest.class)).thenReturn(user);
-        Javalin.createUser(ctx);
-        verify(ctx).status(201);
+        // Create a user first
 
-        // Login to get ID for deletion
-        NewLoginRequest login = new NewLoginRequest("test@mail.com", "test");
-        when(ctx.bodyAsClass(NewLoginRequest.class)).thenReturn(login);
-        AtomicReference<String> json = new AtomicReference<>("");
-        when(ctx.result(anyString())).thenAnswer(invocation -> {
-            String result = invocation.getArgument(0, String.class);
-            json.set(result);
-            return null;
-        });
-        Javalin.login(ctx);
-        verify(ctx).status(200);
+        NewUpdateUserRequest user = new NewUpdateUserRequest();
 
-        // Get ID from login json response
-        ObjectMapper objectMapper = new ObjectMapper();
-        String capturedResultString = json.toString();
-        JsonNode jsonNode = objectMapper.readTree(capturedResultString);
-        String id = String.valueOf(jsonNode.get("id"));
 
-        // Delete user
-        NewDeleteUserRequest del = new NewDeleteUserRequest();
-        del.password = "test";
-        when(ctx.bodyAsClass(NewDeleteUserRequest.class)).thenReturn(del);
-        when(ctx.pathParam("id")).thenReturn(id);
-        Javalin.deleteUser(ctx);
-        verify(ctx).status(204);
     }
 
 
-    // Requirement: F.DP.4
+    // Requirement: F.DP.14
     @Test
-    public void createUserNoUser() {
-        Context ctx = mock(Context.class);
+    public void updateUserByIdPasswordFail() {
 
-        // Empty object to show how it handles sending insufficient data
-        NewUserRequest user = new NewUserRequest();
-
-        when(ctx.bodyAsClass(NewUserRequest.class)).thenReturn(user);
-
-        Javalin.createUser(ctx);
-
-        verify(ctx).status(404);
     }
 
-    // Requirement: F.DP.4
-    @Test
-    public void createUserAlreadyExist() {
-        Context ctx = mock(Context.class);
 
-        // Empty object to show how it handles sending insufficient data
-        NewUserRequest user = new NewUserRequest();
-
-        when(ctx.bodyAsClass(NewUserRequest.class)).thenReturn(user);
-
-        Javalin.createUser(ctx);
-
-        verify(ctx).status(404);
-    }
 }

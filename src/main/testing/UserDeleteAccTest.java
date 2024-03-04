@@ -17,7 +17,7 @@ import java.util.Random;
 import static org.mockito.Mockito.*;
 
 /**
- * REQUIREMENT: F.A.5
+ * REQUIREMENT: F.DP.6
  */
 public class UserDeleteAccTest {
     private final Context ctx = mock(Context.class);

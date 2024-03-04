@@ -16,7 +16,7 @@ import java.util.Random;
 import static org.mockito.Mockito.*;
 
 /**
- * Requirement: F.UE.3
+ * Requirement: F.DP.14
  */
 
 public class UserChangeNotificationsTest {
@@ -72,7 +72,7 @@ public class UserChangeNotificationsTest {
 
         return randomString.toString();
     }
-    // Requirement: F.UE.3
+
     @Test
     public void PATCH_userChangeNotificationsOn_200_Success() throws JsonProcessingException {
         NewUpdateUserRequest userRequest = new NewUpdateUserRequest();
@@ -87,7 +87,6 @@ public class UserChangeNotificationsTest {
         verify(ctx).status(200);
     }
 
-    // Requirement: F.UE.3
     @Test
     public void PATCH_userChangeNotificationsOff_200_Success() throws JsonProcessingException {
         NewUpdateUserRequest userRequest = new NewUpdateUserRequest();
