@@ -439,7 +439,7 @@ public class JavalinTests {
         Helper.deleteUser(userId);
     }
 
-    // Requirement: F.DP.1
+    // Requirement: F.DP.2
     @Test
     public void addPlantToUserSuccess() {
         Context ctx = mock(Context.class);
@@ -462,7 +462,7 @@ public class JavalinTests {
         Helper.deleteUser(userId);
     }
 
-    // Requirement: F.DP.1
+    // Requirement: F.DP.2
     @Test
     public void addPlantToUserWrongDateFormat() {
         Context ctx = mock(Context.class);
@@ -485,7 +485,7 @@ public class JavalinTests {
         Helper.deleteUser(userId);
     }
 
-    // Requirement: F.DP.1
+    // Requirement: F.DP.2
     @Test
     public void addPlantToUserAlreadyExists() {
         Context ctx = mock(Context.class);
@@ -515,5 +515,23 @@ public class JavalinTests {
 
         // Delete user and plants for repeatable tests
         Helper.deleteUser(userId);
+    }
+
+    // Requirement: F.DP.1
+    @Test
+    public void getPlantsSuccess() {
+        Context ctx = mock(Context.class);
+        when(ctx.queryParam("plant")).thenReturn("monstera");
+        Javalin.getPlants(ctx);
+        verify(ctx).status(200);
+    }
+
+    // Requirement: F.DP.1
+    @Test
+    public void getPlantsFail() {
+        Context ctx = mock(Context.class);
+        when(ctx.queryParam("plant")).thenReturn("asdasdasdjasdlkjadlad");
+        Javalin.getPlants(ctx);
+        verify(ctx).status(404);
     }
 }

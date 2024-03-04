@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.http.Context;
+import io.javalin.http.InternalServerErrorResponse;
 import io.javalin.http.NotFoundResponse;
 import io.javalin.openapi.*;
 import io.javalin.openapi.plugin.OpenApiPlugin;
@@ -726,7 +727,7 @@ public class Javalin {
         }
     }
 
-    // Requirement: F.DP.1
+    // Requirement: F.DP.2
     @OpenApi(
             summary = "Add plant to user",
             operationId = "savePlant",
@@ -862,11 +863,21 @@ public class Javalin {
         try {
             result = response.get();
             ctx.status(200);
-        } catch (InterruptedException | ExecutionException e) {
-            ctx.status(404);
-            throw new RuntimeException(e);
-        }
+            ctx.result(result.body());
+            ObjectMapper mapper = new ObjectMapper();
 
-        ctx.result(result.body());
+            try {
+                JsonNode tree = mapper.readTree(result.body());
+                if (tree.get("data").isEmpty()) {
+                    ctx.status(404);
+                    ctx.result("No plants found");
+                }
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+
+        } catch (InterruptedException | ExecutionException e) {
+            throw new InternalServerErrorResponse("Failed to get plants from Trefle");
+        }
     }
 }
