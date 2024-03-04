@@ -1,19 +1,13 @@
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.http.Context;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import se.myhappyplants.javalin.Javalin;
-import se.myhappyplants.javalin.login.NewLoginRequest;
 import se.myhappyplants.javalin.plant.Fact;
 import se.myhappyplants.javalin.user.NewDeleteUserRequest;
 import se.myhappyplants.javalin.user.NewUpdateUserRequest;
 import se.myhappyplants.javalin.user.NewUserRequest;
 import se.myhappyplants.javalin.utils.DbConnection;
-
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.mockito.Mockito.*;
 
@@ -38,7 +32,7 @@ public class JavalinTests {
         // Login to get ID for deletion
         String id = Helper.getUserIdForTest(ctx);
 
-        // Delete user
+        // Delete user for repeatable tests
         NewDeleteUserRequest del = new NewDeleteUserRequest();
         del.password = "test";
         when(ctx.bodyAsClass(NewDeleteUserRequest.class)).thenReturn(del);
@@ -79,10 +73,10 @@ public class JavalinTests {
         Javalin.createUser(ctx);
         verify(ctx).status(409);
 
-        // Delete user for repeatable tests
+        // Login to get ID for deletion
         String id = Helper.getUserIdForTest(ctx);
 
-        // Delete user
+        // Delete user for repeatable tests
         NewDeleteUserRequest del = new NewDeleteUserRequest();
         del.password = "test";
         when(ctx.bodyAsClass(NewDeleteUserRequest.class)).thenReturn(del);
@@ -121,11 +115,27 @@ public class JavalinTests {
     public void updateUserByIdPasswordSuccess() {
         Context ctx = mock(Context.class);
 
-        // Create a user first
+        // Create user to be used in the test
+        NewUserRequest user = new NewUserRequest("test@mail.com", "test", "test");
+        when(ctx.bodyAsClass(NewUserRequest.class)).thenReturn(user);
+        Javalin.createUser(ctx);
+        verify(ctx).status(201);
 
-        NewUpdateUserRequest user = new NewUpdateUserRequest();
+        // Get ID by logging in
+        String id = Helper.getUserIdForTest(ctx);
 
+        NewUpdateUserRequest updatedRequest = new NewUpdateUserRequest();
+        updatedRequest.oldPassword = "test";
+        when(ctx.bodyAsClass(NewUpdateUserRequest.class)).thenReturn(updatedRequest);
+        when(ctx.pathParam("id")).thenReturn(id);
 
+        // Delete user for repeatable tests
+        NewDeleteUserRequest del = new NewDeleteUserRequest();
+        del.password = "test";
+        when(ctx.bodyAsClass(NewDeleteUserRequest.class)).thenReturn(del);
+        when(ctx.pathParam("id")).thenReturn(id);
+        Javalin.deleteUser(ctx);
+        verify(ctx).status(204);
     }
 
 

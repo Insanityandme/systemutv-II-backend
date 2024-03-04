@@ -246,7 +246,7 @@ public class Javalin {
             tags = {"User"},
             requestBody = @OpenApiRequestBody(
                     description = "You can use one field at a time to update the user, " +
-                            "changing password requires the password field to be filled in as well.",
+                            "changing password requires the oldPassword and newPassword field to be filled in.",
                     content = {
                             @OpenApiContent(from = NewUpdateUserRequest.class),
                     }),
@@ -259,18 +259,24 @@ public class Javalin {
         int userId = Integer.parseInt(ctx.pathParam("id"));
 
         Connection database = DbConnection.getConnection();
-        String password = "";
-        ObjectMapper objectMapper = new ObjectMapper();
+        String oldPassword, newPassword;
         JsonNode jsonNode;
-        try {
-            jsonNode = objectMapper.readTree(ctx.body());
-            if (jsonNode.get("password") != null) {
-                password = jsonNode.get("password").asText();
 
-                if (checkPassword(userId, password)) {
-                    // add code to update user that requires a password here
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            jsonNode = objectMapper.readTree(ctx.body());
+            System.out.println(jsonNode.get("newPassword"));
+            System.out.println(jsonNode.get("oldPassword"));
+
+            if (jsonNode.get("newPassword") != null) {
+                oldPassword = jsonNode.get("oldPassword").asText();
+
+                if (checkPassword(userId, oldPassword)) {
+                    // add code to update user information that requires a password here
+
                     // change password
-                    String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
+                    newPassword = jsonNode.get("newPassword").asText();
+                    String hashedPassword = BCrypt.hashpw(newPassword, BCrypt.gensalt());
                     String query = "UPDATE user SET password = ? WHERE id = ?;";
                     try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
                         preparedStatement.setString(1, hashedPassword);
@@ -279,48 +285,46 @@ public class Javalin {
                     } catch (SQLException sqlException) {
                         sqlException.printStackTrace();
                     }
-
                     ctx.status(200);
                     ctx.result("Password updated");
                 } else {
                     ctx.status(400);
                     ctx.result("Password incorrect");
                 }
+            } else if (jsonNode.get("funFactsActivated") != null) {
+                boolean funFactsActivated = jsonNode.get("funFactsActivated").asBoolean();
+                String query = "UPDATE user SET fun_facts_activated = ? WHERE id = ?;";
+                try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+                    preparedStatement.setBoolean(1, funFactsActivated);
+                    preparedStatement.setInt(2, userId);
+                    preparedStatement.executeUpdate();
+
+                    ctx.status(200);
+                    ctx.result("Fun facts activated updated");
+                } catch (SQLException sqlException) {
+                    sqlException.printStackTrace();
+                }
+            } else if (jsonNode.get("notificationsActivated") != null) {
+                boolean notificationActivated = jsonNode.get("notificationsActivated").asBoolean();
+                String query = "UPDATE user SET notification_activated = ? WHERE id = ?;";
+                try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+                    preparedStatement.setBoolean(1, notificationActivated);
+                    preparedStatement.setInt(2, userId);
+                    preparedStatement.executeUpdate();
+
+                    ctx.status(200);
+                    ctx.result("Notification activated updated");
+                } catch (SQLException sqlException) {
+                    sqlException.printStackTrace();
+                }
+            } else {
+                ctx.status(400);
+                ctx.result("No valid field to update");
             }
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
 
-        if (jsonNode.get("funFactsActivated") != null) {
-            boolean funFactsActivated = jsonNode.get("funFactsActivated").asBoolean();
-            String query = "UPDATE user SET fun_facts_activated = ? WHERE id = ?;";
-            try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
-                preparedStatement.setBoolean(1, funFactsActivated);
-                preparedStatement.setInt(2, userId);
-                preparedStatement.executeUpdate();
-
-                ctx.status(200);
-                ctx.result("Fun facts activated updated");
-            } catch (SQLException sqlException) {
-                sqlException.printStackTrace();
-            }
-        } else if (jsonNode.get("notificationsActivated") != null) {
-            boolean notificationActivated = jsonNode.get("notificationsActivated").asBoolean();
-            String query = "UPDATE user SET notification_activated = ? WHERE id = ?;";
-            try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
-                preparedStatement.setBoolean(1, notificationActivated);
-                preparedStatement.setInt(2, userId);
-                preparedStatement.executeUpdate();
-
-                ctx.status(200);
-                ctx.result("Notification activated updated");
-            } catch (SQLException sqlException) {
-                sqlException.printStackTrace();
-            }
-        } else {
-            ctx.status(400);
-            ctx.result("No valid field to update");
-        }
     }
 
     // Requirement: F.DP.6

@@ -13,7 +13,6 @@ import static org.mockito.Mockito.when;
 
 public class Helper {
     public static String getUserIdForTest(Context ctx) {
-        // Delete user for repeatable tests
         // Login to get ID for deletion
         NewLoginRequest login = new NewLoginRequest("test@mail.com", "test");
         when(ctx.bodyAsClass(NewLoginRequest.class)).thenReturn(login);
