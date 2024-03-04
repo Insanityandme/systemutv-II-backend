@@ -10,6 +10,7 @@ import se.myhappyplants.javalin.Javalin;
 import se.myhappyplants.javalin.login.NewLoginRequest;
 import se.myhappyplants.javalin.plant.NewPlantRequest;
 import se.myhappyplants.javalin.user.NewUserRequest;
+import se.myhappyplants.javalin.utils.DbConnection;
 
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -52,6 +53,8 @@ public class UserDeletePlantTest {
 
     @BeforeEach
     public void setUp() throws JsonProcessingException {
+        DbConnection.path = "myHappyPlantsDBTEST.db";
+
         email = generateRandomString(8) + "@example.com";
         username = generateRandomString(10);
         password = generateRandomString(12);

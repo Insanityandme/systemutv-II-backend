@@ -4,6 +4,8 @@ import se.myhappyplants.javalin.Javalin;
 import se.myhappyplants.javalin.login.NewLoginRequest;
 import se.myhappyplants.javalin.user.NewUserRequest;
 import io.javalin.http.Context;
+import se.myhappyplants.javalin.utils.DbConnection;
+
 import static org.mockito.Mockito.*;
 
 /**
@@ -15,6 +17,8 @@ import static org.mockito.Mockito.*;
 
     @BeforeEach
     public void setUp(){
+        DbConnection.path = "myHappyPlantsDBTEST.db";
+
         email = "test@example.com";
         String username = "test12";
         String password = "password";

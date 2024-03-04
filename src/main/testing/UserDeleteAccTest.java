@@ -11,6 +11,7 @@ import io.javalin.http.Context;
 
 import org.junit.jupiter.api.*;
 import se.myhappyplants.javalin.user.NewUserRequest;
+import se.myhappyplants.javalin.utils.DbConnection;
 
 import java.util.Random;
 
@@ -30,6 +31,8 @@ public class UserDeleteAccTest {
 
     @BeforeEach
     public void setUp() throws JsonProcessingException {
+        DbConnection.path = "myHappyPlantsDBTEST.db";
+
         email = generateRandomString(8) + "@example.com";
         username = generateRandomString(10);
         password = generateRandomString(12);

@@ -9,6 +9,7 @@ import se.myhappyplants.javalin.Javalin;
 import se.myhappyplants.javalin.login.NewLoginRequest;
 import se.myhappyplants.javalin.user.NewUpdateUserRequest;
 import se.myhappyplants.javalin.user.NewUserRequest;
+import se.myhappyplants.javalin.utils.DbConnection;
 
 import java.sql.SQLException;
 import java.util.Random;
@@ -30,6 +31,8 @@ public class UserChangeNotificationsTest {
 
     @BeforeEach
     public void setUp() throws JsonProcessingException {
+        DbConnection.path = "myHappyPlantsDBTEST.db";
+
         email = generateRandomString(8) + "@example.com";
         username = generateRandomString(10);
         password = generateRandomString(12);
@@ -74,11 +77,8 @@ public class UserChangeNotificationsTest {
     }
 
     @Test
-    public void PATCH_userChangeNotificationsOn_200_Success() throws JsonProcessingException {
-        NewUpdateUserRequest userRequest = new NewUpdateUserRequest();
-        userRequest.notificationsActivated = true;
-        ObjectMapper objectMapper = new ObjectMapper();
-        String jsonUserRequest = objectMapper.writeValueAsString(userRequest);
+    public void PATCH_userChangeNotificationsOn_200_Success() {
+        String jsonUserRequest = "{\"notificationsActivated\":true}";
 
         doReturn(getUserId).when(ctx).pathParam("id");
         when(ctx.body()).thenReturn(jsonUserRequest);
@@ -88,11 +88,8 @@ public class UserChangeNotificationsTest {
     }
 
     @Test
-    public void PATCH_userChangeNotificationsOff_200_Success() throws JsonProcessingException {
-        NewUpdateUserRequest userRequest = new NewUpdateUserRequest();
-        userRequest.notificationsActivated = false;
-        ObjectMapper objectMapper = new ObjectMapper();
-        String jsonUserRequest = objectMapper.writeValueAsString(userRequest);
+    public void PATCH_userChangeNotificationsOff_200_Success() {
+        String jsonUserRequest = "{\"notificationsActivated\":false}";
 
         doReturn(getUserId).when(ctx).pathParam("id");
         when(ctx.body()).thenReturn(jsonUserRequest);
