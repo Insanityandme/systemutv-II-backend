@@ -4,11 +4,8 @@ import org.junit.jupiter.api.Test;
 import se.myhappyplants.javalin.Javalin;
 import se.myhappyplants.javalin.plant.Fact;
 import se.myhappyplants.javalin.plant.NewPlantRequest;
-import se.myhappyplants.javalin.user.NewDeleteUserRequest;
 import se.myhappyplants.javalin.user.NewUserRequest;
 import se.myhappyplants.javalin.utils.DbConnection;
-
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.mockito.Mockito.*;
 
@@ -34,12 +31,7 @@ public class JavalinTests {
         String id = Helper.getUserIdForTest(ctx);
 
         // Delete user for repeatable tests
-        NewDeleteUserRequest del = new NewDeleteUserRequest();
-        del.password = "test";
-        when(ctx.bodyAsClass(NewDeleteUserRequest.class)).thenReturn(del);
-        when(ctx.pathParam("id")).thenReturn(id);
-        Javalin.deleteUser(ctx);
-        verify(ctx).status(204);
+        Helper.deleteUser(ctx, id);
     }
 
     // Requirement: F.DP.4
@@ -78,12 +70,7 @@ public class JavalinTests {
         String id = Helper.getUserIdForTest(ctx);
 
         // Delete user for repeatable tests
-        NewDeleteUserRequest del = new NewDeleteUserRequest();
-        del.password = "test";
-        when(ctx.bodyAsClass(NewDeleteUserRequest.class)).thenReturn(del);
-        when(ctx.pathParam("id")).thenReturn(id);
-        Javalin.deleteUser(ctx);
-        verify(ctx).status(204);
+        Helper.deleteUser(ctx, id);
     }
     // Requirement: F.DP.13
     @Test
@@ -117,10 +104,7 @@ public class JavalinTests {
         Context ctx = mock(Context.class);
 
         // Create user to be used in the test
-        NewUserRequest user = new NewUserRequest("test@mail.com", "test", "test");
-        when(ctx.bodyAsClass(NewUserRequest.class)).thenReturn(user);
-        Javalin.createUser(ctx);
-        verify(ctx).status(201);
+        Helper.createUser(ctx);
 
         // Get ID by logging in
         String id = Helper.getUserIdForTest(ctx);
@@ -134,12 +118,7 @@ public class JavalinTests {
         verify(ctx, times(2)).status(200);
 
         // Delete user for repeatable tests
-        NewDeleteUserRequest del = new NewDeleteUserRequest();
-        del.password = "hi";
-        when(ctx.bodyAsClass(NewDeleteUserRequest.class)).thenReturn(del);
-        when(ctx.pathParam("id")).thenReturn(id);
-        Javalin.deleteUser(ctx);
-        verify(ctx).status(204);
+        Helper.deleteUser(ctx, id);
     }
 
     // Requirement: F.DP.14
@@ -148,10 +127,7 @@ public class JavalinTests {
         Context ctx = mock(Context.class);
 
         // Create user to be used in the test
-        NewUserRequest user = new NewUserRequest("test@mail.com", "test", "test");
-        when(ctx.bodyAsClass(NewUserRequest.class)).thenReturn(user);
-        Javalin.createUser(ctx);
-        verify(ctx).status(201);
+        Helper.createUser(ctx);
 
         // Get ID by logging in
         String id = Helper.getUserIdForTest(ctx);
@@ -164,12 +140,7 @@ public class JavalinTests {
         verify(ctx).status(400);
 
         // Delete user for repeatable tests
-        NewDeleteUserRequest del = new NewDeleteUserRequest();
-        del.password = "test";
-        when(ctx.bodyAsClass(NewDeleteUserRequest.class)).thenReturn(del);
-        when(ctx.pathParam("id")).thenReturn(id);
-        Javalin.deleteUser(ctx);
-        verify(ctx).status(204);
+        Helper.deleteUser(ctx, id);
     }
 
 
@@ -179,25 +150,18 @@ public class JavalinTests {
         Context ctx = mock(Context.class);
 
         // Create user to be used in the test
-        NewUserRequest user = new NewUserRequest("test@mail.com", "test", "test");
-        when(ctx.bodyAsClass(NewUserRequest.class)).thenReturn(user);
-        Javalin.createUser(ctx);
-        verify(ctx).status(201);
+        Helper.createUser(ctx);
 
         // Get ID by logging in
         String id = Helper.getUserIdForTest(ctx);
 
+        // Get user based on ID
         when(ctx.pathParam("id")).thenReturn(id);
         Javalin.getUserById(ctx);
         verify(ctx, times(2)).status(200);
 
         // Delete user for repeatable tests
-        NewDeleteUserRequest del = new NewDeleteUserRequest();
-        del.password = "test";
-        when(ctx.bodyAsClass(NewDeleteUserRequest.class)).thenReturn(del);
-        when(ctx.pathParam("id")).thenReturn(id);
-        Javalin.deleteUser(ctx);
-        verify(ctx).status(204);
+        Helper.deleteUser(ctx, id);
     }
 
     // Requirement: F.DP.16
@@ -219,22 +183,13 @@ public class JavalinTests {
         Context ctx = mock(Context.class);
 
         // Create user to be used in the test
-        NewUserRequest user = new NewUserRequest("test@mail.com", "test", "test");
-        when(ctx.bodyAsClass(NewUserRequest.class)).thenReturn(user);
-        Javalin.createUser(ctx);
-        verify(ctx).status(201);
+        Helper.createUser(ctx);
 
         // Get ID by logging in
         String id = Helper.getUserIdForTest(ctx);
 
         // Add plant to a user
-        NewPlantRequest plant = new NewPlantRequest(0, "test", "test",
-                "test", "test", "1970-01-01",
-                1, 1, "test", "test");
-        when(ctx.bodyAsClass(NewPlantRequest.class)).thenReturn(plant);
-        when(ctx.pathParam("id")).thenReturn(id);
-        Javalin.savePlant(ctx);
-        verify(ctx, times(2)).status(201);
+        Helper.addPlantToUser(ctx, id);
 
         // Get all plants based on user ID
         when(ctx.pathParam("id")).thenReturn(id);
@@ -242,12 +197,7 @@ public class JavalinTests {
         verify(ctx, times(2)).status(200);
 
         // Delete user and plants for repeatable tests
-        NewDeleteUserRequest del = new NewDeleteUserRequest();
-        del.password = "test";
-        when(ctx.bodyAsClass(NewDeleteUserRequest.class)).thenReturn(del);
-        when(ctx.pathParam("id")).thenReturn(id);
-        Javalin.deleteUser(ctx);
-        verify(ctx).status(204);
+        Helper.deleteUser(ctx, id);
     }
 
     // Requirement: F.DP.4
@@ -256,10 +206,7 @@ public class JavalinTests {
         Context ctx = mock(Context.class);
 
         // Create user to be used in the test
-        NewUserRequest user = new NewUserRequest("test@mail.com", "test", "test");
-        when(ctx.bodyAsClass(NewUserRequest.class)).thenReturn(user);
-        Javalin.createUser(ctx);
-        verify(ctx).status(201);
+        Helper.createUser(ctx);
 
         // Get ID by logging in
         String id = Helper.getUserIdForTest(ctx);
@@ -270,12 +217,7 @@ public class JavalinTests {
         verify(ctx).status(404);
 
         // Delete user for repeatable tests
-        NewDeleteUserRequest del = new NewDeleteUserRequest();
-        del.password = "test";
-        when(ctx.bodyAsClass(NewDeleteUserRequest.class)).thenReturn(del);
-        when(ctx.pathParam("id")).thenReturn(id);
-        Javalin.deleteUser(ctx);
-        verify(ctx).status(204);
+        Helper.deleteUser(ctx, id);
     }
 
     // Requirement: F.DP.9
@@ -284,22 +226,13 @@ public class JavalinTests {
         Context ctx = mock(Context.class);
 
         // Create user to be used in the test
-        NewUserRequest user = new NewUserRequest("test@mail.com", "test", "test");
-        when(ctx.bodyAsClass(NewUserRequest.class)).thenReturn(user);
-        Javalin.createUser(ctx);
-        verify(ctx).status(201);
+        Helper.createUser(ctx);
 
         // Get ID by logging in
         String id = Helper.getUserIdForTest(ctx);
 
         // Add plant to a user
-        NewPlantRequest plant = new NewPlantRequest(0, "test", "test",
-                "test", "test", "1970-01-01",
-                1, 1, "test", "test");
-        when(ctx.bodyAsClass(NewPlantRequest.class)).thenReturn(plant);
-        when(ctx.pathParam("id")).thenReturn(id);
-        Javalin.savePlant(ctx);
-        verify(ctx, times(2)).status(201);
+        Helper.addPlantToUser(ctx, id);
 
         // Update all plants based on user ID
         // For some reason Mockito can't handle ctx.body and ctx.bodyAsClass as intended.
@@ -315,12 +248,7 @@ public class JavalinTests {
         verify(ctx, times(2)).status(200);
 
         // Delete user and plants for repeatable tests
-        NewDeleteUserRequest del = new NewDeleteUserRequest();
-        del.password = "test";
-        when(ctx.bodyAsClass(NewDeleteUserRequest.class)).thenReturn(del);
-        when(ctx.pathParam("id")).thenReturn(id);
-        Javalin.deleteUser(ctx);
-        verify(ctx).status(204);
+        Helper.deleteUser(ctx, id);
     }
 
     // Requirement: F.DP.9
@@ -329,19 +257,13 @@ public class JavalinTests {
         Context ctx = mock(Context.class);
 
         // Create user to be used in the test
-        Javalin.createUser(ctx);
+        Helper.createUser(ctx);
 
         // Get ID by logging in
         String id = Helper.getUserIdForTest(ctx);
 
         // Add plant to a user
-        NewPlantRequest plant = new NewPlantRequest(0, "test", "test",
-                "test", "test", "1970-01-01",
-                1, 1, "test", "test");
-        when(ctx.bodyAsClass(NewPlantRequest.class)).thenReturn(plant);
-        when(ctx.pathParam("id")).thenReturn(id);
-        Javalin.savePlant(ctx);
-        verify(ctx, times(2)).status(201);
+        Helper.addPlantToUser(ctx, id);
 
         // Update all plants based on user ID
         // For some reason Mockito can't handle ctx.body and ctx.bodyAsClass as intended.
@@ -357,12 +279,7 @@ public class JavalinTests {
         verify(ctx ).status(400);
 
         // Delete user and plants for repeatable tests
-        NewDeleteUserRequest del = new NewDeleteUserRequest();
-        del.password = "test";
-        when(ctx.bodyAsClass(NewDeleteUserRequest.class)).thenReturn(del);
-        when(ctx.pathParam("id")).thenReturn(id);
-        Javalin.deleteUser(ctx);
-        verify(ctx).status(204);
+        Helper.deleteUser(ctx, id);
     }
 
     // Requirement: F.DP.10
