@@ -3,9 +3,8 @@
 # MyHappyPlants
 [Install](#install) • [Testing](#testing) • [Contact](#contact)
 
-<img src="https://github.com/Insanityandme/systemutv-II-backend/assets/1380257/02761e82-d7dc-44b5-899a-f41c36b56ffe" width="250" height="500"/> 
-<img src="https://github.com/Insanityandme/systemutv-II-backend/assets/1380257/e032f1c5-a040-4a85-aa42-80c1d3a5cccd" width="250" height="500"/> 
-<img src="https://github.com/Insanityandme/systemutv-II-backend/assets/1380257/9df0db8a-4c4c-4c46-b941-0bc489404f85" width="250" height="500"/> 
+<img src="https://github.com/Insanityandme/systemutv-II-backend/assets/1380257/02761e82-d7dc-44b5-899a-f41c36b56ffe"/> 
+
 
 </div>
 
