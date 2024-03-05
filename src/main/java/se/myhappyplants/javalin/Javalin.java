@@ -768,7 +768,12 @@ public class Javalin {
             plantStatement.setInt(3, plant.id);
             plantStatement.setDate(4, Date.valueOf(plant.lastWatered));
             plantStatement.setString(5, plant.imageURL);
-            plantStatement.executeUpdate();
+            try {
+                plantStatement.executeUpdate();
+            } catch (SQLiteException e) {
+                ctx.status(409);
+                ctx.result("Duplicate plant nickname");
+            }
 
             // Checks if plant details already exist in the database
             // We might want to have several of the same plants in our dashboard
