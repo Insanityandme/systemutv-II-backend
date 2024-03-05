@@ -1,6 +1,6 @@
 <div align="center">
 
-# MyHappyPlants
+# MyHappyPlants API
 [Install](#install) • [Testing](#testing) • [Contact](#contact)
 
 --- 
