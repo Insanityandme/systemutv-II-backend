@@ -46,10 +46,19 @@ It's most likely already installed.
 1. In your operating system be it Windows, Linux or Mac, set the environment variable `TREFLE_API_KEY` to your Trefle API key.
 2. Now you can use this key in your code by calling `System.getenv("TREFLE_API_KEY")` to get the value of the environment variable.
 
+MACOSX: https://phoenixnap.com/kb/set-environment-variable-mac
+WINDOWS: https://phoenixnap.com/kb/windows-set-environment-variable
+
 ## Front-end
 You can find instructions for the frontend here: https://github.com/Insanityandme/systemutv-II-frontend
 
 # Testing
+1. Go into src/main/testing folder
+2. If Mockito and Junit is installed (it usually is included in your IDE or will be installed through Maven)
+3. Enter JavalinTests.java and run the file.
+4. Run all other files except Helper.java
+5. Done!
+6. It should look something like this depending on your editor: 
 
 # Contact
 You are welcome to contact me at bengtegardbook@gmail.com if you have any questions on how to setup this environment.
