@@ -8,7 +8,7 @@
 ---
 ### Table of Contents
 - [Introduction](#introduction)
-- [Installation](#installation)
+- [Installation](#install)
 - [Testing](#testing)
 - [Contact](#contact)
 
