@@ -54,7 +54,6 @@ Instructions for WINDOWS: https://phoenixnap.com/kb/windows-set-environment-vari
 2. Navigate to the file Javalin.java in src/main/java/se/myhappyplants/javalin/
 3. Run Javalin.java and it should look something like this: ![image](https://github.com/Insanityandme/systemutv-II-backend/assets/1380257/03980c76-d2d6-48ba-94a2-3be7ee24764d)
 4. Now that the server is running navigate to localhost:7002 to check out our API documentation! ![image](https://github.com/Insanityandme/systemutv-II-backend/assets/1380257/01fa74d0-7c10-41f9-ac39-3c942cc34a25)
-5. Now that the backend server is up and running, here is everything to get the frontend up and running: https://github.com/Insanityandme/systemutv-II-frontend
 
 ## Front-end
 You can find instructions for the frontend here: https://github.com/Insanityandme/systemutv-II-frontend
