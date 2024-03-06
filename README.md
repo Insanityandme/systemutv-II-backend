@@ -32,6 +32,8 @@ Our application is divided into two seperate parts
 + frontend
 
 ## Back-end
+
+### Initial Setup
 1. ```git clone https://github.com/Insanityandme/systemutv-II-backend.git```
 2. If you are using an IDE such as IntelliJ and Eclipse you need to install the Maven plugin for your environment if it isn't already installed. (It's most likely already installed)
 3. Navigate to the file Javalin.java in src/main/java/se/myhappyplants/javalin/
@@ -50,7 +52,7 @@ Instructions for WINDOWS: https://phoenixnap.com/kb/windows-set-environment-vari
 
 ### Instructions for databases
 1. We are using SQLite for our simple database
-2. In src/main/resources/ create two database files ```myHappyPlantsDB.db``` and ```myHappyPlantsDBTEST.db```
+2. In src/main/resources/ create/copy two database files  ```myHappyPlantsDB.db``` and ```myHappyPlantsDBTEST.db```
 3. Done!
 
 ## Front-end
