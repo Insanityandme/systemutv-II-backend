@@ -19,6 +19,7 @@
 
 # Introduction
 MyHappyPlants was originally an incomplete student project written in Java, using JavaFX for all GUI related code. 
+
 It was a Java desktop application that exists to help you organize and keep track of your plants at home.
 Using Trefles extensive API to get detailed information about your species of plants. 
 
