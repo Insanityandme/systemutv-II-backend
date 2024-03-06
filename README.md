@@ -41,6 +41,7 @@ Our application is divided into two seperate parts
 2. In your operating system be it Windows, Linux or Mac, set the environment variable `TREFLE_API_KEY` to your Trefle API key
 
 Instructions for MACOSX: https://phoenixnap.com/kb/set-environment-variable-mac
+
 Instructions for WINDOWS: https://phoenixnap.com/kb/windows-set-environment-variable
 
 ### Instructions for databases
