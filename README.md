@@ -18,12 +18,9 @@
 - [Contact](#contact)
 
 # Introduction
-MyHappyPlants is a Java desktop application that exists to help you organize and keep track of your plants at home! 
+MyHappyPlants was originally an incomplete student project written in Java, using JavaFX for all GUI related code. 
+It was a Java desktop application that exists to help you organize and keep track of your plants at home.
 Using Trefles extensive API to get detailed information about your species of plants. 
-
-It was originally an incomplete student project written in Java, using JavaFX for all GUI related code.
-
-We were tasked with deciding whether we should continue improving the product or scrap it and start over from scratch.
 
 We decided to start over from scratch and turn it into a Java based backend API using Javalin, a lightweight web framework for Java and Kotlin.
 Our frontend is written in Javascript using React and is located here: https://github.com/Insanityandme/systemutv-II-frontend
