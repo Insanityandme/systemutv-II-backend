@@ -45,6 +45,7 @@ Our application is divided into two seperate parts
 2. Now you can use this key in your code by calling `System.getenv("TREFLE_API_KEY")` to get the value of the environment variable.
 
 Instructions for MACOSX: https://phoenixnap.com/kb/set-environment-variable-mac
+
 Instructions for WINDOWS: https://phoenixnap.com/kb/windows-set-environment-variable
 
 ### Instructions for databases
