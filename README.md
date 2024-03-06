@@ -40,11 +40,17 @@ Our application is divided into two seperate parts
 6. Now that the backend server is up and running, here is everything to get the frontend up and running: https://github.com/Insanityandme/systemutv-II-frontend
 
 ### Instructions for environment variables
+1. We use environment variables in development for our secret KEYS. 
 1. In your operating system be it Windows, Linux or Mac, set the environment variable `TREFLE_API_KEY` to your Trefle API key.
 2. Now you can use this key in your code by calling `System.getenv("TREFLE_API_KEY")` to get the value of the environment variable.
 
-MACOSX: https://phoenixnap.com/kb/set-environment-variable-mac
-WINDOWS: https://phoenixnap.com/kb/windows-set-environment-variable
+Instructions for MACOSX: https://phoenixnap.com/kb/set-environment-variable-mac
+Instructions for WINDOWS: https://phoenixnap.com/kb/windows-set-environment-variable
+
+### Instructions for databases
+1. We are using SQLite for our simple database
+2. In src/main/resources/ create two database files ```myHappyPlantsDB.db``` and ```myHappyPlantsDBTEST.db```
+3. Done!
 
 ## Front-end
 You can find instructions for the frontend here: https://github.com/Insanityandme/systemutv-II-frontend
