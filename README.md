@@ -59,10 +59,9 @@ You can find instructions for the frontend here: https://github.com/Insanityandm
 # Testing
 1. Go into src/main/testing folder
 2. If Mockito and Junit is installed (it usually is included in your IDE or will be installed through Maven)
-3. Enter JavalinTests.java and run the file.
-4. Run all other files except Helper.java
-5. Done!
-6. It should look something like this depending on your editor: 
+3. Run all files except Helper.java
+4. Done!
+5. It should look something like this depending on your editor: 
 ![image](https://github.com/Insanityandme/systemutv-II-backend/assets/1380257/be9d35ab-a25d-46b4-9530-bed329ff5aee)
 
 
