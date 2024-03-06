@@ -1,6 +1,6 @@
 <div align="center">
 
-# MyHappyPlants API
+# MyHappyPlants Backend
 [Install](#install) • [Testing](#testing) • [Contact](#contact)
 
 --- 
@@ -59,6 +59,8 @@ You can find instructions for the frontend here: https://github.com/Insanityandm
 4. Run all other files except Helper.java
 5. Done!
 6. It should look something like this depending on your editor: 
+![image](https://github.com/Insanityandme/systemutv-II-backend/assets/1380257/be9d35ab-a25d-46b4-9530-bed329ff5aee)
+
 
 # Contact
 You are welcome to contact me at bengtegardbook@gmail.com if you have any questions on how to setup this environment.
