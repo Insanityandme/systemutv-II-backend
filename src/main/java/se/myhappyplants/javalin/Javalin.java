@@ -451,7 +451,7 @@ public class Javalin {
 
         Connection database = DbConnection.getConnection();
         String queryUserPlant = "SELECT * FROM plant WHERE user_id = ?;";
-        String queryPlantDetails = "SELECT * FROM plantdetails WHERE id = ?";
+        String queryPlantDetails = "SELECT * FROM plantdetails WHERE plant_id = ?";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(queryUserPlant)) {
             preparedStatement.setInt(1, userId);
@@ -462,15 +462,17 @@ public class Javalin {
                 plant.nickname = resultSet.getString("nickname");
                 plant.lastWatered = resultSet.getDate("last_watered").toString();
                 plant.imageURL = resultSet.getString("image_url");
+                int plantId = resultSet.getInt("plant_id");
+                System.out.println("plant id: " + plantId);
 
                 try (PreparedStatement preparedStatement2 = database.prepareStatement(queryPlantDetails)) {
-                    preparedStatement2.setInt(1, plant.id);
+                    preparedStatement2.setInt(1, plantId);
                     ResultSet resultSet2 = preparedStatement2.executeQuery();
                     plant.commonName = resultSet2.getString("common_name");
                     plant.scientificName = resultSet2.getString("scientific_name");
                     plant.genus = resultSet2.getString("genus");
                     plant.family = resultSet2.getString("family");
-                    plant.waterFrequency = getWaterFrequency(plant.id);
+                    plant.waterFrequency = getWaterFrequency(plantId);
                     plant.light = resultSet2.getInt("light");
                 }
 
@@ -768,6 +770,7 @@ public class Javalin {
             plantStatement.setInt(3, plant.id);
             plantStatement.setDate(4, Date.valueOf(plant.lastWatered));
             plantStatement.setString(5, plant.imageURL);
+
             try {
                 plantStatement.executeUpdate();
             } catch (SQLiteException e) {
