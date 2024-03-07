@@ -158,3 +158,5 @@ $RECYCLE.BIN/
 **/.DS_STORE
 DS._STORE
 .idea
+
+src/main/resources/uploads/
