@@ -6,29 +6,32 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.http.Context;
 import io.javalin.http.InternalServerErrorResponse;
 import io.javalin.http.NotFoundResponse;
+import io.javalin.http.UploadedFile;
+import io.javalin.http.staticfiles.Location;
 import io.javalin.openapi.*;
 import io.javalin.openapi.plugin.OpenApiPlugin;
 import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
 import io.javalin.plugin.bundled.CorsPluginConfig;
 
+import io.javalin.util.FileUtil;
 import org.mindrot.jbcrypt.BCrypt;
 import org.sqlite.SQLiteException;
 import se.myhappyplants.javalin.login.NewLoginRequest;
 import se.myhappyplants.javalin.plant.Fact;
 import se.myhappyplants.javalin.plant.NewPlantRequest;
 import se.myhappyplants.javalin.plant.Plant;
+import se.myhappyplants.javalin.user.*;
 import se.myhappyplants.javalin.utils.DbConnection;
 import se.myhappyplants.javalin.utils.TreflePlantSwaggerObject;
-import se.myhappyplants.javalin.user.NewDeleteUserRequest;
-import se.myhappyplants.javalin.user.NewUserRequest;
-import se.myhappyplants.javalin.user.NewUpdateUserRequest;
-import se.myhappyplants.javalin.user.User;
 import se.myhappyplants.javalin.utils.ErrorResponse;
 
+import java.io.File;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -51,6 +54,12 @@ public class Javalin {
             config.registerPlugin(new SwaggerPlugin());
             config.bundledPlugins.enableCors(cors -> {
                 cors.addRule(CorsPluginConfig.CorsRule::anyHost);
+            });
+
+            config.staticFiles.add(staticFiles -> {
+                staticFiles.hostedPath = "/uploads";
+                staticFiles.location = Location.EXTERNAL;
+                staticFiles.directory = "src/main/resources/uploads";
             });
 
             // Routing
@@ -76,6 +85,9 @@ public class Javalin {
                             patch(Javalin::updateUser);
                             delete(Javalin::deleteUser);
                             get(Javalin::getUserById);
+                            path("upload", () -> {
+                                post(Javalin::uploadImage);
+                            });
                             path("plants", () -> {
                                 get(Javalin::getAllPlants);
                                 patch(Javalin::updateAllPlants);
@@ -95,6 +107,67 @@ public class Javalin {
             });
         }).start(7002);
 
+    }
+
+    @OpenApi(
+            summary = "Upload image",
+            operationId = "uplaod",
+            path = "/v1/users/{id}/upload",
+            methods = HttpMethod.POST,
+            tags = {"Authentication"},
+            requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = Upload.class)}),
+            responses = {
+                    @OpenApiResponse(status = "200", content = {@OpenApiContent(from = Upload.class)}),
+                    @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
+            }
+    )
+    public static void uploadImage(Context ctx) throws NoSuchAlgorithmException {
+        UploadedFile file = ctx.uploadedFile("file");
+        long time = System.currentTimeMillis();
+
+        MessageDigest md = MessageDigest.getInstance("SHA-1");
+        assert file != null;
+        md.update((time + file.filename()).getBytes());
+        byte[] digest = md.digest();
+        StringBuilder hash = new StringBuilder();
+
+        for (byte b : digest) {
+            hash.append(String.format("%02x", b));
+        }
+
+        FileUtil.streamToFile(file.content(), "src/main/resources/uploads/" + hash + file.extension());
+
+        Connection database = DbConnection.getConnection();
+
+        // Delete file if it already exists
+        String getAvatarUrl = "SELECT avatar_url FROM user WHERE id = ?;";
+        String avatarUrl;
+        try (PreparedStatement preparedStatement = database.prepareStatement(getAvatarUrl)) {
+            preparedStatement.setInt(1, Integer.parseInt(ctx.pathParam("id")));
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                avatarUrl = resultSet.getString("avatar_url");
+                File myObj = new File("src/main/resources/uploads/" + avatarUrl);
+                if (myObj.exists()) {
+                    myObj.delete();
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        String query = "UPDATE user SET avatar_url = ? WHERE id = ?;";
+        try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
+            preparedStatement.setString(1, hash + file.extension());
+            preparedStatement.setInt(2, Integer.parseInt(ctx.pathParam("id")));
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        String json = objecToJson(hash + file.extension());
+        ctx.result(json);
+        ctx.status(200);
     }
 
     // Requirement: F.DP.3
@@ -118,10 +191,11 @@ public class Javalin {
         User user = null;
         int id = 0;
         String username = null;
+        String avatarUrl = null;
         boolean notificationActivated = false;
         boolean funFactsActivated = false;
 
-        String query = "SELECT id, username, password, notification_activated, fun_facts_activated FROM user WHERE email = ?;";
+        String query = "SELECT id, username, password, notification_activated, fun_facts_activated, avatar_url FROM user WHERE email = ?;";
 
         try (PreparedStatement preparedStatement = database.prepareStatement(query)) {
             preparedStatement.setString(1, newLoginRequest.email);
@@ -135,8 +209,9 @@ public class Javalin {
                 username = resultSet.getString("username");
                 notificationActivated = resultSet.getBoolean("notification_activated");
                 funFactsActivated = resultSet.getBoolean("fun_facts_activated");
+                avatarUrl = resultSet.getString("avatar_url");
             }
-            user = new User(id, newLoginRequest.email, username, notificationActivated, funFactsActivated);
+            user = new User(id, newLoginRequest.email, username, notificationActivated, funFactsActivated, avatarUrl);
         } catch (SQLException sqlException) {
             sqlException.printStackTrace();
         }
