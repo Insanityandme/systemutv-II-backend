@@ -109,23 +109,29 @@ public class Javalin {
 
     }
 
+    // Requirement: F.DP.5
     @OpenApi(
             summary = "Upload image",
             operationId = "uplaod",
             path = "/v1/users/{id}/upload",
             methods = HttpMethod.POST,
             tags = {"Authentication"},
-            requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = Upload.class)}),
             responses = {
                     @OpenApiResponse(status = "200", content = {@OpenApiContent(from = Upload.class)}),
                     @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
             }
     )
-    public static void uploadImage(Context ctx) throws NoSuchAlgorithmException {
+    public static void uploadImage(Context ctx) {
         UploadedFile file = ctx.uploadedFile("file");
         long time = System.currentTimeMillis();
 
-        MessageDigest md = MessageDigest.getInstance("SHA-1");
+        MessageDigest md;
+        try {
+            md = MessageDigest.getInstance("SHA-1");
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+
         assert file != null;
         md.update((time + file.filename()).getBytes());
         byte[] digest = md.digest();

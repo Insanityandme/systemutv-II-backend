@@ -1,4 +1,5 @@
 import io.javalin.http.Context;
+import io.javalin.http.UploadedFile;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import se.myhappyplants.javalin.Javalin;
@@ -6,6 +7,7 @@ import se.myhappyplants.javalin.plant.Fact;
 import se.myhappyplants.javalin.plant.NewPlantRequest;
 import se.myhappyplants.javalin.user.NewUserRequest;
 import se.myhappyplants.javalin.utils.DbConnection;
+import utils.Helper;
 
 import static org.mockito.Mockito.*;
 
@@ -533,5 +535,27 @@ public class JavalinTests {
         when(ctx.queryParam("plant")).thenReturn("asdasdasdjasdlkjadlad");
         Javalin.getPlants(ctx);
         verify(ctx).status(404);
+    }
+
+    // Requirement: F.DP.5
+    @Test
+    public void uploadImageSuccess() {
+        Context ctx = mock(Context.class);
+
+        // Create user for the test
+        Helper.createUser();
+        // Get ID by logging in
+        String userId = Helper.getUserIdForTest();
+
+        // Upload profile picture
+        when(ctx.pathParam("id")).thenReturn(userId);
+        when(ctx.formParam("file")).thenReturn("utils/test.jpg");
+        when(ctx.uploadedFile("file")).thenReturn(null);
+        Javalin.uploadImage(ctx);
+
+        verify(ctx).status(200);
+
+        // Delete user for repeatable tests
+        Helper.deleteUser(userId);
     }
 }
