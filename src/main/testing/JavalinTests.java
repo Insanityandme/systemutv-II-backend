@@ -9,6 +9,9 @@ import se.myhappyplants.javalin.user.NewUserRequest;
 import se.myhappyplants.javalin.utils.DbConnection;
 import utils.Helper;
 
+import java.io.*;
+import java.util.concurrent.atomic.AtomicReference;
+
 import static org.mockito.Mockito.*;
 
 public class JavalinTests {
@@ -74,6 +77,7 @@ public class JavalinTests {
         // Delete user for repeatable tests
         Helper.deleteUser(id);
     }
+
     // Requirement: F.DP.13
     @Test
     public void getFactSuccess() {
@@ -548,14 +552,39 @@ public class JavalinTests {
         String userId = Helper.getUserIdForTest();
 
         // Upload profile picture
-        when(ctx.pathParam("id")).thenReturn(userId);
-        when(ctx.formParam("file")).thenReturn("utils/test.jpg");
-        when(ctx.uploadedFile("file")).thenReturn(null);
-        Javalin.uploadImage(ctx);
+        File file = new File("src/main/testing/utils/test.jpg");
+        AtomicReference<String> filePath = new AtomicReference<>("");
+        UploadedFile uploadedFile = mock(UploadedFile.class);
+
+        try (FileInputStream fis = new FileInputStream(file)) {
+            when(uploadedFile.content()).thenReturn(fis);
+            when(uploadedFile.contentType()).thenReturn("image/jpeg");
+            when(uploadedFile.filename()).thenReturn("test.jpg");
+            when(uploadedFile.extension()).thenReturn(".jpg");
+            when(uploadedFile.size()).thenReturn(file.getTotalSpace());
+
+            when(ctx.pathParam("id")).thenReturn(userId);
+            when(ctx.uploadedFile("file")).thenReturn(uploadedFile);
+
+            // Get the filepath back from the response
+            when(ctx.result(anyString())).thenAnswer(invocation -> {
+                filePath.set(invocation.getArgument(0, String.class).replace("\"", ""));
+                return null;
+            });
+
+            Javalin.uploadImage(ctx);
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         verify(ctx).status(200);
 
-        // Delete user for repeatable tests
+        // Delete user and image for repeatable tests
         Helper.deleteUser(userId);
+        File fileToBeDeleted = new File("src/main/resources/uploads/" + filePath);
+        if (fileToBeDeleted.exists()) {
+            fileToBeDeleted.delete();
+        }
     }
 }

@@ -89,6 +89,10 @@ public class Helper {
         return String.valueOf(jsonNode.get("id"));
     }
 
+    public static void getFilename() {
+
+    }
+
     public static void deleteUser(String userId) {
         Context ctx = mock(Context.class);
 
