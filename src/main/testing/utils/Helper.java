@@ -1,3 +1,5 @@
+package utils;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -85,6 +87,10 @@ public class Helper {
         }
 
         return String.valueOf(jsonNode.get("id"));
+    }
+
+    public static void getFilename() {
+
     }
 
     public static void deleteUser(String userId) {
