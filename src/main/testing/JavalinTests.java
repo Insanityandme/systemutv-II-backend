@@ -190,7 +190,7 @@ public class JavalinTests {
         verify(ctx).status(404);
     }
 
-    // Requirement: F.DP.4
+    // Requirement: F.DP.1 + F.SI.1
     @Test
     public void getAllPlantsSuccesful() {
         Context ctx = mock(Context.class);
@@ -213,7 +213,7 @@ public class JavalinTests {
         Helper.deleteUser(id);
     }
 
-    // Requirement: F.DP.4
+    // Requirement: F.DP.1 + F.SI.1
     @Test
     public void getAllPlantsNotFound() {
         Context ctx = mock(Context.class);
