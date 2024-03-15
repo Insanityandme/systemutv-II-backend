@@ -47,7 +47,7 @@ Instructions for WINDOWS: https://phoenixnap.com/kb/windows-set-environment-vari
 ### Instructions for databases and uploads
 1. We are using SQLite for our simple database
 2. Create or copy two database files  ```myHappyPlantsDB.db``` and ```myHappyPlantsDBTEST.db```
-3. Put them in the src/main/resources folder
+3. Create a folder resources in src/main and put them in there
 4. Create an empty folder named ```uploads``` in the same directory. 
 
 ### Starting the server
