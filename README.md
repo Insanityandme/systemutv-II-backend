@@ -1,4 +1,4 @@
-![image](https://github.com/Insanityandme/systemutv-II-backend/assets/1380257/be6e9fe7-f869-4471-abaa-e9141a4841cb)<div align="center">
+<div align="center">
 
 # MyHappyPlants Backend
 [Install](#install) • [Testing](#testing) • [Contact](#contact)
