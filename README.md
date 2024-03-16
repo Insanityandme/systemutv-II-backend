@@ -63,7 +63,7 @@ We are using SQLite for our simple database
 3. run ```mvn clean package``` in the root of the project
 4. run ```java -jar .\target\MyHappyPlants-1.0-SNAPSHOT-jar-with-dependencies.jar```
 5. The server should now be running and should look something like this: ![image](https://github.com/Insanityandme/systemutv-II-backend/assets/1380257/f5db41fd-98fc-4649-89a8-521cb6a91c12)
-
+6. Go to localhost:7002 to check out our API documentation
 
 ## Front-end
 You can find instructions for the frontend here: https://github.com/Insanityandme/systemutv-II-frontend
