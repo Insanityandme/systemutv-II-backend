@@ -68,12 +68,21 @@ Instructions for WINDOWS: https://phoenixnap.com/kb/windows-set-environment-vari
 ## Front-end
 You can find instructions for the frontend here: https://github.com/Insanityandme/systemutv-II-frontend
 
-# Testing
+# Testing 
+
+## Using IntelliJ
 1. Go into src/main/testing folder
 2. If Mockito and Junit is installed (it usually is included in your IDE or will be installed through Maven)
 3. Run all files except Helper.java
 4. It should look something like this depending on your editor: 
 ![image](https://github.com/Insanityandme/systemutv-II-backend/assets/1380257/be9d35ab-a25d-46b4-9530-bed329ff5aee)
+
+## Using terminal
+1. Same as with running the server you need to have Maven installed globally on your computer for this to work properly
+1. cd into root of the project
+2. if you've run ```mvn install``` and ```mvn clean package``` you are good to go.
+3. run ```mvn clean test```
+4. It should look something like this: ![image](https://github.com/Insanityandme/systemutv-II-backend/assets/1380257/17a3b794-3187-4fba-9633-2b28bf8554b2)
 
 # Contact
 You are welcome to contact me at bengtegardbook@gmail.com if you have any questions on how to setup this environment.
