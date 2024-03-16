@@ -48,7 +48,7 @@ Instructions for WINDOWS: https://phoenixnap.com/kb/windows-set-environment-vari
 1. We are using SQLite for our simple database
 2. Create or copy two database files  ```myHappyPlantsDB.db``` and ```myHappyPlantsDBTEST.db```
 3. Create a folder named ```resources``` in src/main and put them in there
-4. Create an empty folder named ```uploads``` in the same directory. 
+4. Create an empty folder named ```uploads``` in the same directory
 
 ## Using IntelliJ
 1. If you are using an IDE such as IntelliJ and Eclipse you need to install the Maven plugin for your environment if it isn't already installed. (It's most likely already installed)
