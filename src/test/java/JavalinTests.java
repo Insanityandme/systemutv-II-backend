@@ -552,7 +552,7 @@ public class JavalinTests {
         String userId = Helper.getUserIdForTest();
 
         // Upload profile picture
-        File file = new File("src/main/testing/utils/test.jpg");
+        File file = new File("src/test/java/utils/test.jpg");
         AtomicReference<String> filePath = new AtomicReference<>("");
         UploadedFile uploadedFile = mock(UploadedFile.class);
 

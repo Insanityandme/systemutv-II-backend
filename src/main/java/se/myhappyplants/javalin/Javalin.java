@@ -112,7 +112,7 @@ public class Javalin {
     // Requirement: F.DP.5
     @OpenApi(
             summary = "Upload image",
-            operationId = "uplaod",
+            operationId = "upload",
             path = "/v1/users/{id}/upload",
             methods = HttpMethod.POST,
             tags = {"Authentication"},

@@ -88,6 +88,11 @@
                     <target>11</target>
                     <annotationProcessorPaths>
                         <annotationProcessorPath>
+                            <groupId>org.mockito</groupId>
+                            <artifactId>mockito-core</artifactId>
+                            <version>5.2.0</version>
+                        </annotationProcessorPath>
+                        <annotationProcessorPath>
                             <groupId>org.xerial</groupId>
                             <artifactId>sqlite-jdbc</artifactId>
                             <version>3.42.0.0</version>
@@ -101,19 +106,6 @@
                 </configuration>
             </plugin>
             <plugin>
-                <!-- Build an executable JAR
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>3.1.0</version>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <addClasspath>true</addClasspath>
-                            <mainClass>se.myhappyplants.javalin.Javalin</mainClass>
-                        </manifest>
-                    </archive>
-                </configuration>
-                -->
                 <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-assembly-plugin</artifactId>
                     <executions>
