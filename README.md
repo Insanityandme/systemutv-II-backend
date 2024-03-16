@@ -48,15 +48,15 @@ Instructions for WINDOWS: https://phoenixnap.com/kb/windows-set-environment-vari
 1. We are using SQLite for our simple database
 2. Create or copy two database files  ```myHappyPlantsDB.db``` and ```myHappyPlantsDBTEST.db```
 3. Create a folder named ```resources``` in src/main and put them in there
-4. Create an empty folder named ```uploads``` in the same directory. 
+4. Create an empty folder named ```uploads``` in the same directory
 
-### Starting the server (IDE)
+## Using IntelliJ
 1. If you are using an IDE such as IntelliJ and Eclipse you need to install the Maven plugin for your environment if it isn't already installed. (It's most likely already installed)
 2. Navigate to the file Javalin.java in src/main/java/se/myhappyplants/javalin/
 3. Run Javalin.java and it should look something like this: ![image](https://github.com/Insanityandme/systemutv-II-backend/assets/1380257/03980c76-d2d6-48ba-94a2-3be7ee24764d)
 4. Now that the server is running navigate to localhost:7002 to check out our API documentation! ![image](https://github.com/Insanityandme/systemutv-II-backend/assets/1380257/01fa74d0-7c10-41f9-ac39-3c942cc34a25)
 
-### Starting server (TERMINAL)
+## Using terminal
 1. Make sure you have maven installed on your computer (SEE: https://www.baeldung.com/install-maven-on-windows-linux-mac)
 2. run ```mvn install``` in the root of the project
 3. run ```mvn compile``` in the root of the project
@@ -68,12 +68,21 @@ Instructions for WINDOWS: https://phoenixnap.com/kb/windows-set-environment-vari
 ## Front-end
 You can find instructions for the frontend here: https://github.com/Insanityandme/systemutv-II-frontend
 
-# Testing
+# Testing 
+
+## Using IntelliJ
 1. Go into src/main/testing folder
 2. If Mockito and Junit is installed (it usually is included in your IDE or will be installed through Maven)
 3. Run all files except Helper.java
 4. It should look something like this depending on your editor: 
 ![image](https://github.com/Insanityandme/systemutv-II-backend/assets/1380257/be9d35ab-a25d-46b4-9530-bed329ff5aee)
+
+## Using terminal
+1. Same as with running the server you need to have Maven installed globally on your computer for this to work properly
+1. cd into root of the project
+2. if you've run ```mvn install``` and ```mvn clean package``` you are good to go.
+3. run ```mvn clean test```
+4. It should look something like this: ![image](https://github.com/Insanityandme/systemutv-II-backend/assets/1380257/17a3b794-3187-4fba-9633-2b28bf8554b2)
 
 # Contact
 You are welcome to contact me at bengtegardbook@gmail.com if you have any questions on how to setup this environment.
