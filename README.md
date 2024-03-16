@@ -45,10 +45,11 @@ Instructions for MACOSX: https://phoenixnap.com/kb/set-environment-variable-mac
 Instructions for WINDOWS: https://phoenixnap.com/kb/windows-set-environment-variable
 
 ### Instructions for databases and uploads
-1. We are using SQLite for our simple database
-2. Create or copy two database files  ```myHappyPlantsDB.db``` and ```myHappyPlantsDBTEST.db```
-3. Create a folder named ```resources``` in src/main and put them in there
-4. Create an empty folder named ```uploads``` in the same directory
+We are using SQLite for our simple database
+
+1. In src/main create a folder named ```resources``` 
+2. Create or copy two database files  ```myHappyPlantsDB.db``` and ```myHappyPlantsDBTEST.db``` and put in the resources folder
+3. Create an empty folder named ```uploads``` and put it in the resources folder
 
 ## Using IntelliJ
 1. If you are using an IDE such as IntelliJ and Eclipse you need to install the Maven plugin for your environment if it isn't already installed. (It's most likely already installed)
@@ -58,11 +59,10 @@ Instructions for WINDOWS: https://phoenixnap.com/kb/windows-set-environment-vari
 
 ## Using terminal
 1. Make sure you have maven installed on your computer (SEE: https://www.baeldung.com/install-maven-on-windows-linux-mac)
-2. run ```mvn install``` in the root of the project
-3. run ```mvn compile``` in the root of the project
-4. run ```mvn clean package``` in the root of the project
-5. run ```java -jar .\target\MyHappyPlants-1.0-SNAPSHOT-jar-with-dependencies.jar```
-6. The server should now be running and should look something like this: ![image](https://github.com/Insanityandme/systemutv-II-backend/assets/1380257/f5db41fd-98fc-4649-89a8-521cb6a91c12)
+2. run ```mvn compile``` in the root of the project
+3. run ```mvn clean package``` in the root of the project
+4. run ```java -jar .\target\MyHappyPlants-1.0-SNAPSHOT-jar-with-dependencies.jar```
+5. The server should now be running and should look something like this: ![image](https://github.com/Insanityandme/systemutv-II-backend/assets/1380257/f5db41fd-98fc-4649-89a8-521cb6a91c12)
 
 
 ## Front-end
